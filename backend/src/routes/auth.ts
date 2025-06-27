@@ -5,29 +5,43 @@ import bcrypt from 'bcrypt';
 const router = Router();
 
 const registerHandler = async (req: Request, res: Response) => {
-  const { email, password, name, role_id } = req.body;
+  const { email, password, name, role } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required.' });
+  if (!email || !password || !role) {
+    return res.status(400).json({ error: 'Email, password, and role are required.' });
   }
 
   try {
+    // 1. Check if user already exists
     const userExists = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
     if (userExists.rows.length > 0) {
       return res.status(409).json({ error: 'Email already in use.' });
     }
 
-    const saltRounds = 10;
-    const password_hash = await bcrypt.hash(password, saltRounds);
+    // 2. Look up role_id from roles table
+    const roleResult = await pool.query(
+      'SELECT id FROM roles WHERE name = $1',
+      [role]
+    );
+
+    if (roleResult.rows.length === 0) {
+      return res.status(400).json({ error: 'Invalid role name.' });
+    }
+
+    const role_id = roleResult.rows[0].id;
+
+    // 3. Hash password and insert user
+    const password_hash = await bcrypt.hash(password, 10);
 
     const result = await pool.query(
       `INSERT INTO users (email, password_hash, name, role_id)
        VALUES ($1, $2, $3, $4)
        RETURNING id, email, name, role_id, created_at`,
-      [email, password_hash, name || null, role_id || null]
+      [email, password_hash, name || null, role_id]
     );
 
     res.status(201).json({ user: result.rows[0] });
+
   } catch (err) {
     console.error('❌ Registration error:', err);
     res.status(500).json({ error: 'Server error during registration.' });
