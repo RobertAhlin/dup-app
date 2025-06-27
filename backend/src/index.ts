@@ -2,9 +2,17 @@ import express from 'express';
 import pool from './db';
 import authRoutes from './routes/auth';
 import testRoutes from './routes/test';
+import cors from 'cors';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+app.use(cors({
+  origin: process.env.FRONTEND_URL, // allow requests from your frontend URL
+  credentials: true, // allow cookies if you use them later
+}));
 
 app.use(express.json());
 app.use('/api/auth', authRoutes);
