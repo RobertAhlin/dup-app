@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import pool from '../db';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { verifyToken, AuthenticatedRequest } from '../middleware/verifyToken';
 
 const router = Router();
 
@@ -99,9 +100,47 @@ const loginHandler = async (req: Request, res: Response) => {
   }
 };
 
-// 👇 Register the route using a wrapper
+// Register the route using a wrapper
 router.post('/login', (req: Request, res: Response) => {
   loginHandler(req, res);
+});
+
+// Get user profile handler to profile route
+const getProfileHandler = async (req: AuthenticatedRequest, res: Response) => {
+  const userId = req.user?.id;
+
+  try {
+    const result = await pool.query(
+      `SELECT 
+         users.id,
+         users.email,
+         users.name,
+         roles.name AS role,
+         users.created_at
+       FROM users
+       JOIN roles ON users.role_id = roles.id
+       WHERE users.id = $1`,
+      [userId]
+    );
+
+    const user = result.rows[0];
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    res.json({
+      message: '👤 Profile retrieved',
+      user
+    });
+  } catch (err) {
+    console.error('❌ Error fetching profile:', err);
+    res.status(500).json({ error: 'Failed to fetch user profile.' });
+  }
+};
+
+router.get('/me', verifyToken, (req: Request, res: Response) => {
+  getProfileHandler(req as AuthenticatedRequest, res);
 });
 
 export default router;
