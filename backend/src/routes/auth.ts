@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import pool from '../db';
 import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
 const router = Router();
 
@@ -50,6 +51,57 @@ const registerHandler = async (req: Request, res: Response) => {
 
 router.post('/register', (req: Request, res: Response) => {
   registerHandler(req, res);
+});
+
+const secret = process.env.JWT_SECRET || 'supersecret';
+
+const loginHandler = async (req: Request, res: Response) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required.' });
+  }
+
+  try {
+    const result = await pool.query(
+      `SELECT id, email, password_hash, name, role_id FROM users WHERE email = $1`,
+      [email]
+    );
+
+    const user = result.rows[0];
+
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid email or password.' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Invalid email or password.' });
+    }
+
+    const tokenPayload = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role_id: user.role_id
+    };
+
+    const token = jwt.sign(tokenPayload, secret, { expiresIn: '2h' });
+
+    res.json({
+      message: 'Login successful',
+      token
+    });
+  } catch (err) {
+    console.error('❌ Login error:', err);
+    res.status(500).json({ error: 'Server error during login.' });
+  }
+};
+
+// 👇 Register the route using a wrapper
+router.post('/login', (req: Request, res: Response) => {
+  loginHandler(req, res);
 });
 
 export default router;
