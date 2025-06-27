@@ -1,10 +1,12 @@
 import express from 'express';
 import pool from './db';
+import authRoutes from './routes/auth';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(express.json());
+app.use('/api/auth', authRoutes);
 
 app.get('/', async (_req, res) => {
   try {
