@@ -57,7 +57,7 @@ Our goal is to create a platform that supports upskilling through clarity, modul
 | Frontend    | React + Vite      |
 | Backend     | Node.js + Express |
 | Database    | PostgreSQL        |
-| Hosting     | Render (free-tier for MVP) |
+| Hosting     | Neon (free-tier for MVP) |
 | Auth        | JWT + Email-based login |
 | Versioning  | GitHub (public repo)      |
 
