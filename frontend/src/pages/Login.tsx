@@ -1,3 +1,5 @@
+//frontend/src/pages/Login.tsx
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Login.css'; // move CSS here (see below)
@@ -26,7 +28,13 @@ export default function Login() {
         throw new Error(data.error || 'Login failed');
       }
 
-      localStorage.setItem('token', data.token);
+      if (data.token) {
+  localStorage.setItem('token', data.token);
+  navigate('/dashboard');
+} else {
+  throw new Error('No token received from server');
+}
+
       navigate('/dashboard');
     } catch (err: unknown) {
       if (err instanceof Error) {
