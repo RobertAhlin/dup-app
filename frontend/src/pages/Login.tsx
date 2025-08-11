@@ -1,8 +1,9 @@
-//frontend/src/pages/Login.tsx
+// frontend/src/pages/Login.tsx
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './Login.css'; // move CSS here (see below)
+import axios from '../api/axios'; // <-- Axios-instansen
+import './Login.css';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -15,29 +16,23 @@ export default function Login() {
     setError('');
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+      const response = await axios.post('/api/auth/login', {
+        email,
+        password,
       });
 
-      const text = await response.text();
-      const data = text ? JSON.parse(text) : {};
+      const token = response.data.token;
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Login failed');
+      if (!token) {
+        throw new Error('No token received from server');
       }
 
-      if (data.token) {
-  localStorage.setItem('token', data.token);
-  navigate('/dashboard');
-} else {
-  throw new Error('No token received from server');
-}
-
+      localStorage.setItem('token', token);
       navigate('/dashboard');
-    } catch (err: unknown) {
-      if (err instanceof Error) {
+    } catch (err: any) {
+      if (err.response?.data?.error) {
+        setError(err.response.data.error);
+      } else if (err instanceof Error) {
         setError(err.message);
       } else {
         setError('Unexpected error');
