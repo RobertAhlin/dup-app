@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from '../api/axios'; // <-- Axios-instansen
+import axiosInstance from '../api/axios';
 import './Login.css';
 
 export default function Login() {
@@ -16,27 +16,16 @@ export default function Login() {
     setError('');
 
     try {
-      const response = await axios.post('/api/auth/login', {
+      const response = await axiosInstance.post('/api/auth/login', {
         email,
         password,
       });
 
-      const token = response.data.token;
-
-      if (!token) {
-        throw new Error('No token received from server');
-      }
-
-      localStorage.setItem('token', token);
+      console.log('✅ Login successful:', response.data);
       navigate('/dashboard');
     } catch (err: any) {
-      if (err.response?.data?.error) {
-        setError(err.response.data.error);
-      } else if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Unexpected error');
-      }
+      setError(err?.response?.data?.error || 'Login failed');
+      console.error('❌ Login error:', err);
     }
   };
 

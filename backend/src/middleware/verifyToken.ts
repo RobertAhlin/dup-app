@@ -1,3 +1,5 @@
+// backend/src/middleware/verifyToken.ts
+
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
@@ -7,15 +9,17 @@ export interface AuthenticatedRequest extends Request {
   user?: any;
 }
 
-export function verifyToken(req: AuthenticatedRequest, res: Response, next: NextFunction): void {
-  const authHeader = req.headers.authorization;
+export function verifyToken(
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): void {
+  const token = req.cookies.token;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    res.status(401).json({ error: 'Access token missing or invalid' });
+  if (!token) {
+    res.status(401).json({ error: 'Access token missing' });
     return;
   }
-
-  const token = authHeader.split(' ')[1];
 
   try {
     const decoded = jwt.verify(token, secret);

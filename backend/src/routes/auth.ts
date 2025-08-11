@@ -1,3 +1,5 @@
+// backend/src/routes/auth.ts
+
 import { Router, Request, Response } from 'express';
 import pool from '../db';
 import bcrypt from 'bcrypt';
@@ -90,10 +92,14 @@ const loginHandler = async (req: Request, res: Response) => {
 
     const token = jwt.sign(tokenPayload, secret, { expiresIn: '2h' });
 
-    res.json({
-      message: 'Login successful',
-      token
-    });
+    res
+    .cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production' ? true : false,
+      sameSite: 'lax',
+      maxAge: 2 * 60 * 60 * 1000 // 2 timmar
+    })
+  .json({ message: 'Login successful' });
   } catch (err) {
     console.error('❌ Login error:', err);
     res.status(500).json({ error: 'Server error during login.' });
@@ -106,7 +112,10 @@ router.post('/login', (req: Request, res: Response) => {
 });
 
 // Get user profile handler to profile route
-const getProfileHandler = async (req: AuthenticatedRequest, res: Response) => {
+const getProfileHandler = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
   const userId = req.user?.id;
 
   try {
@@ -126,12 +135,13 @@ const getProfileHandler = async (req: AuthenticatedRequest, res: Response) => {
     const user = result.rows[0];
 
     if (!user) {
-      return res.status(404).json({ error: 'User not found.' });
+      res.status(404).json({ error: 'User not found.' });
+      return;
     }
 
     res.json({
       message: '👤 Profile retrieved',
-      user
+      user,
     });
   } catch (err) {
     console.error('❌ Error fetching profile:', err);
@@ -139,8 +149,18 @@ const getProfileHandler = async (req: AuthenticatedRequest, res: Response) => {
   }
 };
 
-router.get('/me', verifyToken, (req: Request, res: Response) => {
-  getProfileHandler(req as AuthenticatedRequest, res);
+
+router.get('/me', verifyToken, getProfileHandler);
+
+router.post('/logout', (_req, res) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'strict',
+  });
+  res.json({ message: 'Logged out' });
 });
 
 export default router;
+
+

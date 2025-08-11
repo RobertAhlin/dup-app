@@ -74,10 +74,10 @@ Our goal is to create a platform that supports upskilling through clarity, modul
 ---
 
 ## 📝 Project Commands
-run `npm install` to install dependencies
-run `npm run dev` to start the development server
-run `npm run build` to build the project for production
-run `npm run initdb` to initialize the database
+- run `npm install` to install dependencies  
+- run `npm run dev` to start the development server  
+- run `npm run build` to build the project for production  
+- run `npm run initdb` to initialize the database  
 
 ## 💡 Why public?
 
