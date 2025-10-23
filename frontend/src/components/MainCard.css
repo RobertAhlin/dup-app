@@ -1,26 +1,28 @@
 .main-card {
   background: white;
   border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: 10px 10px 10px rgba(0, 0, 0, 0.2);
   margin-bottom: 24px;
   overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 .card-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #45464b 0%, #115815 100%);
+  margin: 16px;
   padding: 32px;
   color: white;
+  border-radius: 12px;
 }
 
-.welcome-section {
+.user-info-section {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
-.welcome-title {
-  font-size: 2.5rem;
+.user-title {
+  font-size: 1.5rem;
   font-weight: 700;
   margin: 0;
   color: white;
@@ -30,7 +32,7 @@
 .user-info {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 5px;
 }
 
 .info-item {
