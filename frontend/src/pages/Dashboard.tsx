@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-import axios from "../api/axios"; // <-- använd din instans
+import axios from "../api/axios";
 import { useNavigate } from "react-router-dom";
 import MainCard from "../components/MainCard";
-import "./Dashboard.css";
 
 const Dashboard = () => {
   const [user, setUser] = useState<any>(null);

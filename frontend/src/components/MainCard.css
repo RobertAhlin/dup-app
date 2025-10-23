@@ -1,17 +1,17 @@
 .main-card {
-  background: white;
+  background: rgb(217, 226, 255);
   border-radius: 16px;
   box-shadow: 10px 10px 10px rgba(0, 0, 0, 0.2);
-  /* Take up 95% of the viewport width and center */
   width: 95vw;
   margin: 0 auto 24px;
   box-sizing: border-box;
   overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
 }
 
 .card-header {
-  background: linear-gradient(135deg, #45464b 0%, #115815 100%);
+  background: linear-gradient(135deg, #01105a 0%, #313135 100%);
   margin: 16px;
   padding: 32px;
   color: white;
@@ -81,7 +81,6 @@
 .card-content {
   padding: 32px;
   min-height: 200px;
-  background: white;
 }
 
 /* Responsive design */
