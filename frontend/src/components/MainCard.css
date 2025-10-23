@@ -1,0 +1,99 @@
+.main-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  margin-bottom: 24px;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.card-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 32px;
+  color: white;
+}
+
+.welcome-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.welcome-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0;
+  color: white;
+  line-height: 1.2;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.info-label {
+  font-size: 1rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+  min-width: 60px;
+}
+
+.info-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+}
+
+.role-badge {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  text-transform: capitalize;
+  backdrop-filter: blur(10px);
+}
+
+.card-content {
+  padding: 32px;
+  min-height: 200px;
+  background: white;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .welcome-title {
+    font-size: 2rem;
+  }
+
+  .card-header {
+    padding: 24px;
+  }
+
+  .card-content {
+    padding: 24px;
+  }
+
+  .user-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .info-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .info-label {
+    min-width: auto;
+  }
+}
