@@ -9,12 +9,13 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
 
+    // Don't reset states immediately to avoid showing default color
     try {
       const response = await axiosInstance.post("/api/auth/login", {
         email,
@@ -22,8 +23,17 @@ export default function Login() {
       });
 
       console.log("✅ Login successful:", response.data);
-      navigate("/dashboard");
+      // Clear error state and set success state
+      setError("");
+      setSuccess(true);
+
+      // Wait 1 second before navigating to dashboard
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1000);
     } catch (err: any) {
+      // Clear success state and set error state
+      setSuccess(false);
       setError(err?.response?.data?.error || "Login failed");
       console.error("❌ Login error:", err);
     }
@@ -31,7 +41,9 @@ export default function Login() {
 
   return (
     <div className="container">
-      <div className={`ring ${error ? "error" : ""}`}>
+      <div
+        className={`ring ${error ? "error" : ""} ${success ? "success" : ""}`}
+      >
         {Array.from({ length: 36 }, (_, i) => (
           <div className="bar" style={{ ["--i" as any]: i }} key={i}></div>
         ))}

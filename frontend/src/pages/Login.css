@@ -46,6 +46,11 @@ body {
   background: #e74c3c; /* red */
 }
 
+/* When login succeeds, color bars green */
+.ring.success .bar {
+  background: #27ae60; /* green */
+}
+
 @keyframes glow {
   0% {
     opacity: 1;
