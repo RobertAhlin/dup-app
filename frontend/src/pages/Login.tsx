@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axios";
+import { useAlert } from "../contexts/AlertContext";
 import "./Login.css";
 
 export default function Login() {
@@ -11,6 +12,7 @@ export default function Login() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
+  const { showAlert } = useAlert();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,6 +29,9 @@ export default function Login() {
       setError("");
       setSuccess(true);
 
+      // Show success alert
+      showAlert("success", "Login successful!");
+
       // Wait 1 second before navigating to dashboard
       setTimeout(() => {
         navigate("/dashboard");
@@ -35,6 +40,10 @@ export default function Login() {
       // Clear success state and set error state
       setSuccess(false);
       setError(err?.response?.data?.error || "Login failed");
+
+      // Show error alert using the global alert system
+      showAlert("error", err?.response?.data?.error || "Login failed");
+
       console.error("❌ Login error:", err);
     }
   };
@@ -71,7 +80,6 @@ export default function Login() {
           />
         </label>
         <button type="submit">Log In</button>
-        {error && <p style={{ color: "red" }}>{error}</p>}
       </form>
     </div>
   );
