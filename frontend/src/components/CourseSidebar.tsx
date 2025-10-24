@@ -118,6 +118,8 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({ items }) => {
             className="course-sidebar__item"
             href="#"
             onClick={(e) => e.preventDefault()}
+            data-label={c.name}
+            title={c.name}
           >
             <span className="course-sidebar__icon" aria-hidden>
               {c.icon || <DefaultIcon />}

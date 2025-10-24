@@ -64,3 +64,49 @@
   font-weight: 600;
   margin-left: 12px;
 }
+
+/* Tooltip when collapsed: show course name on hover */
+.course-sidebar:not(.expanded) .course-sidebar__item {
+  position: relative;
+}
+
+.course-sidebar:not(.expanded) .course-sidebar__item::after {
+  content: attr(data-label);
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: #0f172a; /* slate-900 */
+  color: #fff;
+  font-size: 12px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+  z-index: 10;
+}
+
+.course-sidebar:not(.expanded) .course-sidebar__item:hover::after {
+  opacity: 1;
+}
+
+.course-sidebar:not(.expanded) .course-sidebar__item::before {
+  content: "";
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translate(0, -50%);
+  border: 6px solid transparent;
+  border-right: 0;
+  border-left-color: #0f172a;
+  opacity: 0;
+  transition: opacity 120ms ease;
+  z-index: 10;
+}
+
+.course-sidebar:not(.expanded) .course-sidebar__item:hover::before {
+  opacity: 1;
+}
