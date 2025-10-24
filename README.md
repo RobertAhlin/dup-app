@@ -55,6 +55,7 @@ Our goal is to create a platform that supports upskilling through clarity, modul
 | Layer       | Tech              |
 |-------------|-------------------|
 | Frontend    | React + Vite      |
+| Styling     | Tailwind CSS      |
 | Backend     | Node.js + Express |
 | Database    | PostgreSQL        |
 | Hosting     | Neon (free-tier for MVP) |
