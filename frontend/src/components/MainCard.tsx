@@ -15,10 +15,12 @@ export default function MainCard({ name, role }: MainCardProps) {
             <h1 className="inline m-0 text-2xl font-bold text-white leading-tight">
               Welcome, {name}
             </h1>
-            <span className="text-white/90">Role:</span>
-            <span className="bg-white/20 py-1 px-3 rounded-full text-sm capitalize backdrop-blur-md">
-              {role}
-            </span>
+            <div className="ms-auto flex items-center gap-2">
+              <span className="text-white/90">Role:</span>
+              <span className="bg-white/20 py-1 px-3 rounded-full text-sm capitalize backdrop-blur-md">
+                {role}
+              </span>
+            </div>
           </div>
         </div>
       </div>
