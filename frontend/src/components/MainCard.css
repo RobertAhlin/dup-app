@@ -1,8 +1,9 @@
 .main-card {
-  background: rgb(217, 226, 255);
+  background: rgb(255, 255, 255);
   border-radius: 16px;
   box-shadow: 10px 10px 10px rgba(0, 0, 0, 0.2);
-  width: 93vw;
+  width: 98vw;
+  max-height: 90vw;
   margin: 0 auto;
   box-sizing: border-box;
   overflow: hidden;
@@ -12,7 +13,7 @@
 
 .card-header {
   background: linear-gradient(135deg, #01105a 0%, #313135 100%);
-  margin: 16px;
+  margin: 12px;
   padding: 32px;
   color: white;
   border-radius: 12px;
@@ -79,8 +80,17 @@
 }
 
 .card-content {
-  padding: 32px;
-  min-height: 200px;
+  padding: 16px; 
+  min-height: 200px; 
+  display: grid; 
+  grid-template-columns: auto 1fr; /* sidebar + main area */ 
+  gap: 16px; 
+}
+
+.card-main-area {
+  background: #ffffff; 
+  border-radius: 12px; 
+  border: 1px dashed rgba(0,0,0,0.08); 
 }
 
 /* Responsive design */
@@ -94,11 +104,11 @@
   }
 
   .card-header {
-    padding: 24px;
+    padding: 12px;
   }
 
   .card-content {
-    padding: 24px;
+    padding: 12px;
   }
 
   .user-info {

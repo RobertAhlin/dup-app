@@ -1,0 +1,66 @@
+/* Sidebar inside MainCard */
+.course-sidebar {
+  --sidebar-collapsed: 64px;
+  --sidebar-expanded: 220px;
+  width: var(--sidebar-collapsed);
+  transition: width 180ms ease, background 180ms ease;
+  background: #f5f7fb;
+  border-right: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
+  padding: 8px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.course-sidebar.expanded {
+  width: var(--sidebar-expanded);
+}
+
+.course-sidebar__toggle {
+  align-self: flex-end;
+  border: 0;
+  background: white;
+  color: #333;
+  border-radius: 10px;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.course-sidebar__list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.course-sidebar__item {
+  text-decoration: none;
+  display: grid;
+  grid-template-columns: 12px 1fr;
+  align-items: center;
+  color: #1c2840;
+  padding: 8px 8px;
+  border-radius: 10px;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.course-sidebar__item:hover {
+  background: #ecf2ff;
+}
+
+.course-sidebar__icon {
+  display: grid;
+  place-items: center;
+}
+
+.course-sidebar__label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+  margin-left: 12px;
+}

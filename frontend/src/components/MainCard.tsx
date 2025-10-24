@@ -1,4 +1,5 @@
 import "./MainCard.css";
+import CourseSidebar from "./CourseSidebar";
 
 interface MainCardProps {
   name: string;
@@ -25,7 +26,10 @@ export default function MainCard({ name, email, role }: MainCardProps) {
         </div>
       </div>
       <div className="card-content">
-        
+        <CourseSidebar />
+        <div className="card-main-area">
+          {/* Placeholder for main dashboard content */}
+        </div>
       </div>
     </div>
   );
