@@ -49,9 +49,11 @@ export default function Login() {
   };
 
   return (
-    <div className="container">
+    <div>
       <div
-        className={`ring ${error ? "error" : ""} ${success ? "success" : ""}`}
+        className={`spinner-ring ${error ? "error" : ""} ${
+          success ? "success" : ""
+        } absolute left-1/2! top-1/2! -translate-x-1/2 -translate-y-[55%] w-[260px]! h-[260px]! pointer-events-none`}
       >
         {Array.from({ length: 36 }, (_, i) => (
           <div className="bar" style={{ ["--i" as any]: i }} key={i}></div>

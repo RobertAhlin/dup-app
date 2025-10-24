@@ -37,13 +37,19 @@ export function AlertProvider({ children }: AlertProviderProps) {
       autoHide?: boolean,
       duration?: number
     ) => {
+      // Defaults by type: success auto-hides after 2s, error after 5s
+      const defaultAutoHide =
+        autoHide ?? (type === "success" || type === "error");
+      const defaultDuration =
+        duration ??
+        (type === "success" ? 2000 : type === "error" ? 5000 : undefined);
       const id = Math.random().toString(36).substr(2, 9);
       const newAlert: Alert = {
         id,
         type,
         message,
-        autoHide: autoHide ?? type === "success", // Default to auto-hide for success alerts
-        duration: duration ?? (type === "success" ? 2000 : undefined), // Default 2 seconds for success
+        autoHide: defaultAutoHide,
+        duration: defaultDuration,
       };
 
       setAlerts((prev) => {
