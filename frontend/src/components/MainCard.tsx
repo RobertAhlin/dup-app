@@ -8,7 +8,7 @@ interface MainCardProps {
 
 export default function MainCard({ name, role }: MainCardProps) {
   return (
-    <div className="bg-white rounded-2xl shadow-2xl w-[98vw] h-[80vw] mx-auto overflow-hidden font-sans">
+    <div className="bg-white rounded-2xl shadow-2xl w-[98vw] h-[100vw] mx-auto overflow-hidden font-sans">
       <div className="bg-linear-to-br from-[#01105a] to-[#313135] m-3 md:p-8 p-3 text-white rounded-xl">
         <div className="flex flex-col gap-5">
           <div className="flex flex-wrap md:flex-nowrap items-center gap-2 md:gap-3">
@@ -16,7 +16,6 @@ export default function MainCard({ name, role }: MainCardProps) {
               Welcome, {name}
             </h1>
             <div className="ms-auto flex items-center gap-2">
-              <span className="text-white/90">Role:</span>
               <span className="bg-white/20 py-1 px-3 rounded-full text-sm capitalize backdrop-blur-md">
                 {role}
               </span>
