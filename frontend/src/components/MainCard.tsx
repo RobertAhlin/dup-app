@@ -8,11 +8,11 @@ interface MainCardProps {
 
 export default function MainCard({ name, role }: MainCardProps) {
   return (
-    <div className="bg-white rounded-2xl shadow-2xl w-[98vw] h-[100vw] mx-auto overflow-hidden font-sans">
-      <div className="bg-linear-to-br from-[#01105a] to-[#313135] m-3 md:p-8 p-3 text-white rounded-xl">
+  <div className="bg-white rounded-2xl shadow-2xl w-[calc(100vw-1.5rem)] min-h-[calc(100vh-1.5rem)] font-sans p-3 m-3">
+  <div className="bg-linear-to-br from-[#01105a] to-[#313135] mb-3 md:p-8 p-3 text-white rounded-xl">
         <div className="flex flex-col gap-5">
           <div className="flex flex-wrap md:flex-nowrap items-center gap-2 md:gap-3">
-            <h1 className="inline m-0 text-2xl font-bold text-white leading-tight">
+            <h1 className="inline text-2xl font-bold text-white leading-tight">
               Welcome, {name}
             </h1>
             <div className="ms-auto flex items-center gap-2">
@@ -23,7 +23,7 @@ export default function MainCard({ name, role }: MainCardProps) {
           </div>
         </div>
       </div>
-      <div className="p-4 md:p-4 min-h-[200px] grid grid-cols-[auto_1fr] gap-4">
+  <div className="p-4 md:p-4 min-h-[200px] grid grid-cols-[auto_1fr] gap-4 overflow-auto">
         <CourseSidebar />
         <div className="bg-white rounded-xl border border-dashed border-black/10">
           {/* Placeholder for main dashboard content */}
