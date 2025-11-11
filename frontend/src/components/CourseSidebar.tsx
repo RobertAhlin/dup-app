@@ -79,6 +79,9 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({ items, onSelectCourse }) 
       <nav className="course-sidebar__list">
         {loading && <div className="course-sidebar__item" style={{justifyContent:'center'}}>Loading…</div>}
         {!loading && error && <div className="course-sidebar__item" style={{color:'#b00020'}}>{error}</div>}
+        {!loading && !error && courses.length === 0 && (
+          <div className="course-sidebar__item" style={{justifyContent:'center', color:'#64748b'}}>No courses available</div>
+        )}
         {!loading && !error && courses.map(c => (
           <a
             key={c.id}

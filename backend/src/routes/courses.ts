@@ -30,30 +30,89 @@ router.post('/', verifyToken, ensureAdmin, async (req: AuthenticatedRequest, res
   }
 });
 
-// Read all
-// Public to authenticated users: list courses
-router.get('/', verifyToken, async (_req, res) => {
+// Read all with RBAC filtering
+// admin: all courses
+// teacher: courses they own (created_by = user.id OR course_teachers.is_owner)
+// student: courses they are enrolled in (course_enrollments)
+router.get('/', verifyToken, async (req: AuthenticatedRequest, res) => {
   try {
-    const result = await pool.query(
-      `SELECT c.id, c.title, c.description, c.created_at, c.created_by, c.icon,
-              u.name AS creator_name
-       FROM course c
-       LEFT JOIN users u ON u.id = c.created_by
-       ORDER BY c.created_at DESC`
-    );
-    res.json({ courses: result.rows });
+    const user = req.user;
+    if (!user) {
+      res.status(401).json({ error: 'Not authenticated' });
+      return;
+    }
+
+    // Determine role name
+    const roleRes = await pool.query('SELECT r.name FROM roles r WHERE r.id = $1', [user.role_id]);
+    const roleName = roleRes.rows[0]?.name;
+    if (!roleName) {
+      res.status(403).json({ error: 'Role not found' });
+      return;
+    }
+
+    let rows: any[] = [];
+    if (roleName === 'admin') {
+      const result = await pool.query(
+        `SELECT c.id, c.title, c.description, c.created_at, c.created_by, c.icon,
+                u.name AS creator_name
+         FROM course c
+         LEFT JOIN users u ON u.id = c.created_by
+         ORDER BY c.created_at DESC`
+      );
+      rows = result.rows;
+    } else if (roleName === 'teacher') {
+      const result = await pool.query(
+        `SELECT DISTINCT c.id, c.title, c.description, c.created_at, c.created_by, c.icon,
+                u.name AS creator_name
+         FROM course c
+         LEFT JOIN users u ON u.id = c.created_by
+         LEFT JOIN course_teachers ct ON ct.course_id = c.id AND ct.user_id = $1 AND ct.is_owner = TRUE
+         WHERE c.created_by = $1 OR ct.user_id = $1
+         ORDER BY c.created_at DESC`,
+        [user.id]
+      );
+      rows = result.rows;
+    } else if (roleName === 'student') {
+      const result = await pool.query(
+        `SELECT c.id, c.title, c.description, c.created_at, c.created_by, c.icon,
+                u.name AS creator_name
+         FROM course c
+         JOIN course_enrollments ce ON ce.course_id = c.id AND ce.user_id = $1
+         LEFT JOIN users u ON u.id = c.created_by
+         ORDER BY c.created_at DESC`,
+        [user.id]
+      );
+      rows = result.rows;
+    } else {
+      // Unknown role -> no courses
+      rows = [];
+    }
+
+    res.json({ courses: rows });
   } catch (err) {
     console.error('List courses error:', err);
     res.status(500).json({ error: 'Failed to list courses' });
   }
 });
 
-// Read one
-// Public to authenticated users: read single course
-router.get('/:id', verifyToken, async (req, res) => {
+// Read one with RBAC visibility enforcement
+router.get('/:id', verifyToken, async (req: AuthenticatedRequest, res) => {
   const { id } = req.params;
   try {
-    const result = await pool.query(
+    const user = req.user;
+    if (!user) {
+      res.status(401).json({ error: 'Not authenticated' });
+      return;
+    }
+    const roleRes = await pool.query('SELECT r.name FROM roles r WHERE r.id = $1', [user.role_id]);
+    const roleName = roleRes.rows[0]?.name;
+    if (!roleName) {
+      res.status(403).json({ error: 'Role not found' });
+      return;
+    }
+
+    // Always fetch course basic data
+    const courseRes = await pool.query(
       `SELECT c.id, c.title, c.description, c.created_at, c.created_by, c.icon,
               u.name AS creator_name
        FROM course c
@@ -61,11 +120,36 @@ router.get('/:id', verifyToken, async (req, res) => {
        WHERE c.id = $1`,
       [id]
     );
-    if (!result.rows.length) {
+    if (!courseRes.rows.length) {
       res.status(404).json({ error: 'Course not found' });
       return;
     }
-    res.json({ course: result.rows[0] });
+    const course = courseRes.rows[0];
+
+    let allowed = false;
+    if (roleName === 'admin') {
+      allowed = true;
+    } else if (roleName === 'teacher') {
+      // Ownership check
+      const ownRes = await pool.query(
+        `SELECT 1 FROM course_teachers WHERE course_id = $1 AND user_id = $2 AND is_owner = TRUE`,
+        [id, user.id]
+      );
+      allowed = ownRes.rows.length > 0 || course.created_by === user.id;
+    } else if (roleName === 'student') {
+      const enrRes = await pool.query(
+        `SELECT 1 FROM course_enrollments WHERE course_id = $1 AND user_id = $2`,
+        [id, user.id]
+      );
+      allowed = enrRes.rows.length > 0;
+    }
+
+    if (!allowed) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    res.json({ course });
   } catch (err) {
     console.error('Get course error:', err);
     res.status(500).json({ error: 'Failed to get course' });
