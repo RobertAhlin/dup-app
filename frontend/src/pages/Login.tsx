@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axios";
 import { useAlert } from "../contexts/AlertContext";
 import "./Login.css";
+import { isAxiosError } from "axios";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -36,13 +37,21 @@ export default function Login() {
       setTimeout(() => {
         navigate("/dashboard");
       }, 1000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Clear success state and set error state
       setSuccess(false);
-      setError(err?.response?.data?.error || "Login failed");
+      let message = "Login failed";
+      if (isAxiosError(err)) {
+        const resp = err.response;
+        if (resp && resp.data && typeof resp.data === 'object' && 'error' in resp.data) {
+          const e = (resp.data as { error?: string }).error;
+          if (e) message = e;
+        }
+      }
+      setError(message);
 
       // Show error alert using the global alert system
-      showAlert("error", err?.response?.data?.error || "Login failed");
+      showAlert("error", message);
 
       console.error("❌ Login error:", err);
     }
@@ -56,7 +65,11 @@ export default function Login() {
         } absolute left-1/2! top-1/2! -translate-x-1/2 -translate-y-[55%] w-[260px]! h-[260px]! pointer-events-none`}
       >
         {Array.from({ length: 36 }, (_, i) => (
-          <div className="bar" style={{ ["--i" as any]: i }} key={i}></div>
+          <div
+            className="bar"
+            style={{ ['--i']: i } as React.CSSProperties & Record<'--i', number>}
+            key={i}
+          ></div>
         ))}
       </div>
 

@@ -5,7 +5,7 @@ function App() {
   return (
     <>
       <div>
-        <a href="http://localhost:5173/login" target="_blank">
+        <a href="http://localhost:5173/login">
           <img src={logo} className="logo DUP" alt="DUP logo" />
         </a>
       </div>

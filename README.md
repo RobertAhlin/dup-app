@@ -1,5 +1,9 @@
 # 🚀 DUP – Digital Upskill Platform
 
+<p align="center">
+    <img src="frontend/src/assets/hero-image.png" alt="DUP hero" width="25%">
+</p>
+
 **DUP** is a modern, guided self-paced learning platform designed to help educators and learners build skills through structured learning journeys, with visual progression and milestone-based unlocking. Built for flexibility, DUP supports any subject, any structure, and adapts for both internal company use and future SaaS delivery.
 
 > 🚧 This project is under active development. Features and structure may evolve.
