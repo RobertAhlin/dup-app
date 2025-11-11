@@ -2,16 +2,12 @@ import React, { useEffect, useState } from "react";
 import "./CourseSidebar.css";
 import { listCourses } from "../api/courses";
 import {
-  BookOpenIcon,
-  BeakerIcon,
-  CpuChipIcon,
-  LockClosedIcon,
-  RectangleGroupIcon,
   GlobeAltIcon,
   ServerIcon,
   CubeIcon,
   WindowIcon,
   RocketLaunchIcon,
+  ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 
 export type CourseItem = {
@@ -20,15 +16,8 @@ export type CourseItem = {
   icon?: React.ReactNode;
 };
 
-// Fallback icons from Heroicons to assign deterministically
+// Icon sizing
 const iconClass = "h-5 w-5";
-const fallbackIcons = [
-  <CpuChipIcon key="i1" className={iconClass} />,
-  <BookOpenIcon key="i2" className={iconClass} />,
-  <BeakerIcon key="i3" className={iconClass} />,
-  <LockClosedIcon key="i4" className={iconClass} />,
-  <RectangleGroupIcon key="i5" className={iconClass} />,
-];
 
 export interface CourseSidebarProps {
   items?: CourseItem[]; // optional override
@@ -64,7 +53,7 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({ items, onSelectCourse }) 
             case 'rocket-launch':
               return <RocketLaunchIcon className={iconClass} />;
             default:
-              return fallbackIcons[0];
+              return <ExclamationTriangleIcon className={iconClass} />;
           }
         };
         const mapped: CourseItem[] = list.map(c => ({
@@ -110,7 +99,7 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({ items, onSelectCourse }) 
             title={c.name}
           >
             <span className="course-sidebar__icon" aria-hidden>
-              {c.icon || <BookOpenIcon className={iconClass} />}
+              {c.icon || <ExclamationTriangleIcon className={iconClass} />}
             </span>
             {expanded && <span className="course-sidebar__label">{c.name}</span>}
           </a>

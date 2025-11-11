@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from '../api/axios';
 import { listUsers, createUser, updateUser, deleteUser } from '../api/users';
@@ -9,6 +9,8 @@ import MainCard from '../components/MainCard';
 import AdminSidebar from '../components/AdminSidebar';
 import type { Course } from '../types/course';
 import { listCourses, createCourse, updateCourse, deleteCourse } from '../api/courses';
+import * as OutlineIcons from '@heroicons/react/24/outline';
+const IconPicker = lazy(() => import('../components/IconPicker'));
 
 export default function AdminDashboard() {
   const [me, setMe] = useState<User | null>(null);
@@ -21,6 +23,19 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+
+  const iconClass = 'h-5 w-5';
+  const IconsMap = OutlineIcons as unknown as Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>>;
+  const iconFromString = (key?: string | null) => {
+    const kebab = (key || '').toLowerCase();
+    const pascal = kebab
+      .split('-')
+      .map(s => s.charAt(0).toUpperCase() + s.slice(1))
+      .join('') + 'Icon';
+    const Fallback = IconsMap['ExclamationTriangleIcon'];
+    const Comp = IconsMap[pascal] || Fallback;
+    return <Comp className={iconClass} />;
+  };
 
   // Access control
   useEffect(() => {
@@ -63,6 +78,7 @@ export default function AdminDashboard() {
 
   const [form, setForm] = useState({ email: '', name: '', password: '', role: 'user' });
   const [editing, setEditing] = useState<null | number>(null);
+  const [iconPickerTarget, setIconPickerTarget] = useState<null | { type: 'create' } | { type: 'edit'; courseId: number }>(null);
 
   const refresh = async () => {
     const list = await listUsers();
@@ -215,33 +231,61 @@ export default function AdminDashboard() {
               } catch {
                 setError('Failed to create course');
               }
-            }} className="grid grid-cols-1 md:grid-cols-6 gap-3 items-end mb-6">
-              <div className="md:col-span-2">
+            }} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end mb-6">
+              <div className="md:col-span-1">
+                <label className="block text-sm text-gray-600 mb-1">Icon</label>
+                <button
+                  type="button"
+                  onClick={() => setIconPickerTarget({ type: 'create' })}
+                  className="w-full border rounded-lg px-3 py-2 bg-white hover:bg-gray-50 flex items-center justify-center gap-2"
+                >
+                  {courseForm.icon ? (
+                    <>{iconFromString(courseForm.icon)}</>
+                  ) : (
+                    <>Choose</>
+                  )}
+                </button>
+              </div>
+              <div className="md:col-span-3">
                 <label className="block text-sm text-gray-600 mb-1">Title</label>
                 <input className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/40" value={courseForm.title} onChange={e => setCourseForm(f => ({...f, title: e.target.value}))} required />
               </div>
-              <div className="md:col-span-3">
+              <div className="md:col-span-5">
                 <label className="block text-sm text-gray-600 mb-1">Description</label>
                 <input className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/40" value={courseForm.description} onChange={e => setCourseForm(f => ({...f, description: e.target.value}))} />
               </div>
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Icon key</label>
-                <input placeholder="e.g. globe-alt" className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/40" value={courseForm.icon} onChange={e => setCourseForm(f => ({...f, icon: e.target.value}))} />
-              </div>
-              <div className="md:col-span-1 md:justify-self-end">
+              <div className="md:col-span-2 md:justify-self-end">
                 <button className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 transition-colors" type="submit">Create course</button>
               </div>
             </form>
+
+            {iconPickerTarget && (
+              <Suspense fallback={<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"><div className="bg-white px-4 py-2 rounded shadow">Loading icons…</div></div>}>
+                <IconPicker
+                  value={iconPickerTarget.type === 'create' ? courseForm.icon : (courses.find(cc => cc.id === iconPickerTarget.courseId)?.icon ?? '')}
+                  onChange={(key) => {
+                    if (iconPickerTarget.type === 'create') {
+                      setCourseForm(f => ({ ...f, icon: key }));
+                    } else {
+                      const id = iconPickerTarget.courseId;
+                      setCourses(prev => prev.map(cc => cc.id === id ? { ...cc, icon: key } : cc));
+                    }
+                    setIconPickerTarget(null);
+                  }}
+                  onClose={() => setIconPickerTarget(null)}
+                />
+              </Suspense>
+            )}
 
             {/* List courses */}
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left border-b border-black/10 text-gray-600">
-                    <th className="py-2 pr-2">ID</th>
+                    <th className="py-2 pr-2">Icon</th>
                     <th className="pr-2">Title</th>
                     <th className="pr-2">Description</th>
-                    <th className="pr-2">Icon</th>
+                    <th className="pr-2">Icon key</th>
                     <th className="pr-2">Creator</th>
                     <th className="pr-2">Created</th>
                     <th className="w-40"></th>
@@ -250,7 +294,7 @@ export default function AdminDashboard() {
                 <tbody>
                   {courses.map(c => (
                     <tr key={c.id} className="border-b border-black/5 hover:bg-black/5">
-                      <td className="py-2 pr-2">{c.id}</td>
+                      <td className="py-2 pr-2">{iconFromString(c.icon)}</td>
                       <td className="pr-2">
                         {courseEditing === c.id ? (
                           <input className="w-full border rounded-lg px-2 py-1" value={c.title} onChange={e => {
@@ -267,9 +311,23 @@ export default function AdminDashboard() {
                       </td>
                       <td className="pr-2">
                         {courseEditing === c.id ? (
-                          <input className="w-full border rounded-lg px-2 py-1" value={c.icon ?? ''} onChange={e => {
-                            const val = e.target.value; setCourses(prev => prev.map(cc => cc.id === c.id ? { ...cc, icon: val } : cc));
-                          }} />
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              className="border rounded px-2 py-1 bg-white hover:bg-gray-50"
+                              onClick={() => setIconPickerTarget({ type: 'edit', courseId: c.id })}
+                            >Choose</button>
+                            <div className="flex items-center gap-1">
+                              {iconFromString(c.icon)}
+                              <input
+                                className="w-40 border rounded-lg px-2 py-1"
+                                value={c.icon ?? ''}
+                                onChange={e => {
+                                  const val = e.target.value; setCourses(prev => prev.map(cc => cc.id === c.id ? { ...cc, icon: val } : cc));
+                                }}
+                              />
+                            </div>
+                          </div>
                         ) : (c.icon ?? '')}
                       </td>
                       <td className="pr-2">{c.creator_name ?? ''}</td>
