@@ -5,7 +5,7 @@
 ### To do:
 
 - Mini menu on role chip
-- Administrator dashboard
+- [X] Administrator dashboard
 
 ### Ideas
 

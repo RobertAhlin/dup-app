@@ -31,7 +31,8 @@ router.post('/', verifyToken, ensureAdmin, async (req: AuthenticatedRequest, res
 });
 
 // Read all
-router.get('/', verifyToken, ensureAdmin, async (_req, res) => {
+// Public to authenticated users: list courses
+router.get('/', verifyToken, async (_req, res) => {
   try {
     const result = await pool.query(
       `SELECT c.id, c.title, c.description, c.created_at, c.created_by,
@@ -48,7 +49,8 @@ router.get('/', verifyToken, ensureAdmin, async (_req, res) => {
 });
 
 // Read one
-router.get('/:id', verifyToken, ensureAdmin, async (req, res) => {
+// Public to authenticated users: read single course
+router.get('/:id', verifyToken, async (req, res) => {
   const { id } = req.params;
   try {
     const result = await pool.query(

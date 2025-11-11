@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./CourseSidebar.css";
+import { listCourses } from "../api/courses";
 
 export type CourseItem = {
   id: string;
@@ -80,21 +81,44 @@ const LockIcon: React.FC = () => (
   </svg>
 );
 
-const defaultCourses: CourseItem[] = [
-  { id: "c1", name: "Algorithms", icon: <ChipIcon /> },
-  { id: "c2", name: "Databases", icon: <DefaultIcon /> },
-  { id: "c3", name: "Networking", icon: <BeakerIcon /> },
-  { id: "c4", name: "Security", icon: <LockIcon /> },
-  { id: "c5", name: "Literature", icon: <BookIcon /> },
-];
+// Fallback icons to assign pseudo-randomly if needed
+const fallbackIcons = [<ChipIcon key="i1" />, <DefaultIcon key="i2" />, <BeakerIcon key="i3" />, <LockIcon key="i4" />, <BookIcon key="i5" />];
 
-export type CourseSidebarProps = {
-  items?: CourseItem[];
-};
+export interface CourseSidebarProps {
+  items?: CourseItem[]; // optional override
+  onSelectCourse?: (id: number) => void;
+}
 
-const CourseSidebar: React.FC<CourseSidebarProps> = ({ items }) => {
+const CourseSidebar: React.FC<CourseSidebarProps> = ({ items, onSelectCourse }) => {
   const [expanded, setExpanded] = useState<boolean>(true);
-  const list = items && items.length > 0 ? items : defaultCourses;
+  const [courses, setCourses] = useState<CourseItem[]>(items ?? []);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
+
+  useEffect(() => {
+    if (items && items.length) {
+      setCourses(items);
+      return;
+    }
+    const load = async () => {
+      setLoading(true);
+      try {
+        const list = await listCourses();
+        // Map to CourseItem assigning an icon deterministically by id
+        const mapped: CourseItem[] = list.map(c => ({
+          id: String(c.id),
+          name: c.title,
+          icon: fallbackIcons[c.id % fallbackIcons.length],
+        }));
+        setCourses(mapped);
+      } catch {
+        setError("Failed to load courses");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [items]);
 
   return (
     <aside
@@ -112,21 +136,21 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({ items }) => {
       </button>
 
       <nav className="course-sidebar__list">
-        {list.map((c) => (
+        {loading && <div className="course-sidebar__item" style={{justifyContent:'center'}}>Loading…</div>}
+        {!loading && error && <div className="course-sidebar__item" style={{color:'#b00020'}}>{error}</div>}
+        {!loading && !error && courses.map(c => (
           <a
             key={c.id}
             className="course-sidebar__item"
             href="#"
-            onClick={(e) => e.preventDefault()}
+            onClick={(e) => { e.preventDefault(); onSelectCourse?.(Number(c.id)); }}
             data-label={c.name}
             title={c.name}
           >
             <span className="course-sidebar__icon" aria-hidden>
               {c.icon || <DefaultIcon />}
             </span>
-            {expanded && (
-              <span className="course-sidebar__label">{c.name}</span>
-            )}
+            {expanded && <span className="course-sidebar__label">{c.name}</span>}
           </a>
         ))}
       </nav>
