@@ -5,6 +5,7 @@ import pool from "./db";
 import authRoutes from "./routes/auth";
 import usersRoutes from "./routes/users";
 import rolesRoutes from "./routes/roles";
+import coursesRoutes from "./routes/courses";
 import testRoutes from "./routes/test";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -50,6 +51,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/test", testRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/roles", rolesRoutes);
+app.use("/api/courses", coursesRoutes);
 
 // Statuskontroll
 app.get("/", async (_req, res) => {

@@ -7,12 +7,17 @@ import type { Role } from '../types/role';
 import type { User } from '../types/user';
 import MainCard from '../components/MainCard';
 import AdminSidebar from '../components/AdminSidebar';
+import type { Course } from '../types/course';
+import { listCourses, createCourse, updateCourse, deleteCourse } from '../api/courses';
 
 export default function AdminDashboard() {
   const [me, setMe] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [tab, setTab] = useState<'users' | 'courses'>('users');
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [courseForm, setCourseForm] = useState<{ title: string; description: string }>({ title: '', description: '' });
+  const [courseEditing, setCourseEditing] = useState<null | number>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -40,6 +45,21 @@ export default function AdminDashboard() {
     };
     checkAuth();
   }, [navigate]);
+
+  // When switching to courses tab and no data yet, load courses
+  useEffect(() => {
+    const load = async () => {
+      if (tab === 'courses' && courses.length === 0) {
+        try {
+          const list = await listCourses();
+          setCourses(list);
+        } catch {
+          setError('Failed to load courses');
+        }
+      }
+    };
+    load();
+  }, [tab, courses.length]);
 
   const [form, setForm] = useState({ email: '', name: '', password: '', role: 'user' });
   const [editing, setEditing] = useState<null | number>(null);
@@ -95,7 +115,7 @@ export default function AdminDashboard() {
       hideSidebar={false}
       sidebar={<AdminSidebar active={tab} onChange={setTab} />}
     >
-      <div className="p-4 md:p-6 overflow-x-auto max-w-[1100px] mx-auto">
+      <div className="p-4 md:p-6 overflow-x-auto max-w-[full] mx-auto">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-gray-800">Admin • {tab === 'users' ? 'Users' : 'Courses'}</h2>
         </div>
@@ -182,9 +202,104 @@ export default function AdminDashboard() {
         )}
 
         {tab === 'courses' && (
-          <div className="text-gray-600 text-sm">
-            <p>Courses tab coming soon…</p>
-          </div>
+          <>
+            {/* Create course */}
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              if (!courseForm.title.trim()) return;
+              try {
+                await createCourse({ title: courseForm.title, description: courseForm.description || undefined });
+                setCourseForm({ title: '', description: '' });
+                const list = await listCourses();
+                setCourses(list);
+              } catch {
+                setError('Failed to create course');
+              }
+            }} className="grid grid-cols-1 md:grid-cols-6 gap-3 items-end mb-6">
+              <div className="md:col-span-2">
+                <label className="block text-sm text-gray-600 mb-1">Title</label>
+                <input className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/40" value={courseForm.title} onChange={e => setCourseForm(f => ({...f, title: e.target.value}))} required />
+              </div>
+              <div className="md:col-span-3">
+                <label className="block text-sm text-gray-600 mb-1">Description</label>
+                <input className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/40" value={courseForm.description} onChange={e => setCourseForm(f => ({...f, description: e.target.value}))} />
+              </div>
+              <div className="md:col-span-1 md:justify-self-end">
+                <button className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 transition-colors" type="submit">Create course</button>
+              </div>
+            </form>
+
+            {/* List courses */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left border-b border-black/10 text-gray-600">
+                    <th className="py-2 pr-2">ID</th>
+                    <th className="pr-2">Title</th>
+                    <th className="pr-2">Description</th>
+                    <th className="pr-2">Creator</th>
+                    <th className="pr-2">Created</th>
+                    <th className="w-40"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {courses.map(c => (
+                    <tr key={c.id} className="border-b border-black/5 hover:bg-black/5">
+                      <td className="py-2 pr-2">{c.id}</td>
+                      <td className="pr-2">
+                        {courseEditing === c.id ? (
+                          <input className="w-full border rounded-lg px-2 py-1" value={c.title} onChange={e => {
+                            const val = e.target.value; setCourses(prev => prev.map(cc => cc.id === c.id ? { ...cc, title: val } : cc));
+                          }} />
+                        ) : c.title}
+                      </td>
+                      <td className="pr-2">
+                        {courseEditing === c.id ? (
+                          <input className="w-full border rounded-lg px-2 py-1" value={c.description ?? ''} onChange={e => {
+                            const val = e.target.value; setCourses(prev => prev.map(cc => cc.id === c.id ? { ...cc, description: val } : cc));
+                          }} />
+                        ) : (c.description ?? '')}
+                      </td>
+                      <td className="pr-2">{c.creator_name ?? ''}</td>
+                      <td className="pr-2">{c.created_at ? new Date(c.created_at).toLocaleDateString() : ''}</td>
+                      <td className="py-2">
+                        {courseEditing === c.id ? (
+                          <div className="flex gap-2">
+                            <button className="bg-green-600 hover:bg-green-700 text-white rounded-lg px-3 py-1" onClick={async () => {
+                              try {
+                                await updateCourse(c.id, { title: c.title, description: c.description ?? null });
+                                setCourseEditing(null);
+                                const list = await listCourses();
+                                setCourses(list);
+                              } catch {
+                                setError('Failed to update course');
+                              }
+                            }}>Save</button>
+                            <button className="bg-gray-400 hover:bg-gray-500 text-white rounded-lg px-3 py-1" onClick={() => { setCourseEditing(null); }}>
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex gap-2">
+                            <button className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-3 py-1" onClick={() => setCourseEditing(c.id)}>Edit</button>
+                            <button className="bg-red-600 hover:bg-red-700 text-white rounded-lg px-3 py-1" onClick={async () => {
+                              if (!confirm('Delete course?')) return;
+                              try {
+                                await deleteCourse(c.id);
+                                setCourses(prev => prev.filter(cc => cc.id !== c.id));
+                              } catch {
+                                setError('Failed to delete course');
+                              }
+                            }}>Delete</button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </MainCard>
