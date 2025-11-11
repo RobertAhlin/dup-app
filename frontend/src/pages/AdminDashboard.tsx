@@ -2,12 +2,15 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from '../api/axios';
 import { listUsers, createUser, updateUser, deleteUser } from '../api/users';
+import { listRoles } from '../api/roles';
+import type { Role } from '../types/role';
 import type { User } from '../types/user';
 import MainCard from '../components/MainCard';
 
 export default function AdminDashboard() {
   const [me, setMe] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -23,8 +26,9 @@ export default function AdminDashboard() {
           navigate('/dashboard');
           return;
         }
-        const list = await listUsers();
-        setUsers(list);
+  const [list, roleList] = await Promise.all([listUsers(), listRoles()]);
+  setUsers(list);
+  setRoles(roleList);
       } catch {
         navigate('/login');
         return;
@@ -94,7 +98,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Create */}
-        <form onSubmit={onCreate} className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end mb-6">
+        <form onSubmit={onCreate} className="grid grid-cols-1 md:grid-cols-6 gap-3 items-end mb-6">
           <div className="md:col-span-2">
             <label className="block text-sm text-gray-600 mb-1">Email</label>
             <input className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/40" value={form.email} onChange={e => setForm(f => ({...f, email: e.target.value}))} required />
@@ -110,12 +114,13 @@ export default function AdminDashboard() {
           <div>
             <label className="block text-sm text-gray-600 mb-1">Role</label>
             <select className="w-full border rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40" value={form.role} onChange={e => setForm(f => ({...f, role: e.target.value}))}>
-              <option value="user">user</option>
-              <option value="admin">admin</option>
+              {roles.map(r => (
+                <option key={r.id} value={r.name}>{r.name}</option>
+              ))}
             </select>
           </div>
-          <div className="md:col-span-5">
-            <button className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 transition-colors" type="submit">Create user</button>
+          <div className="md:col-span-1 md:justify-self-end">
+            <button className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 transition-colors" type="submit">Create user</button>
           </div>
         </form>
 
@@ -144,8 +149,9 @@ export default function AdminDashboard() {
                   <td className="pr-2">
                     {editing === u.id ? (
                       <select className="border rounded-lg px-2 py-1" value={form.role} onChange={e => setForm(f => ({...f, role: e.target.value}))}>
-                        <option value="user">user</option>
-                        <option value="admin">admin</option>
+                        {roles.map(r => (
+                          <option key={r.id} value={r.name}>{r.name}</option>
+                        ))}
                       </select>
                     ) : (u.role)}
                   </td>

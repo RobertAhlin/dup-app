@@ -4,6 +4,7 @@ import express from "express";
 import pool from "./db";
 import authRoutes from "./routes/auth";
 import usersRoutes from "./routes/users";
+import rolesRoutes from "./routes/roles";
 import testRoutes from "./routes/test";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -48,6 +49,7 @@ app.get("/test-cookie", (_req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/test", testRoutes);
 app.use("/api/users", usersRoutes);
+app.use("/api/roles", rolesRoutes);
 
 // Statuskontroll
 app.get("/", async (_req, res) => {
