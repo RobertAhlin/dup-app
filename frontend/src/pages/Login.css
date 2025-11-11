@@ -6,6 +6,21 @@ body {
   align-items: center;
   justify-content: center;
   font-family: sans-serif;
+  position: relative; /* allow pseudo background positioning */
+}
+
+/* Soft hero background image at 10% visibility */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0; /* cover viewport but we'll place image via background-position */
+  background-image: url('../assets/hero-image.png');
+  background-repeat: no-repeat;
+  background-position: center center; /* centered placement */
+  background-size:  auto; /* adjust as desired */
+  opacity: 0.1; /* 10% visibility */
+  pointer-events: none;
+  z-index: -1;
 }
 
 .spinner-ring {
@@ -14,6 +29,7 @@ body {
   height: 100%;
   top: 0;
   left: 0;
+  z-index: 1; /* above background */
 }
 
 .bar {
@@ -66,6 +82,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 5px;
+  z-index: 2; /* above spinner and background */
 }
 
 .login-form label {
