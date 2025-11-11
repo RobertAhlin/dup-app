@@ -6,11 +6,13 @@ import { listRoles } from '../api/roles';
 import type { Role } from '../types/role';
 import type { User } from '../types/user';
 import MainCard from '../components/MainCard';
+import AdminSidebar from '../components/AdminSidebar';
 
 export default function AdminDashboard() {
   const [me, setMe] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
+  const [tab, setTab] = useState<'users' | 'courses'>('users');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -90,13 +92,16 @@ export default function AdminDashboard() {
       role={me.role}
       title="Admin:"
       chip={{ label: 'Dashboard', to: '/dashboard' }}
-      hideSidebar
+      hideSidebar={false}
+      sidebar={<AdminSidebar active={tab} onChange={setTab} />}
     >
-      <div className="p-4 md:p-6">
+      <div className="p-4 md:p-6 overflow-x-auto max-w-[1100px] mx-auto">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-gray-800">Admin • Users</h2>
+          <h2 className="text-xl font-semibold text-gray-800">Admin • {tab === 'users' ? 'Users' : 'Courses'}</h2>
         </div>
 
+        {tab === 'users' && (
+          <>
         {/* Create */}
         <form onSubmit={onCreate} className="grid grid-cols-1 md:grid-cols-6 gap-3 items-end mb-6">
           <div className="md:col-span-2">
@@ -173,6 +178,14 @@ export default function AdminDashboard() {
             </tbody>
           </table>
         </div>
+          </>
+        )}
+
+        {tab === 'courses' && (
+          <div className="text-gray-600 text-sm">
+            <p>Courses tab coming soon…</p>
+          </div>
+        )}
       </div>
     </MainCard>
   );
