@@ -3,6 +3,7 @@
 import express from "express";
 import pool from "./db";
 import authRoutes from "./routes/auth";
+import usersRoutes from "./routes/users";
 import testRoutes from "./routes/test";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -46,6 +47,7 @@ app.get("/test-cookie", (_req, res) => {
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/test", testRoutes);
+app.use("/api/users", usersRoutes);
 
 // Statuskontroll
 app.get("/", async (_req, res) => {

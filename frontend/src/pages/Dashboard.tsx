@@ -30,7 +30,7 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-container">
-      <MainCard name={user.name} email={user.email} role={user.role} />
+  <MainCard name={user.name ?? ''} email={user.email} role={user.role} />
     </div>
   );
 };
