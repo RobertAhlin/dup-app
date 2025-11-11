@@ -1,19 +1,13 @@
 import React, { useEffect, useState } from "react";
 import "./CourseSidebar.css";
 import { listCourses } from "../api/courses";
-import {
-  GlobeAltIcon,
-  ServerIcon,
-  CubeIcon,
-  WindowIcon,
-  RocketLaunchIcon,
-  ExclamationTriangleIcon,
-} from "@heroicons/react/24/outline";
+import * as OutlineIcons from "@heroicons/react/24/outline";
 
 export type CourseItem = {
   id: string;
   name: string;
   icon?: React.ReactNode;
+  description?: string;
 };
 
 // Icon sizing
@@ -39,27 +33,23 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({ items, onSelectCourse }) 
       setLoading(true);
       try {
         const list = await listCourses();
-        // Map to CourseItem using icon from DB when available
+        // Map to CourseItem using icon from DB when available (dynamic mapping of any outline icon)
+        const IconsMap = OutlineIcons as unknown as Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>>;
         const iconFromString = (key?: string | null): React.ReactNode => {
-          switch ((key || '').toLowerCase()) {
-            case 'globe-alt':
-              return <GlobeAltIcon className={iconClass} />;
-            case 'server':
-              return <ServerIcon className={iconClass} />;
-            case 'cube':
-              return <CubeIcon className={iconClass} />;
-            case 'window':
-              return <WindowIcon className={iconClass} />;
-            case 'rocket-launch':
-              return <RocketLaunchIcon className={iconClass} />;
-            default:
-              return <ExclamationTriangleIcon className={iconClass} />;
-          }
+          const kebab = (key || '').toLowerCase();
+          const pascal = kebab
+            .split('-')
+            .map(s => s.charAt(0).toUpperCase() + s.slice(1))
+            .join('') + 'Icon';
+          const Fallback = IconsMap['ExclamationTriangleIcon'];
+          const Comp = IconsMap[pascal] || Fallback;
+          return <Comp className={iconClass} />;
         };
         const mapped: CourseItem[] = list.map(c => ({
           id: String(c.id),
           name: c.title,
           icon: iconFromString(c.icon ?? null),
+          description: c.description ?? '',
         }));
         setCourses(mapped);
       } catch {
@@ -95,11 +85,10 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({ items, onSelectCourse }) 
             className="course-sidebar__item"
             href="#"
             onClick={(e) => { e.preventDefault(); onSelectCourse?.(Number(c.id)); }}
-            data-label={c.name}
-            title={c.name}
+            data-label={expanded ? (c.description || c.name) : c.name}
           >
             <span className="course-sidebar__icon" aria-hidden>
-              {c.icon || <ExclamationTriangleIcon className={iconClass} />}
+              {c.icon}
             </span>
             {expanded && <span className="course-sidebar__label">{c.name}</span>}
           </a>
