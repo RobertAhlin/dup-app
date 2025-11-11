@@ -18,7 +18,7 @@ body::before {
   background-repeat: no-repeat;
   background-position: center center; /* centered placement */
   background-size:  auto; /* adjust as desired */
-  opacity: 0.1; /* 10% visibility */
+  opacity: 0.08; /* 8% visibility */
   pointer-events: none;
   z-index: -1;
 }
