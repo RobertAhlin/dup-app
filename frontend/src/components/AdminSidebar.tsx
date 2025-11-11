@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './CourseSidebar.css';
+import { UserGroupIcon, AcademicCapIcon } from '@heroicons/react/24/outline';
 
 export type AdminTab = 'users' | 'courses';
 
@@ -8,21 +9,9 @@ interface AdminSidebarProps {
   onChange: (tab: AdminTab) => void;
 }
 
-const UsersIcon: React.FC = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-    <circle cx="9" cy="8" r="3" stroke="currentColor" strokeWidth="2" />
-    <path d="M2 20c0-3.3137 2.6863-6 6-6" stroke="currentColor" strokeWidth="2" />
-    <circle cx="17" cy="9" r="2" stroke="currentColor" strokeWidth="2" />
-    <path d="M14 20c0-2.2091 1.7909-4 4-4" stroke="currentColor" strokeWidth="2" />
-  </svg>
-);
-
-const CoursesIcon: React.FC = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-    <rect x="4" y="5" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="2" />
-    <path d="M4 10h16" stroke="currentColor" strokeWidth="2" />
-  </svg>
-);
+const iconClass = 'h-5 w-5';
+const UsersIcon: React.FC = () => <UserGroupIcon className={iconClass} />;
+const CoursesIcon: React.FC = () => <AcademicCapIcon className={iconClass} />;
 
 const AdminSidebar: React.FC<AdminSidebarProps> = ({ active, onChange }) => {
   const [expanded, setExpanded] = useState<boolean>(true);

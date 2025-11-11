@@ -1,6 +1,18 @@
 import React, { useEffect, useState } from "react";
 import "./CourseSidebar.css";
 import { listCourses } from "../api/courses";
+import {
+  BookOpenIcon,
+  BeakerIcon,
+  CpuChipIcon,
+  LockClosedIcon,
+  RectangleGroupIcon,
+  GlobeAltIcon,
+  ServerIcon,
+  CubeIcon,
+  WindowIcon,
+  RocketLaunchIcon,
+} from "@heroicons/react/24/outline";
 
 export type CourseItem = {
   id: string;
@@ -8,81 +20,15 @@ export type CourseItem = {
   icon?: React.ReactNode;
 };
 
-const DefaultIcon: React.FC = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-    <rect
-      x="3"
-      y="4"
-      width="18"
-      height="14"
-      rx="2"
-      stroke="currentColor"
-      strokeWidth="2"
-    />
-    <path d="M3 10h18" stroke="currentColor" strokeWidth="2" />
-  </svg>
-);
-
-const BookIcon: React.FC = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-    <path
-      d="M5 4h10a3 3 0 0 1 3 3v13H8a3 3 0 0 0-3 3V4z"
-      stroke="currentColor"
-      strokeWidth="2"
-      fill="none"
-    />
-    <path d="M8 4v15" stroke="currentColor" strokeWidth="2" />
-  </svg>
-);
-
-const BeakerIcon: React.FC = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-    <path d="M6 3h12" stroke="currentColor" strokeWidth="2" />
-    <path
-      d="M9 3v5l-4 9a3 3 0 0 0 2.7 4h8.6a3 3 0 0 0 2.7-4l-4-9V3"
-      stroke="currentColor"
-      strokeWidth="2"
-      fill="none"
-    />
-  </svg>
-);
-
-const ChipIcon: React.FC = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-    <rect
-      x="7"
-      y="7"
-      width="10"
-      height="10"
-      rx="2"
-      stroke="currentColor"
-      strokeWidth="2"
-    />
-    <path
-      d="M12 1v4M12 19v4M1 12h4M19 12h4M4 4l2 2M18 18l2 2M4 20l2-2M18 6l2-2"
-      stroke="currentColor"
-      strokeWidth="2"
-    />
-  </svg>
-);
-
-const LockIcon: React.FC = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-    <rect
-      x="4"
-      y="10"
-      width="16"
-      height="10"
-      rx="2"
-      stroke="currentColor"
-      strokeWidth="2"
-    />
-    <path d="M8 10V7a4 4 0 1 1 8 0v3" stroke="currentColor" strokeWidth="2" />
-  </svg>
-);
-
-// Fallback icons to assign pseudo-randomly if needed
-const fallbackIcons = [<ChipIcon key="i1" />, <DefaultIcon key="i2" />, <BeakerIcon key="i3" />, <LockIcon key="i4" />, <BookIcon key="i5" />];
+// Fallback icons from Heroicons to assign deterministically
+const iconClass = "h-5 w-5";
+const fallbackIcons = [
+  <CpuChipIcon key="i1" className={iconClass} />,
+  <BookOpenIcon key="i2" className={iconClass} />,
+  <BeakerIcon key="i3" className={iconClass} />,
+  <LockClosedIcon key="i4" className={iconClass} />,
+  <RectangleGroupIcon key="i5" className={iconClass} />,
+];
 
 export interface CourseSidebarProps {
   items?: CourseItem[]; // optional override
@@ -104,11 +50,27 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({ items, onSelectCourse }) 
       setLoading(true);
       try {
         const list = await listCourses();
-        // Map to CourseItem assigning an icon deterministically by id
+        // Map to CourseItem using icon from DB when available
+        const iconFromString = (key?: string | null): React.ReactNode => {
+          switch ((key || '').toLowerCase()) {
+            case 'globe-alt':
+              return <GlobeAltIcon className={iconClass} />;
+            case 'server':
+              return <ServerIcon className={iconClass} />;
+            case 'cube':
+              return <CubeIcon className={iconClass} />;
+            case 'window':
+              return <WindowIcon className={iconClass} />;
+            case 'rocket-launch':
+              return <RocketLaunchIcon className={iconClass} />;
+            default:
+              return fallbackIcons[0];
+          }
+        };
         const mapped: CourseItem[] = list.map(c => ({
           id: String(c.id),
           name: c.title,
-          icon: fallbackIcons[c.id % fallbackIcons.length],
+          icon: iconFromString(c.icon ?? null),
         }));
         setCourses(mapped);
       } catch {
@@ -148,7 +110,7 @@ const CourseSidebar: React.FC<CourseSidebarProps> = ({ items, onSelectCourse }) 
             title={c.name}
           >
             <span className="course-sidebar__icon" aria-hidden>
-              {c.icon || <DefaultIcon />}
+              {c.icon || <BookOpenIcon className={iconClass} />}
             </span>
             {expanded && <span className="course-sidebar__label">{c.name}</span>}
           </a>

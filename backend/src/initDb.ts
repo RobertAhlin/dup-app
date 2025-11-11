@@ -40,23 +40,24 @@ async function initDb() {
         title       TEXT NOT NULL,
         description TEXT,
         created_by  INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        icon        VARCHAR(50), 
         created_at  TIMESTAMP DEFAULT NOW()
       );
     `);
 
     // 4️⃣ Seed Courses
     const { rows } = await client.query('SELECT COUNT(*)::int AS c FROM course');
-    if (rows[0].c === 0) {
-      await client.query(`
-        INSERT INTO course (title, description, created_by) VALUES
-          ('Introduction to Web Development', 'Learn HTML, CSS, and JavaScript to build basic websites.', 1),
-          ('Database Design & SQL', 'Understand relational databases and how to use SQL for querying and managing data.', 1),
-          ('Backend Development with Node.js', 'Build scalable APIs using Express and Node.js.', 1),
-          ('Frontend Frameworks with React', 'Learn React to build dynamic and responsive user interfaces.', 2),
-          ('Fullstack Project: Build a Web App', 'Combine frontend and backend skills in a final fullstack project.', 2);
-      `);
-      console.log('✅ Courses seeded with created_by values');
-    } else {
+      if (rows[0].c === 0) {
+        await client.query(`
+          INSERT INTO course (title, description, created_by, icon) VALUES
+            ('Web Development', 'Learn HTML, CSS, and JavaScript to build basic websites.', 1, 'globe-alt'),
+            ('Database Design', 'Understand relational databases and how to use SQL for querying and managing data.', 1, 'server'),
+            ('Backend Development', 'Build scalable APIs using Express and Node.js.', 1, 'cube'),
+            ('Frontend React', 'Learn React to build dynamic and responsive user interfaces.', 2, 'window'),
+            ('Fullstack Project', 'Combine frontend and backend skills in a final fullstack project.', 2, 'rocket-launch');
+        `);
+        console.log('✅ Courses seeded with created_by values and icons');
+      } else {
       console.log('ℹ️ Courses already present, skipping seed');
     }
 

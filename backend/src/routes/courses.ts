@@ -7,7 +7,7 @@ const router = Router();
 
 // Create
 router.post('/', verifyToken, ensureAdmin, async (req: AuthenticatedRequest, res) => {
-  const { title, description } = req.body as { title?: string; description?: string };
+  const { title, description, icon } = req.body as { title?: string; description?: string; icon?: string };
   if (!title) {
     res.status(400).json({ error: 'title is required' });
     return;
@@ -15,10 +15,10 @@ router.post('/', verifyToken, ensureAdmin, async (req: AuthenticatedRequest, res
   try {
     const created_by = req.user?.id ?? null;
     const result = await pool.query(
-      `INSERT INTO course (title, description, created_by)
-       VALUES ($1, $2, $3)
-       RETURNING id, title, description, created_by, created_at`,
-      [title, description ?? null, created_by]
+      `INSERT INTO course (title, description, created_by, icon)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, title, description, created_by, icon, created_at`,
+      [title, description ?? null, created_by, icon ?? null]
     );
     const inserted = result.rows[0];
     // fetch creator name
@@ -35,7 +35,7 @@ router.post('/', verifyToken, ensureAdmin, async (req: AuthenticatedRequest, res
 router.get('/', verifyToken, async (_req, res) => {
   try {
     const result = await pool.query(
-      `SELECT c.id, c.title, c.description, c.created_at, c.created_by,
+      `SELECT c.id, c.title, c.description, c.created_at, c.created_by, c.icon,
               u.name AS creator_name
        FROM course c
        LEFT JOIN users u ON u.id = c.created_by
@@ -54,7 +54,7 @@ router.get('/:id', verifyToken, async (req, res) => {
   const { id } = req.params;
   try {
     const result = await pool.query(
-      `SELECT c.id, c.title, c.description, c.created_at, c.created_by,
+      `SELECT c.id, c.title, c.description, c.created_at, c.created_by, c.icon,
               u.name AS creator_name
        FROM course c
        LEFT JOIN users u ON u.id = c.created_by
@@ -75,15 +75,16 @@ router.get('/:id', verifyToken, async (req, res) => {
 // Update
 router.put('/:id', verifyToken, ensureAdmin, async (req, res) => {
   const { id } = req.params;
-  const { title, description } = req.body as { title?: string; description?: string | null };
+  const { title, description, icon } = req.body as { title?: string; description?: string | null; icon?: string | null };
   try {
     const result = await pool.query(
       `UPDATE course
        SET title = COALESCE($1, title),
-           description = $2
-       WHERE id = $3
-       RETURNING id, title, description, created_at`,
-      [title ?? null, description ?? null, id]
+           description = $2,
+           icon = COALESCE($3, icon)
+       WHERE id = $4
+       RETURNING id, title, description, created_at, created_by, icon`,
+      [title ?? null, description ?? null, icon ?? null, id]
     );
     if (!result.rows.length) {
       res.status(404).json({ error: 'Course not found' });
