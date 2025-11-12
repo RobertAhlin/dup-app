@@ -533,6 +533,18 @@ export default function GraphCanvas(props: Props) {
         onEdgesDelete={onEdgesDelete}
         onNodeDragStop={onNodeDragStop}
         onPaneClick={handlePaneClick}
+        onNodeClick={(_, node) => {
+          if (canEdit) return
+          if (node.type === 'hubNode') {
+            const hubId = (node.data as HubData).id
+            openHubModal(hubId)
+            return
+          }
+          if (node.type === 'taskNode') {
+            const taskId = (node.data as TaskData).id
+            openTaskModal(taskId)
+          }
+        }}
         onEdgeClick={(_, edge) => {
           if (!canEdit) return
           if (edge.id.startsWith('edge-h2h-')) {
