@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axios";
-import { useAlert } from "../contexts/AlertContext";
+import { useAlert } from "../contexts/useAlert";
 import "./Login.css";
 import { isAxiosError } from "axios";
 

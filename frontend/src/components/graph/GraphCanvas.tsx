@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ReactFlow, {
   Controls, ControlButton, ConnectionMode, MiniMap,
   useNodesState, useEdgesState
@@ -129,9 +129,9 @@ export default function GraphCanvas(props: Props) {
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node[]>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge[]>([])
-  const nodeTypesMemo = useMemo(() => nodeTypes, [])
-  const edgeTypesMemo = useMemo(() => edgeTypes, [])
-  // Use stable maps from graphTypes (no need to memoize again)
+  // Lock node/edge types for the lifetime of this component instance to avoid React Flow #002 warnings
+  const nodeTypesRef = useRef(nodeTypes)
+  const edgeTypesRef = useRef(edgeTypes)
 
   useEffect(() => {
     const hubNodes: Node[] = initialHubs.map(h => ({
@@ -327,7 +327,7 @@ export default function GraphCanvas(props: Props) {
   }, [])
 
   return (
-  <div className="h-full rounded-lg overflow-hidden relative">
+  <div className={`h-full rounded-2xl overflow-hidden relative ${canEdit ? 'border-4 border-red-700' : 'border-0'}` }>
       {canEdit && (
         <div className="absolute z-10 left-3 top-3 bg-white/90 rounded-xl shadow px-3 py-2 flex items-center gap-2">
           <button className="border rounded px-2 py-1" onClick={() => onAddHub()}>+ Hub</button>
@@ -339,13 +339,13 @@ export default function GraphCanvas(props: Props) {
           >
             ↔ Connect
           </button>
-          <span className="text-xs text-gray-500 ml-2">
-            {connectMode
-              ? (connectSourceHubId
-                  ? `Connecting from hub ${connectSourceHubId}: click another hub to link`
-                  : 'Click a hub to start linking, then another hub to finish')
-              : (selectedHubId ? `Selected hub: ${selectedHubId}` : 'Click a hub to select')}
-          </span>
+          {connectMode && (
+            <span className="text-xs text-gray-500 ml-2">
+              {connectSourceHubId
+                ? `Connecting from hub ${connectSourceHubId}: click another hub to link`
+                : 'Click a hub to start linking, then another hub to finish'}
+            </span>
+          )}
         </div>
       )}
 
@@ -446,8 +446,8 @@ export default function GraphCanvas(props: Props) {
       <ReactFlow
         nodes={nodes}
         edges={edges}
-        nodeTypes={nodeTypesMemo}
-        edgeTypes={edgeTypesMemo}
+  nodeTypes={nodeTypesRef.current}
+  edgeTypes={edgeTypesRef.current}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
   onConnect={onConnect}

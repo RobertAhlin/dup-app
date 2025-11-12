@@ -1,27 +1,12 @@
-import { createContext, useContext, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import type { ReactNode } from "react";
 import AlertBanner from "../components/AlertBanner";
 import type { AlertType, Alert } from "../types/alert";
+import { AlertContext } from "./alertCore";
+// import type { AlertContextType } from "./alertCore";
 
-interface AlertContextType {
-  showAlert: (
-    type: AlertType,
-    message: string,
-    autoHide?: boolean,
-    duration?: number
-  ) => void;
-  hideAlert: (id: string) => void;
-}
-
-const AlertContext = createContext<AlertContextType | undefined>(undefined);
-
-export const useAlert = () => {
-  const context = useContext(AlertContext);
-  if (!context) {
-    throw new Error("useAlert must be used within an AlertProvider");
-  }
-  return context;
-};
+// This file now only exports a component to satisfy react-refresh/only-export-components
+// The context and hook live in separate files (alertCore.ts, useAlert.ts)
 
 interface AlertProviderProps {
   children: ReactNode;
