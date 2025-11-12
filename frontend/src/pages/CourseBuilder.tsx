@@ -29,6 +29,8 @@ export default function CourseBuilderPage() {
   const courseId = Number(courseIdParam)
   const [course, setCourse] = useState<Course | null>(null)
   const [graph, setGraph] = useState<GraphResponse | null>(null)
+  const [taskDoneIds, setTaskDoneIds] = useState<number[] | null>(null)
+  const [hubDoneIds, setHubDoneIds] = useState<number[] | null>(null)
   const [mode, setMode] = useState<'student' | 'edit'>('student')
   const [loading, setLoading] = useState(true)
   const [, setError] = useState<string | null>(null)
@@ -72,11 +74,16 @@ export default function CourseBuilderPage() {
 
     Promise.all([
       axios.get<{ graph: GraphResponse }>(`/api/courses/${courseId}/graph`),
+      axios.get<{ taskProgress: Array<{ task_id: number; status: string }>; hubProgress: Array<{ hub_id: number; state: string }> }>(`/api/courses/${courseId}/progress`),
       getCourse(courseId),
     ])
-      .then(([graphRes, courseData]) => {
+      .then(([graphRes, progressRes, courseData]) => {
         if (isCancelled) return
         setGraph(graphRes.data.graph)
+        const taskIds = progressRes.data.taskProgress.filter(p => p.status === 'completed').map(p => p.task_id)
+        const hubIds = progressRes.data.hubProgress.filter(p => p.state === 'completed').map(p => p.hub_id)
+        setTaskDoneIds(taskIds)
+        setHubDoneIds(hubIds)
         setCourse(courseData)
       })
       .catch((err: unknown) => {
@@ -357,6 +364,28 @@ export default function CourseBuilderPage() {
             initialTasks={graph.tasks}
             initialEdges={graph.edges}
             canEdit={canEdit}
+            initialTaskDoneIds={taskDoneIds ?? undefined}
+            initialHubDoneIds={hubDoneIds ?? undefined}
+            onSetTaskDone={async (taskId, done) => {
+              try {
+                await axios.put(`/api/tasks/${taskId}/progress`, { done })
+              } catch (err) {
+                const axiosErr = err as AxiosLikeError
+                const msg = axiosErr.response?.data?.error ?? 'Failed to update task progress'
+                showAlert('error', msg)
+                throw err
+              }
+            }}
+            onSetHubDone={async (hubId, done) => {
+              try {
+                await axios.put(`/api/hubs/${hubId}/progress`, { done })
+              } catch (err) {
+                const axiosErr = err as AxiosLikeError
+                const msg = axiosErr.response?.data?.error ?? 'Failed to update hub progress'
+                showAlert('error', msg)
+                throw err
+              }
+            }}
             onAddHub={handleAddHub}
             onAddTask={handleAddTask}
             onAddEdge={handleAddEdge}

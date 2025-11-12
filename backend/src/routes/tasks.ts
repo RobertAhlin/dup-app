@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import pool from '../db';
 import { verifyToken, AuthenticatedRequest } from '../middleware/verifyToken';
-import { canEditCourse, AuthUser } from './helpers/courseAccess';
+import { canEditCourse, canViewCourse, AuthUser } from './helpers/courseAccess';
 
 const router = Router();
 
@@ -170,3 +170,60 @@ router.delete('/:id', verifyToken, async (req: AuthenticatedRequest, res) => {
 });
 
 export default router;
+
+// Progress endpoints
+router.put('/:id/progress', verifyToken, async (req: AuthenticatedRequest, res) => {
+  const taskId = Number(req.params.id)
+  if (!Number.isInteger(taskId)) {
+    res.status(400).json({ error: 'Invalid task id' })
+    return
+  }
+  const { done } = req.body as { done?: boolean }
+  if (typeof done !== 'boolean') {
+    res.status(400).json({ error: 'done boolean is required' })
+    return
+  }
+  try {
+    const user = req.user as AuthUser | undefined
+    if (!user) {
+      res.status(401).json({ error: 'Not authenticated' })
+      return
+    }
+    // find course id for task
+    const courseRes = await pool.query<{ course_id: number }>(
+      `SELECT h.course_id
+         FROM task t
+         JOIN hub h ON h.id = t.hub_id
+        WHERE t.id = $1`,
+      [taskId]
+    )
+    const courseId = courseRes.rows[0]?.course_id
+    if (!courseId) {
+      res.status(404).json({ error: 'Task not found' })
+      return
+    }
+    const canView = await canViewCourse(user, courseId)
+    if (!canView) {
+      res.status(403).json({ error: 'Forbidden' })
+      return
+    }
+
+    // upsert task_progress
+    await pool.query(
+      `INSERT INTO task_progress (user_id, task_id, status, completed_at, updated_at)
+       VALUES ($1, $2, $3::task_status,
+               CASE WHEN $3::task_status = 'completed'::task_status THEN NOW() ELSE NULL END,
+               NOW())
+       ON CONFLICT (user_id, task_id)
+       DO UPDATE SET status = EXCLUDED.status,
+                     completed_at = CASE WHEN EXCLUDED.status = 'completed'::task_status THEN NOW() ELSE NULL END,
+                     updated_at = NOW()`,
+      [user.id, taskId, done ? 'completed' : 'not_started']
+    )
+
+    res.json({ success: true })
+  } catch (err) {
+    console.error('Update task progress error:', err)
+    res.status(500).json({ error: 'Failed to update task progress' })
+  }
+})

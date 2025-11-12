@@ -153,6 +153,53 @@ router.get('/:id/graph', verifyToken, async (req: AuthenticatedRequest, res) => 
   }
 });
 
+// Per-user progress for a course (tasks + hubs)
+router.get('/:id/progress', verifyToken, async (req: AuthenticatedRequest, res) => {
+  const courseId = Number(req.params.id)
+  if (!Number.isInteger(courseId)) {
+    res.status(400).json({ error: 'Invalid course id' })
+    return
+  }
+  try {
+    const user = req.user as AuthUser | undefined
+    if (!user) {
+      res.status(401).json({ error: 'Not authenticated' })
+      return
+    }
+    const allowed = await canViewCourse(user, courseId)
+    if (!allowed) {
+      res.status(403).json({ error: 'Forbidden' })
+      return
+    }
+
+    const [taskProgRes, hubProgRes] = await Promise.all([
+      pool.query(
+        `SELECT tp.task_id, tp.status
+           FROM task_progress tp
+           JOIN task t ON t.id = tp.task_id
+           JOIN hub h  ON h.id = t.hub_id
+          WHERE tp.user_id = $1 AND h.course_id = $2`,
+        [user.id, courseId]
+      ),
+      pool.query(
+        `SELECT hus.hub_id, hus.state
+           FROM hub_user_state hus
+           JOIN hub h ON h.id = hus.hub_id
+          WHERE hus.user_id = $1 AND h.course_id = $2`,
+        [user.id, courseId]
+      )
+    ])
+
+    res.json({
+      taskProgress: taskProgRes.rows,
+      hubProgress: hubProgRes.rows,
+    })
+  } catch (err) {
+    console.error('Get course progress error:', err)
+    res.status(500).json({ error: 'Failed to load progress' })
+  }
+})
+
 // Read one with RBAC visibility enforcement
 router.get('/:id', verifyToken, async (req: AuthenticatedRequest, res) => {
   const courseId = Number(req.params.id);

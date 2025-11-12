@@ -21,6 +21,11 @@ type Props = {
   initialTasks: TaskData[]
   initialEdges: HubEdgeData[]
   canEdit: boolean
+  // Progress
+  initialTaskDoneIds?: number[]
+  initialHubDoneIds?: number[]
+  onSetTaskDone?: (taskId: number, done: boolean) => Promise<void> | void
+  onSetHubDone?: (hubId: number, done: boolean) => Promise<void> | void
   onAddHub: (coords?: { x: number; y: number }) => Promise<void> | void
   onAddTask: (selectedHubId: number|null, coords?: { x: number; y: number }) => Promise<void> | void
   onAddEdge: (fromHubId: number, toHubId: number) => Promise<void> | void
@@ -40,6 +45,10 @@ export default function GraphCanvas(props: Props) {
     initialTasks,
     initialEdges,
     canEdit,
+    initialTaskDoneIds,
+    initialHubDoneIds,
+    onSetTaskDone,
+    onSetHubDone,
     onAddHub,
     onAddTask,
     onAddEdge,
@@ -71,6 +80,58 @@ export default function GraphCanvas(props: Props) {
     | { type: 'task'; task: TaskData }
     | null
   >(null)
+
+  // Student progress state (in-memory for now)
+  const [completedTaskIds, setCompletedTaskIds] = useState<Set<number>>(new Set())
+  const [completedHubIds, setCompletedHubIds] = useState<Set<number>>(new Set())
+
+  // Initialize from props
+  useEffect(() => {
+    if (initialTaskDoneIds) setCompletedTaskIds(new Set(initialTaskDoneIds))
+  }, [initialTaskDoneIds])
+  useEffect(() => {
+    if (initialHubDoneIds) setCompletedHubIds(new Set(initialHubDoneIds))
+  }, [initialHubDoneIds])
+
+  const toggleTaskDone = useCallback(async (taskId: number, checked: boolean) => {
+    setCompletedTaskIds(prev => {
+      const next = new Set(prev)
+      if (checked) next.add(taskId); else next.delete(taskId)
+      return next
+    })
+    try {
+      await onSetTaskDone?.(taskId, checked)
+    } catch (err) {
+      console.error('Failed to update task progress', err)
+      showAlert('error', 'Failed to update task progress')
+      // revert
+      setCompletedTaskIds(prev => {
+        const next = new Set(prev)
+        if (checked) next.delete(taskId); else next.add(taskId)
+        return next
+      })
+    }
+  }, [onSetTaskDone, showAlert])
+
+  const toggleHubDone = useCallback(async (hubId: number, checked: boolean) => {
+    setCompletedHubIds(prev => {
+      const next = new Set(prev)
+      if (checked) next.add(hubId); else next.delete(hubId)
+      return next
+    })
+    try {
+      await onSetHubDone?.(hubId, checked)
+    } catch (err) {
+      console.error('Failed to update hub progress', err)
+      showAlert('error', 'Failed to update hub progress')
+      // revert
+      setCompletedHubIds(prev => {
+        const next = new Set(prev)
+        if (checked) next.delete(hubId); else next.add(hubId)
+        return next
+      })
+    }
+  }, [onSetHubDone, showAlert])
 
   const getViewportCenter = useCallback((): { x: number; y: number } => {
     const rect = wrapperRef.current?.getBoundingClientRect()
@@ -595,9 +656,21 @@ export default function GraphCanvas(props: Props) {
         <NodeModal
           open={!!modal}
           type={modal.type}
-          hub={modal.type === 'hub' ? { title: modal.hub.title, color: modal.hub.color } : undefined}
-          task={modal.type === 'task' ? { title: modal.task.title, task_kind: modal.task.task_kind, color: modal.task.color } : undefined}
+          canEdit={canEdit}
+          hub={modal.type === 'hub' ? { id: modal.hub.id, title: modal.hub.title, color: modal.hub.color } : undefined}
+          task={modal.type === 'task' ? { id: modal.task.id, title: modal.task.title, task_kind: modal.task.task_kind, color: modal.task.color } : undefined}
           onClose={() => setModal(null)}
+          // Edit callbacks
+          onUpdateHub={onUpdateHub}
+          onDeleteHub={onDeleteHub}
+          onUpdateTask={onUpdateTask}
+          onDeleteTask={onDeleteTask}
+          // Student progress
+          taskDone={modal.type === 'task' ? completedTaskIds.has(modal.task.id) : undefined}
+          onToggleTaskDone={toggleTaskDone}
+          hubDone={modal.type === 'hub' ? completedHubIds.has(modal.hub.id) : undefined}
+          allHubTasksDone={modal.type === 'hub' ? initialTasks.filter(t => t.hub_id === modal.hub.id).every(t => completedTaskIds.has(t.id)) : undefined}
+          onToggleHubDone={toggleHubDone}
         />
       )}
     </div>

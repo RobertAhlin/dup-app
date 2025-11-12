@@ -1,8 +1,8 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 
 // Minimal shapes to avoid circular imports
-export type HubPreview = { title: string; color?: string }
-export type TaskPreview = { title: string; task_kind: string; color?: string }
+export type HubPreview = { id: number; title: string; color?: string }
+export type TaskPreview = { id: number; title: string; task_kind: string; color?: string }
 
 type Props = {
   open: boolean
@@ -10,52 +10,63 @@ type Props = {
   hub?: HubPreview
   task?: TaskPreview
   onClose: () => void
+  canEdit: boolean
+  // Edit callbacks
+  onUpdateHub?: (hubId: number, updates: { title?: string; color?: string }) => Promise<void> | void
+  onDeleteHub?: (hubId: number) => Promise<void> | void
+  onUpdateTask?: (taskId: number, updates: { title?: string; task_kind?: 'content'|'quiz'|'assignment'|'reflection' }) => Promise<void> | void
+  onDeleteTask?: (taskId: number) => Promise<void> | void
+  // Student progress callbacks/state
+  taskDone?: boolean
+  onToggleTaskDone?: (taskId: number, checked: boolean) => void
+  hubDone?: boolean
+  allHubTasksDone?: boolean
+  onToggleHubDone?: (hubId: number, checked: boolean) => void
 }
 
-export default function NodeModal({ open, type, hub, task, onClose }: Props) {
+export default function NodeModal(props: Props) {
+  const { open, type, hub, task, onClose, canEdit } = props
   const dialogRef = useRef<HTMLDivElement | null>(null)
   const closeBtnRef = useRef<HTMLButtonElement | null>(null)
+  const [hubTitle, setHubTitle] = useState(hub?.title ?? '')
+  const [hubColor, setHubColor] = useState(hub?.color ?? '#9AE6B4')
+  const [taskTitle, setTaskTitle] = useState(task?.title ?? '')
+  const [taskKind, setTaskKind] = useState<'content'|'quiz'|'assignment'|'reflection'>(
+    (task?.task_kind as 'content'|'quiz'|'assignment'|'reflection') ?? 'content'
+  )
 
   useEffect(() => {
     if (!open) return
-    // Focus the close button initially
     closeBtnRef.current?.focus()
-
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault()
-        onClose()
-        return
-      }
+      if (e.key === 'Escape') { e.preventDefault(); onClose(); return }
       if (e.key !== 'Tab') return
-      // Basic focus trap within the dialog
       const container = dialogRef.current
       if (!container) return
-      const focusables = Array.from(
-        container.querySelectorAll<HTMLElement>(
-          'a[href], button, textarea, input, select, [tabindex]:not([tabindex="-1"])'
-        )
-      ).filter(el => !el.hasAttribute('disabled') && !el.getAttribute('aria-hidden'))
+      const focusables = Array.from(container.querySelectorAll<HTMLElement>('a[href], button, textarea, input, select, [tabindex]:not([tabindex="-1"])'))
+        .filter(el => !el.hasAttribute('disabled') && !el.getAttribute('aria-hidden'))
       if (focusables.length === 0) return
       const first = focusables[0]
       const last = focusables[focusables.length - 1]
       const active = document.activeElement as HTMLElement | null
       if (e.shiftKey) {
-        if (active === first || !container.contains(active)) {
-          e.preventDefault()
-          last.focus()
-        }
+        if (active === first || !container.contains(active)) { e.preventDefault(); last.focus() }
       } else {
-        if (active === last) {
-          e.preventDefault()
-          first.focus()
-        }
+        if (active === last) { e.preventDefault(); first.focus() }
       }
     }
-
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [open, onClose])
+
+  // Reset form state when entity changes
+  useEffect(() => { setHubTitle(hub?.title ?? ''); setHubColor(hub?.color ?? '#9AE6B4') }, [hub?.id, hub?.title, hub?.color])
+  useEffect(() => {
+    setTaskTitle(task?.title ?? '')
+    setTaskKind((task?.task_kind as 'content'|'quiz'|'assignment'|'reflection') ?? 'content')
+  }, [task?.id, task?.title, task?.task_kind])
+
+  const canShowHubCheckbox = useMemo(() => !canEdit && type === 'hub' && !!props.allHubTasksDone, [canEdit, type, props.allHubTasksDone])
 
   if (!open) return null
 
@@ -70,16 +81,73 @@ export default function NodeModal({ open, type, hub, task, onClose }: Props) {
         </div>
         <div className="p-4 text-sm text-slate-700">
           {type === 'hub' && hub && (
-            <div className="space-y-2">
-              <div><span className="font-medium">Title:</span> {hub.title}</div>
-              
-            </div>
+            canEdit ? (
+              <form
+                className="space-y-3"
+                onSubmit={async (e) => { e.preventDefault(); await props.onUpdateHub?.(hub.id, { title: hubTitle.trim() || hub.title, color: hubColor }) }}
+              >
+                <label className="flex flex-col gap-1 text-xs text-slate-500">
+                  Title
+                  <input value={hubTitle} onChange={(e) => setHubTitle(e.target.value)} className="border border-slate-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400/50" />
+                </label>
+                <label className="flex flex-col gap-1 text-xs text-slate-500">
+                  Color
+                  <input type="color" value={hubColor} onChange={(e) => setHubColor(e.target.value)} className="h-8 w-full rounded border border-slate-300" />
+                </label>
+                <div className="flex items-center justify-between">
+                  <button type="submit" className="px-3 py-1.5 rounded bg-slate-900 text-white text-xs">Save hub</button>
+                  <button type="button" onClick={() => props.onDeleteHub?.(hub.id)} className="text-xs text-red-600 hover:underline">Delete</button>
+                </div>
+              </form>
+            ) : (
+              <div className="space-y-3">
+                <div><span className="font-medium">Title:</span> {hub.title}</div>
+                <div><span className="font-medium">Color:</span> <span className="inline-block align-middle w-4 h-4 rounded-full border" style={{ background: hub.color ?? '#9AE6B4' }} /></div>
+                {canShowHubCheckbox ? (
+                  <label className="flex items-center gap-2 text-xs text-slate-600">
+                    <input type="checkbox" checked={!!props.hubDone} onChange={(e) => props.onToggleHubDone?.(hub.id, e.target.checked)} />
+                    Mark hub as done
+                  </label>
+                ) : (
+                  <div className="text-xs text-slate-400">Complete all tasks to mark this hub as done.</div>
+                )}
+              </div>
+            )
           )}
           {type === 'task' && task && (
-            <div className="space-y-2">
-              <div><span className="font-medium">Task:</span> {task.title}</div>
-              <div><span className="font-medium">Type:</span> {task.task_kind}</div>
-            </div>
+            canEdit ? (
+              <form
+                className="space-y-3"
+                onSubmit={async (e) => { e.preventDefault(); await props.onUpdateTask?.(task.id, { title: taskTitle.trim() || task.title, task_kind: taskKind }) }}
+              >
+                <label className="flex flex-col gap-1 text-xs text-slate-500">
+                  Title
+                  <input value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} className="border border-slate-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400/50" />
+                </label>
+                <label className="flex flex-col gap-1 text-xs text-slate-500">
+                  Type
+                  <select value={taskKind} onChange={(e) => setTaskKind(e.target.value as 'content'|'quiz'|'assignment'|'reflection')} className="border border-slate-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400/50">
+                    <option value="content">Content</option>
+                    <option value="quiz">Quiz</option>
+                    <option value="assignment">Assignment</option>
+                    <option value="reflection">Reflection</option>
+                  </select>
+                </label>
+                <div className="flex items-center justify-between">
+                  <button type="submit" className="px-3 py-1.5 rounded bg-slate-900 text-white text-xs">Save task</button>
+                  <button type="button" onClick={() => props.onDeleteTask?.(task.id)} className="text-xs text-red-600 hover:underline">Delete</button>
+                </div>
+              </form>
+            ) : (
+              <div className="space-y-3">
+                <div><span className="font-medium">Title:</span> {task.title}</div>
+                <div><span className="font-medium">Type:</span> {task.task_kind}</div>
+                <label className="flex items-center gap-2 text-xs text-slate-600">
+                  <input type="checkbox" checked={!!props.taskDone} onChange={(e) => props.onToggleTaskDone?.(task.id, e.target.checked)} />
+                  Mark task as done
+                </label>
+              </div>
+            )
           )}
         </div>
         <div className="px-4 py-3 border-t border-slate-200 flex justify-end">
