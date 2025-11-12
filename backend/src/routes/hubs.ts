@@ -111,4 +111,42 @@ router.patch('/:id', verifyToken, async (req: AuthenticatedRequest, res) => {
   }
 });
 
+router.delete('/:id', verifyToken, async (req: AuthenticatedRequest, res) => {
+  const hubId = Number(req.params.id);
+  if (!Number.isInteger(hubId)) {
+    res.status(400).json({ error: 'Invalid hub id' });
+    return;
+  }
+
+  try {
+    const user = req.user as AuthUser | undefined;
+    if (!user) {
+      res.status(401).json({ error: 'Not authenticated' });
+      return;
+    }
+
+    const hubRes = await pool.query<{ course_id: number }>(
+      `SELECT course_id FROM hub WHERE id = $1`,
+      [hubId]
+    );
+    if (!hubRes.rows.length) {
+      res.status(404).json({ error: 'Hub not found' });
+      return;
+    }
+
+    const courseId = hubRes.rows[0].course_id;
+    const allowed = await canEditCourse(user, courseId);
+    if (!allowed) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    await pool.query(`DELETE FROM hub WHERE id = $1`, [hubId]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Delete hub error:', err);
+    res.status(500).json({ error: 'Failed to delete hub' });
+  }
+});
+
 export default router;

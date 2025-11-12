@@ -121,4 +121,52 @@ router.patch('/:id', verifyToken, async (req: AuthenticatedRequest, res) => {
   }
 });
 
+router.delete('/:id', verifyToken, async (req: AuthenticatedRequest, res) => {
+  const taskId = Number(req.params.id);
+  if (!Number.isInteger(taskId)) {
+    res.status(400).json({ error: 'Invalid task id' });
+    return;
+  }
+
+  try {
+    const user = req.user as AuthUser | undefined;
+    if (!user) {
+      res.status(401).json({ error: 'Not authenticated' });
+      return;
+    }
+
+    const taskRes = await pool.query<{ hub_id: number }>(
+      `SELECT hub_id FROM task WHERE id = $1`,
+      [taskId]
+    );
+    if (!taskRes.rows.length) {
+      res.status(404).json({ error: 'Task not found' });
+      return;
+    }
+
+    const hubId = taskRes.rows[0].hub_id;
+    const hubRes = await pool.query<{ course_id: number }>(
+      `SELECT course_id FROM hub WHERE id = $1`,
+      [hubId]
+    );
+    const courseId = hubRes.rows[0]?.course_id;
+    if (!courseId) {
+      res.status(404).json({ error: 'Hub not found for task' });
+      return;
+    }
+
+    const allowed = await canEditCourse(user, courseId);
+    if (!allowed) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    await pool.query(`DELETE FROM task WHERE id = $1`, [taskId]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Delete task error:', err);
+    res.status(500).json({ error: 'Failed to delete task' });
+  }
+});
+
 export default router;
