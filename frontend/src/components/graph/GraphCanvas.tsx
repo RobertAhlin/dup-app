@@ -318,7 +318,7 @@ export default function GraphCanvas(props: Props) {
   }, [props, selectedEdge])
 
   return (
-    <div className="h-full border rounded-lg overflow-hidden relative">
+  <div className="h-full rounded-lg overflow-hidden relative">
       {canEdit && (
         <div className="absolute z-10 left-3 top-3 bg-white/90 rounded-xl shadow px-3 py-2 flex items-center gap-2">
           <button className="border rounded px-2 py-1" onClick={() => onAddHub()}>+ Hub</button>
@@ -459,7 +459,8 @@ export default function GraphCanvas(props: Props) {
     nodesDraggable={canEdit}
     panOnDrag
   nodesConnectable={false}
-    deleteKeyCode={canEdit ? 'Delete' : undefined}
+  deleteKeyCode={canEdit ? 'Delete' : undefined}
+    className="rounded-lg shadow-[inset_0_10px_10px_rgba(0,0,0,0.3),inset_10px_0_10px_rgba(0,0,0,0.14)]"
         style={{ background: '#b7c89d' }}
       >
         {/* Plain olive background (matches page) */}
