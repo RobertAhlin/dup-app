@@ -64,6 +64,13 @@ export default function GraphCanvas(props: Props) {
   const rfInstance = useRef<ReactFlowInstance | null>(null)
   const wrapperRef = useRef<HTMLDivElement | null>(null)
 
+  // Modal state
+  const [modal, setModal] = useState<
+    | { type: 'hub'; hub: HubData }
+    | { type: 'task'; task: TaskData }
+    | null
+  >(null)
+
   const getViewportCenter = useCallback((): { x: number; y: number } => {
     const rect = wrapperRef.current?.getBoundingClientRect()
     const clientX = rect ? rect.left + rect.width / 2 : window.innerWidth / 2
@@ -84,6 +91,16 @@ export default function GraphCanvas(props: Props) {
       setSelectedTaskId(null)
     }
   }, [canEdit])
+
+  const openHubModal = useCallback((id: number) => {
+    const hub = initialHubs.find(h => h.id === id)
+    if (hub) setModal({ type: 'hub', hub })
+  }, [initialHubs])
+
+  const openTaskModal = useCallback((taskId: number) => {
+    const task = initialTasks.find(t => t.id === taskId)
+    if (task) setModal({ type: 'task', task })
+  }, [initialTasks])
 
   const handleSelectHub = useCallback((id: number) => {
     if (!canEdit) return
@@ -166,6 +183,7 @@ export default function GraphCanvas(props: Props) {
       data: {
         ...h,
         onSelect: handleSelectHub,
+        onOpen: openHubModal,
         canEdit,
         isSelected: canEdit && ((selectedHubId === h.id) || (connectMode && connectSourceHubId === h.id)),
       },
@@ -179,6 +197,7 @@ export default function GraphCanvas(props: Props) {
       data: {
         ...t,
         onSelect: handleSelectTask,
+        onOpen: openTaskModal,
         canEdit,
         isSelected: canEdit && selectedTaskId === t.id,
       },
@@ -186,7 +205,7 @@ export default function GraphCanvas(props: Props) {
     }))
 
     setNodes([...hubNodes, ...taskNodes])
-  }, [initialHubs, initialTasks, canEdit, handleSelectHub, handleSelectTask, selectedHubId, selectedTaskId, connectMode, connectSourceHubId, setNodes])
+  }, [initialHubs, initialTasks, canEdit, handleSelectHub, handleSelectTask, openHubModal, openTaskModal, selectedHubId, selectedTaskId, connectMode, connectSourceHubId, setNodes])
 
   useEffect(() => {
     // Dedupe hub->hub edges by id to avoid duplicate React keys if upstream pushed duplicates
@@ -366,6 +385,7 @@ export default function GraphCanvas(props: Props) {
     setSelectedTaskId(null)
     setSelectedEdgeId(null)
     setConnectSourceHubId(null)
+    setModal(null)
   }, [])
 
   return (
@@ -558,6 +578,36 @@ export default function GraphCanvas(props: Props) {
           </ControlButton>
         </Controls>
       </ReactFlow>
+      {modal && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/30" role="dialog" aria-modal="true">
+          <div className="bg-white rounded-xl shadow-xl w-[min(560px,90vw)] max-h-[80vh] overflow-auto">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
+              <h3 className="text-sm font-semibold text-slate-700">
+                {modal.type === 'hub' ? 'Hub' : 'Task'} details
+              </h3>
+              <button className="text-slate-500 hover:text-slate-700" onClick={() => setModal(null)} aria-label="Close">×</button>
+            </div>
+            <div className="p-4 text-sm text-slate-700">
+              {modal.type === 'hub' && (
+                <div className="space-y-2">
+                  <div><span className="font-medium">Title:</span> {modal.hub.title}</div>
+                  <div><span className="font-medium">Color:</span> <span className="inline-block align-middle w-4 h-4 rounded-full border" style={{ background: modal.hub.color ?? '#9AE6B4' }} /></div>
+                </div>
+              )}
+              {modal.type === 'task' && (
+                <div className="space-y-2">
+                  <div><span className="font-medium">Title:</span> {modal.task.title}</div>
+                  <div><span className="font-medium">Type:</span> {modal.task.task_kind}</div>
+                  <div><span className="font-medium">Color:</span> <span className="inline-block align-middle w-4 h-4 rounded-full border" style={{ background: modal.task.color ?? '#4f86c6' }} /></div>
+                </div>
+              )}
+            </div>
+            <div className="px-4 py-3 border-t border-slate-200 flex justify-end">
+              <button className="px-3 py-1.5 rounded bg-slate-800 text-white text-xs" onClick={() => setModal(null)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
