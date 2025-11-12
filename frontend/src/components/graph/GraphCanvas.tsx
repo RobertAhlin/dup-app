@@ -5,6 +5,7 @@ import ReactFlow, {
 } from 'reactflow'
 import type { Edge, Node, OnConnect, OnEdgesDelete, NodeDragHandler, ReactFlowInstance } from 'reactflow'
 import { nodeTypes, edgeTypes } from './graphTypes'
+import NodeModal from '../NodeModal'
 import axios from '../../api/axios'
 import { useAlert } from '../../contexts/useAlert'
 
@@ -427,7 +428,7 @@ export default function GraphCanvas(props: Props) {
         </div>
       )}
 
-      {canEdit && (selectedHub || selectedTask || selectedEdge) && (
+      {canEdit && !modal && (selectedHub || selectedTask || selectedEdge) && (
         <div className="absolute z-10 right-3 top-3 w-64 max-w-[calc(100%-3rem)] bg-white/95 backdrop-blur-sm border border-slate-200 rounded-xl shadow px-4 py-3 space-y-4">
           {selectedHub && (
             <form onSubmit={handleHubSubmit} className="space-y-2">
@@ -591,34 +592,13 @@ export default function GraphCanvas(props: Props) {
         </Controls>
       </ReactFlow>
       {modal && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/30" role="dialog" aria-modal="true">
-          <div className="bg-white rounded-xl shadow-xl w-[min(560px,90vw)] max-h-[80vh] overflow-auto">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
-              <h3 className="text-sm font-semibold text-slate-700">
-                {modal.type === 'hub' ? 'Hub' : 'Task'} details
-              </h3>
-              <button className="text-slate-500 hover:text-slate-700" onClick={() => setModal(null)} aria-label="Close">×</button>
-            </div>
-            <div className="p-4 text-sm text-slate-700">
-              {modal.type === 'hub' && (
-                <div className="space-y-2">
-                  <div><span className="font-medium">Title:</span> {modal.hub.title}</div>
-                  <div><span className="font-medium">Color:</span> <span className="inline-block align-middle w-4 h-4 rounded-full border" style={{ background: modal.hub.color ?? '#9AE6B4' }} /></div>
-                </div>
-              )}
-              {modal.type === 'task' && (
-                <div className="space-y-2">
-                  <div><span className="font-medium">Title:</span> {modal.task.title}</div>
-                  <div><span className="font-medium">Type:</span> {modal.task.task_kind}</div>
-                  <div><span className="font-medium">Color:</span> <span className="inline-block align-middle w-4 h-4 rounded-full border" style={{ background: modal.task.color ?? '#4f86c6' }} /></div>
-                </div>
-              )}
-            </div>
-            <div className="px-4 py-3 border-t border-slate-200 flex justify-end">
-              <button className="px-3 py-1.5 rounded bg-slate-800 text-white text-xs" onClick={() => setModal(null)}>Close</button>
-            </div>
-          </div>
-        </div>
+        <NodeModal
+          open={!!modal}
+          type={modal.type}
+          hub={modal.type === 'hub' ? { title: modal.hub.title, color: modal.hub.color } : undefined}
+          task={modal.type === 'task' ? { title: modal.task.title, task_kind: modal.task.task_kind, color: modal.task.color } : undefined}
+          onClose={() => setModal(null)}
+        />
       )}
     </div>
   )
