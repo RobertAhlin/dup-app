@@ -85,6 +85,15 @@ Our goal is to create a platform that supports upskilling through clarity, modul
 - run `npm run build` to build the project for production  
 - run `npm run initdb` to initialize the database  
 
+## UI examples
+### Login page
+![Login page](readmefiles/login-page_01.png)
+### Course selection sidebar
+![Course selection sidebar](readmefiles/course-selection-sidebar_01.png)
+![Course selection sidebar minimized](readmefiles/course-selection-sidebar-minimized_01.png)
+### Course view
+![Course view](readmefiles/course-view_01.png)
+
 ## 💡 Why public?
 
 This repo is public to showcase the development journey of a real-world, fullstack platform.  
