@@ -14,11 +14,11 @@ type HubNodeData = {
 export default memo(function HubNode({ data }: NodeProps<HubNodeData>) {
   const isSelected = Boolean(data.isSelected)
   return (
-    <div
-      onClick={() => { if (data.canEdit) data.onSelect(data.id) }}
-      className={`rounded-full shadow-xl flex items-center justify-center ${data.canEdit ? 'cursor-pointer' : 'cursor-default'}`}
-      style={{ width: 160, height: 160, background: data.color ?? '#9AE6B4', border: isSelected ? '3px solid #1e40af' : '3px solid rgba(0,0,0,0.1)' }}
-    >
+      <div
+        onClick={() => { if (data.canEdit) data.onSelect(data.id) }}
+        className={`rounded-full flex items-center justify-center ${data.canEdit ? 'cursor-pointer' : 'cursor-default'} shadow-[8px_8px_8px_rgba(0,0,0,0.5),5px_0_5px_rgba(0,0,0,0.10)]`}
+        style={{ width: 160, height: 160, background: data.color ?? '#9AE6B4', border: isSelected ? '2px solid rgba(239, 68, 68, 0.7)' : 'none' }}
+      >
       <div className="text-center px-2 font-semibold">{data.title}</div>
   {/* Source handles at cardinal points (hidden) */}
   <Handle id="hub-right" type="source" position={Position.Right} isConnectable={false} style={{ opacity: 0, pointerEvents: 'none', width: 0, height: 0 }} />

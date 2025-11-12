@@ -317,6 +317,14 @@ export default function GraphCanvas(props: Props) {
     }
   }, [props, selectedEdge])
 
+  // Deselect when clicking on empty canvas background
+  const handlePaneClick = useCallback(() => {
+    setSelectedHubId(null)
+    setSelectedTaskId(null)
+    setSelectedEdgeId(null)
+    setConnectSourceHubId(null)
+  }, [])
+
   return (
   <div className="h-full rounded-lg overflow-hidden relative">
       {canEdit && (
@@ -444,6 +452,7 @@ export default function GraphCanvas(props: Props) {
   onConnect={onConnect}
         onEdgesDelete={onEdgesDelete}
         onNodeDragStop={onNodeDragStop}
+        onPaneClick={handlePaneClick}
         onEdgeClick={(_, edge) => {
           if (!canEdit) return
           if (edge.id.startsWith('edge-h2h-')) {

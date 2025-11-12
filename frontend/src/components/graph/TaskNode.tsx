@@ -18,8 +18,8 @@ export default memo(function TaskNode({ data }: NodeProps<TaskNodeData>) {
   return (
     <div
       onClick={() => { if (data.canEdit) data.onSelect(data.id, data.hub_id) }}
-      className={`rounded-full shadow-md flex items-center justify-center ${data.canEdit ? 'cursor-pointer' : 'cursor-default'} ${isSelected ? 'ring-2 ring-indigo-600' : ''}`}
-  style={{ width: 80, height: 80, background: data.color ?? '#4f86c6', color: 'white' }}
+      className={`rounded-full flex items-center justify-center ${data.canEdit ? 'cursor-pointer' : 'cursor-default'} shadow-[8px_8px_8px_rgba(0,0,0,0.5),5px_0_5px_rgba(0,0,0,0.10)]`}
+  style={{ width: 80, height: 80, background: data.color ?? '#4f86c6', color: 'white', border: isSelected ? '2px solid rgba(239, 68, 68, 0.7)' : 'none' }}
       title={`${data.title} (${data.task_kind})`}
     >
       <span className="px-2 text-sm">{data.title}</span>
