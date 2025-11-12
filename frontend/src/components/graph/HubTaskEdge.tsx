@@ -20,7 +20,7 @@ function computeCircleBorderPoints(
 }
 
 export default memo(function HubTaskEdge(props: EdgeProps) {
-  const { id, source, target, style } = props
+  const { id, source, target, style, markerEnd, markerStart } = props
 
   const sourceNode = useStore((s) => s.nodeInternals.get(source))
   const targetNode = useStore((s) => s.nodeInternals.get(target))
@@ -45,5 +45,5 @@ export default memo(function HubTaskEdge(props: EdgeProps) {
 
   if (!path) return null
 
-  return <BaseEdge id={id} path={path} style={style} />
+  return <BaseEdge id={id} path={path} style={style} markerEnd={markerEnd} markerStart={markerStart} />
 })

@@ -11,5 +11,7 @@ export const nodeTypes: NodeTypes = Object.freeze({
 })
 
 export const edgeTypes: EdgeTypes = Object.freeze({
+  // generic floating line between circular nodes (hubs/tasks)
   floatingHubTask: HubTaskEdge,
+  floatingHubHub: HubTaskEdge,
 })

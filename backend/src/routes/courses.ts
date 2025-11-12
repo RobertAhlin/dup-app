@@ -131,7 +131,8 @@ router.get('/:id/graph', verifyToken, async (req: AuthenticatedRequest, res) => 
         [courseId]
       ),
       pool.query(
-        `SELECT id, course_id, from_hub_id, to_hub_id
+        `SELECT id, course_id, from_hub_id, to_hub_id,
+                (rule_value->>'color') AS color
          FROM hub_edge
          WHERE course_id = $1
          ORDER BY id`,

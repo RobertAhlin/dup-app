@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import ReactFlow, {
   Background, Controls, ConnectionMode, MiniMap,
-  useNodesState, useEdgesState, MarkerType
+  useNodesState, useEdgesState
 } from 'reactflow'
 import type { Edge, Node, OnConnect, OnEdgesDelete, NodeDragHandler } from 'reactflow'
 import { nodeTypes, edgeTypes } from './graphTypes'
@@ -11,7 +11,7 @@ import axios from '../../api/axios'
 
 export type HubData = { id: number; course_id: number; title: string; x: number; y: number; color?: string; radius?: number }
 export type TaskData = { id: number; hub_id: number; title: string; task_kind: 'content'|'quiz'|'assignment'|'reflection'; x: number|null; y: number|null; color?: string }
-export type HubEdgeData = { id: number; course_id: number; from_hub_id: number; to_hub_id: number }
+export type HubEdgeData = { id: number; course_id: number; from_hub_id: number; to_hub_id: number; color?: string|null }
 
 type Props = {
   courseId: number
@@ -28,6 +28,8 @@ type Props = {
   onDeleteTask: (taskId: number) => Promise<void> | void
   onMoveHub: (hubId: number, coords: { x: number; y: number }) => void
   onMoveTask: (taskId: number, coords: { x: number; y: number }) => void
+  onDeleteEdge: (edgeId: number) => Promise<void> | void
+  onUpdateEdgeColor: (edgeId: number, color: string) => Promise<void> | void
 }
 
 export default function GraphCanvas(props: Props) {
@@ -53,6 +55,8 @@ export default function GraphCanvas(props: Props) {
   const [hubColor, setHubColor] = useState('#9AE6B4')
   const [taskTitle, setTaskTitle] = useState('')
   const [taskKind, setTaskKind] = useState<TaskData['task_kind']>('content')
+  const [selectedEdgeId, setSelectedEdgeId] = useState<number|null>(null)
+  const [edgeColor, setEdgeColor] = useState<string>('#64748b')
 
   useEffect(() => {
     if (!canEdit) {
@@ -76,6 +80,7 @@ export default function GraphCanvas(props: Props) {
 
   const selectedHub = useMemo(() => initialHubs.find(h => h.id === selectedHubId) ?? null, [initialHubs, selectedHubId])
   const selectedTask = useMemo(() => initialTasks.find(t => t.id === selectedTaskId) ?? null, [initialTasks, selectedTaskId])
+  const selectedEdge = useMemo(() => initialEdges.find(e => e.id === selectedEdgeId) ?? null, [initialEdges, selectedEdgeId])
 
   useEffect(() => {
     if (!selectedHub) {
@@ -97,8 +102,18 @@ export default function GraphCanvas(props: Props) {
     setTaskKind(selectedTask.task_kind)
   }, [selectedTask])
 
+  useEffect(() => {
+    if (!selectedEdge) {
+      setEdgeColor('#64748b')
+      return
+    }
+    setEdgeColor(selectedEdge.color ?? '#64748b')
+  }, [selectedEdge])
+
   const [nodes, setNodes, onNodesChange] = useNodesState<Node[]>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge[]>([])
+  const nodeTypesMemo = useMemo(() => nodeTypes, [])
+  const edgeTypesMemo = useMemo(() => edgeTypes, [])
   // Use stable maps from graphTypes (no need to memoize again)
 
   useEffect(() => {
@@ -136,9 +151,9 @@ export default function GraphCanvas(props: Props) {
       id: `edge-h2h-${e.id}`,
       source: `hub-${e.from_hub_id}`,
       target: `hub-${e.to_hub_id}`,
+      type: 'floatingHubHub',
       selectable: canEdit,
-      style: { strokeWidth: 3 },
-      markerEnd: { type: MarkerType.ArrowClosed },
+      style: { strokeWidth: 3, stroke: e.color ?? '#64748b' },
     }))
 
     const hubTask: Edge[] = initialTasks.map(t => ({
@@ -167,9 +182,17 @@ export default function GraphCanvas(props: Props) {
   const onEdgesDelete: OnEdgesDelete = useCallback((eds) => {
     const hasHT = eds.some(e => e.id.startsWith('edge-h2t-'))
     if (hasHT) {
-      setEdges(prev => [...prev]) // no-op to revert
+      setEdges(prev => [...prev]) // prevent deleting hub->task
+      return
     }
-  }, [setEdges])
+    // Delete hub->hub edges in backend
+    eds.forEach(e => {
+      if (e.id.startsWith('edge-h2h-')) {
+        const edgeId = Number(e.id.replace('edge-h2h-', ''))
+        props.onDeleteEdge(edgeId)
+      }
+    })
+  }, [setEdges, props])
 
   // Drag end → persist positions
   const onNodeDragStop = useCallback<NodeDragHandler>(async (_event, node: Node) => {
@@ -256,6 +279,28 @@ export default function GraphCanvas(props: Props) {
     }
   }, [onDeleteTask, selectedTask])
 
+  const handleEdgeSubmit = useCallback(async (event: React.FormEvent) => {
+    event.preventDefault()
+    if (!selectedEdge) return
+    try {
+      await props.onUpdateEdgeColor(selectedEdge.id, edgeColor)
+    } catch (err) {
+      console.error('Failed to update edge color', err)
+    }
+  }, [edgeColor, props, selectedEdge])
+
+  const handleEdgeDelete = useCallback(async () => {
+    if (!selectedEdge) return
+    const confirmed = window.confirm('Delete this connection between hubs?')
+    if (!confirmed) return
+    try {
+      await props.onDeleteEdge(selectedEdge.id)
+      setSelectedEdgeId(null)
+    } catch (err) {
+      console.error('Failed to delete edge', err)
+    }
+  }, [props, selectedEdge])
+
   return (
     <div className="h-full border rounded-lg overflow-hidden relative">
       {canEdit && (
@@ -273,7 +318,7 @@ export default function GraphCanvas(props: Props) {
         </div>
       )}
 
-      {canEdit && (selectedHub || selectedTask) && (
+      {canEdit && (selectedHub || selectedTask || selectedEdge) && (
         <div className="absolute z-10 right-3 top-3 w-64 max-w-[calc(100%-3rem)] bg-white/95 backdrop-blur-sm border border-slate-200 rounded-xl shadow px-4 py-3 space-y-4">
           {selectedHub && (
             <form onSubmit={handleHubSubmit} className="space-y-2">
@@ -341,19 +386,51 @@ export default function GraphCanvas(props: Props) {
               </button>
             </form>
           )}
+          {selectedEdge && (
+            <form onSubmit={handleEdgeSubmit} className="space-y-2 border-t border-slate-200 pt-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-slate-700">Connection settings</h3>
+                <button type="button" onClick={handleEdgeDelete} className="text-xs text-red-600 hover:underline">Delete</button>
+              </div>
+              <label className="flex flex-col gap-1 text-xs text-slate-500">
+                Color
+                <input
+                  type="color"
+                  value={edgeColor}
+                  onChange={(e) => setEdgeColor(e.target.value)}
+                  className="h-8 w-full rounded border border-slate-300"
+                />
+              </label>
+              <button
+                type="submit"
+                className="w-full bg-slate-900 text-white text-xs font-semibold uppercase tracking-wide rounded-full py-2"
+              >
+                Save connection
+              </button>
+            </form>
+          )}
         </div>
       )}
 
       <ReactFlow
         nodes={nodes}
         edges={edges}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
+        nodeTypes={nodeTypesMemo}
+        edgeTypes={edgeTypesMemo}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onEdgesDelete={onEdgesDelete}
         onNodeDragStop={onNodeDragStop}
+        onEdgeClick={(_, edge) => {
+          if (!canEdit) return
+          if (edge.id.startsWith('edge-h2h-')) {
+            const id = Number(edge.id.replace('edge-h2h-', ''))
+            setSelectedEdgeId(id)
+            setSelectedHubId(null)
+            setSelectedTaskId(null)
+          }
+        }}
         connectionMode={ConnectionMode.Loose}
         fitView
     elementsSelectable={canEdit}

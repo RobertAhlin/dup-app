@@ -254,6 +254,30 @@ export default function CourseBuilderPage() {
 
   const canEdit = isTeacher && mode === 'edit'
 
+  const handleDeleteEdge = useCallback(async (edgeId: number) => {
+    try {
+      setError(null)
+      await axios.delete(`/api/edges/${edgeId}`)
+      setGraph(current => current ? { ...current, edges: current.edges.filter(e => e.id !== edgeId) } : current)
+    } catch (err) {
+      console.error('Failed to delete edge', err)
+      setError('Failed to delete connection')
+      throw err
+    }
+  }, [])
+
+  const handleUpdateEdgeColor = useCallback(async (edgeId: number, color: string) => {
+    try {
+      setError(null)
+      const res = await axios.patch<{ edge: HubEdgeData }>(`/api/edges/${edgeId}`, { color })
+      setGraph(current => current ? { ...current, edges: current.edges.map(e => e.id === edgeId ? { ...e, color: res.data.edge.color } : e) } : current)
+    } catch (err) {
+      console.error('Failed to update edge color', err)
+      setError('Failed to update connection color')
+      throw err
+    }
+  }, [])
+
   const renderContent = () => {
     if (loading || authLoading) {
       return <div className="p-6 text-sm text-gray-500">Loading course…</div>
@@ -320,6 +344,8 @@ export default function CourseBuilderPage() {
             onDeleteTask={handleDeleteTask}
             onMoveHub={handleMoveHub}
             onMoveTask={handleMoveTask}
+            onDeleteEdge={handleDeleteEdge}
+            onUpdateEdgeColor={handleUpdateEdgeColor}
           />
         </div>
       </div>
