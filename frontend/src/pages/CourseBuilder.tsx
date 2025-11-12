@@ -7,6 +7,7 @@ import MainCard from '../components/MainCard'
 import { useAuth } from '../hooks/useAuth'
 import { getCourse } from '../api/courses'
 import type { Course } from '../types/course'
+import { useAlert } from '../contexts/useAlert'
 
 type GraphResponse = {
   hubs: HubData[]
@@ -30,13 +31,15 @@ export default function CourseBuilderPage() {
   const [graph, setGraph] = useState<GraphResponse | null>(null)
   const [mode, setMode] = useState<'student' | 'edit'>('student')
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [, setError] = useState<string | null>(null)
   const initialModeSet = useRef(false)
+  const { showAlert } = useAlert()
 
   const isTeacher = useMemo(() => {
     const role = (user?.role ?? '').toLowerCase()
     return role === 'teacher' || role === 'admin'
   }, [user])
+  const isAdmin = useMemo(() => (user?.role ?? '').toLowerCase() === 'admin', [user])
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -58,6 +61,7 @@ export default function CourseBuilderPage() {
   useEffect(() => {
     if (!Number.isInteger(courseId) || Number.isNaN(courseId)) {
       setError('Invalid course id')
+      showAlert('error', 'Invalid course id')
       setLoading(false)
       return
     }
@@ -82,20 +86,24 @@ export default function CourseBuilderPage() {
         const status = axiosErr.response?.status
         if (status === 403) {
           setError('You do not have access to this course.')
+          showAlert('error', 'You do not have access to this course.')
           setTimeout(() => navigate('/dashboard'), 2000)
           return
         }
         if (status === 404) {
           setError('Course not found.')
+          showAlert('error', 'Course not found.')
           return
         }
         if (status === 401) {
           setError('Please sign in to view this course.')
+          showAlert('error', 'Please sign in to view this course.')
           setTimeout(() => navigate('/login'), 2000)
           return
         }
         const message = axiosErr.response?.data?.error ?? 'Failed to load course graph'
         setError(message)
+        showAlert('error', message)
       })
       .finally(() => {
         if (!isCancelled) {
@@ -106,40 +114,49 @@ export default function CourseBuilderPage() {
     return () => {
       isCancelled = true
     }
-  }, [courseId, navigate])
+  }, [courseId, navigate, showAlert])
 
-  const handleAddHub = useCallback(async () => {
+  const handleAddHub = useCallback(async (coords?: { x: number; y: number }) => {
     if (!graph) return
     try {
       setError(null)
-      const payload = { courseId, title: 'New hub', x: 200, y: 200 }
+      const payload = { courseId, title: 'New hub', x: coords?.x ?? 200, y: coords?.y ?? 200 }
       const res = await axios.post<{ hub: HubData }>(`/api/hubs`, payload)
       setGraph(current => current ? { ...current, hubs: [...current.hubs, res.data.hub] } : current)
     } catch (err) {
       console.error('Failed to add hub', err)
       setError('Failed to add hub')
+      showAlert('error', 'Failed to add hub')
     }
-  }, [courseId, graph])
+  }, [courseId, graph, showAlert])
 
-  const handleAddTask = useCallback(async (selectedHubId: number | null) => {
+  const handleAddTask = useCallback(async (selectedHubId: number | null, coords?: { x: number; y: number }) => {
     if (!graph) return
     if (!selectedHubId) {
       setError('Select a hub before adding a task')
+      showAlert('error', 'Select a hub before adding a task')
       return
     }
     try {
       setError(null)
-      const payload = { hubId: selectedHubId, title: 'New task', task_kind: 'content', x: 70, y: 0 }
+      const payload = { hubId: selectedHubId, title: 'New task', task_kind: 'content', x: coords?.x ?? 70, y: coords?.y ?? 0 }
       const res = await axios.post<{ task: TaskData }>(`/api/tasks`, payload)
       setGraph(current => current ? { ...current, tasks: [...current.tasks, res.data.task] } : current)
     } catch (err) {
       console.error('Failed to add task', err)
       setError('Failed to add task')
+      showAlert('error', 'Failed to add task')
     }
-  }, [graph])
+  }, [graph, showAlert])
 
   const handleAddEdge = useCallback(async (fromHubId: number, toHubId: number) => {
     if (!graph) return
+    // Frontend guard: prevent duplicates and inform user
+    const duplicate = graph.edges.some(e => e.from_hub_id === fromHubId && e.to_hub_id === toHubId)
+    if (duplicate) {
+      showAlert('error', 'These hubs are already connected.')
+      return
+    }
     try {
       setError(null)
       const res = await axios.post<{ edge: HubEdgeData }>(`/api/edges`, {
@@ -153,8 +170,9 @@ export default function CourseBuilderPage() {
     } catch (err) {
       console.error('Failed to add edge', err)
       setError('Failed to add edge')
+      showAlert('error', 'Failed to add edge')
     }
-  }, [courseId, graph])
+  }, [courseId, graph, showAlert])
 
   const handleUpdateHub = useCallback(async (hubId: number, updates: { title?: string; color?: string }) => {
     try {
@@ -170,9 +188,10 @@ export default function CourseBuilderPage() {
     } catch (err) {
       console.error('Failed to update hub', err)
       setError('Failed to update hub')
+      showAlert('error', 'Failed to update hub')
       throw err
     }
-  }, [])
+  }, [showAlert])
 
   const handleDeleteHub = useCallback(async (hubId: number) => {
     try {
@@ -191,9 +210,10 @@ export default function CourseBuilderPage() {
     } catch (err) {
       console.error('Failed to delete hub', err)
       setError('Failed to delete hub')
+      showAlert('error', 'Failed to delete hub')
       throw err
     }
-  }, [])
+  }, [showAlert])
 
   const handleUpdateTask = useCallback(async (taskId: number, updates: { title?: string; task_kind?: TaskData['task_kind'] }) => {
     try {
@@ -209,9 +229,10 @@ export default function CourseBuilderPage() {
     } catch (err) {
       console.error('Failed to update task', err)
       setError('Failed to update task')
+      showAlert('error', 'Failed to update task')
       throw err
     }
-  }, [])
+  }, [showAlert])
 
   const handleDeleteTask = useCallback(async (taskId: number) => {
     try {
@@ -228,9 +249,10 @@ export default function CourseBuilderPage() {
     } catch (err) {
       console.error('Failed to delete task', err)
       setError('Failed to delete task')
+      showAlert('error', 'Failed to delete task')
       throw err
     }
-  }, [])
+  }, [showAlert])
 
   const handleMoveHub = useCallback((hubId: number, coords: { x: number; y: number }) => {
     setGraph(current => {
@@ -262,9 +284,10 @@ export default function CourseBuilderPage() {
     } catch (err) {
       console.error('Failed to delete edge', err)
       setError('Failed to delete connection')
+      showAlert('error', 'Failed to delete connection')
       throw err
     }
-  }, [])
+  }, [showAlert])
 
   const handleUpdateEdgeColor = useCallback(async (edgeId: number, color: string) => {
     try {
@@ -274,18 +297,17 @@ export default function CourseBuilderPage() {
     } catch (err) {
       console.error('Failed to update edge color', err)
       setError('Failed to update connection color')
+      showAlert('error', 'Failed to update connection color')
       throw err
     }
-  }, [])
+  }, [showAlert])
 
   const renderContent = () => {
     if (loading || authLoading) {
       return <div className="p-6 text-sm text-gray-500">Loading course…</div>
     }
 
-    if (error) {
-      return <div className="p-6 text-sm text-red-600">{error}</div>
-    }
+    // Errors are surfaced exclusively via AlertBanner; no inline error UI here
 
     if (!graph || !course) {
       return <div className="p-6 text-sm text-gray-500">No course data available.</div>
@@ -357,7 +379,7 @@ export default function CourseBuilderPage() {
       name={user?.name ?? ''}
       email={user?.email ?? ''}
       role={user?.role ?? ''}
-      chip={{ label: 'Dashboard', to: '/dashboard' }}
+      chip={!authLoading && user && !isAdmin ? { label: 'Dashboard', to: '/dashboard' } : undefined}
     >
       {renderContent()}
     </MainCard>

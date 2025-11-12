@@ -3,9 +3,10 @@ import ReactFlow, {
   Controls, ControlButton, ConnectionMode, MiniMap,
   useNodesState, useEdgesState
 } from 'reactflow'
-import type { Edge, Node, OnConnect, OnEdgesDelete, NodeDragHandler } from 'reactflow'
+import type { Edge, Node, OnConnect, OnEdgesDelete, NodeDragHandler, ReactFlowInstance } from 'reactflow'
 import { nodeTypes, edgeTypes } from './graphTypes'
 import axios from '../../api/axios'
+import { useAlert } from '../../contexts/useAlert'
 
 // nodeTypes and edgeTypes are defined outside this module in graphTypes to ensure stable identity
 
@@ -19,8 +20,8 @@ type Props = {
   initialTasks: TaskData[]
   initialEdges: HubEdgeData[]
   canEdit: boolean
-  onAddHub: () => Promise<void> | void
-  onAddTask: (selectedHubId: number|null) => Promise<void> | void
+  onAddHub: (coords?: { x: number; y: number }) => Promise<void> | void
+  onAddTask: (selectedHubId: number|null, coords?: { x: number; y: number }) => Promise<void> | void
   onAddEdge: (fromHubId: number, toHubId: number) => Promise<void> | void
   onUpdateHub: (hubId: number, updates: { title?: string; color?: string }) => Promise<void> | void
   onDeleteHub: (hubId: number) => Promise<void> | void
@@ -58,7 +59,22 @@ export default function GraphCanvas(props: Props) {
   const [taskKind, setTaskKind] = useState<TaskData['task_kind']>('content')
   const [selectedEdgeId, setSelectedEdgeId] = useState<number|null>(null)
   const [edgeColor, setEdgeColor] = useState<string>('#64748b')
-  const [showMinimap, setShowMinimap] = useState(true)
+  const [showMinimap, setShowMinimap] = useState(false)
+  const { showAlert } = useAlert()
+  const rfInstance = useRef<ReactFlowInstance | null>(null)
+  const wrapperRef = useRef<HTMLDivElement | null>(null)
+
+  const getViewportCenter = useCallback((): { x: number; y: number } => {
+    const rect = wrapperRef.current?.getBoundingClientRect()
+    const clientX = rect ? rect.left + rect.width / 2 : window.innerWidth / 2
+    const clientY = rect ? rect.top + rect.height / 2 : window.innerHeight / 2
+    const projected = rfInstance.current?.screenToFlowPosition({ x: clientX, y: clientY })
+    if (projected) {
+      return { x: Math.round(projected.x), y: Math.round(projected.y) }
+    }
+    // Fallback if instance not ready yet
+    return { x: 0, y: 0 }
+  }, [])
 
   useEffect(() => {
     if (!canEdit) {
@@ -78,6 +94,13 @@ export default function GraphCanvas(props: Props) {
         setConnectSourceHubId(id)
         setSelectedHubId(id)
       } else if (connectSourceHubId !== id) {
+        // Prevent duplicate connections and inform user
+        const alreadyExists = initialEdges.some(e => e.from_hub_id === connectSourceHubId && e.to_hub_id === id)
+        if (alreadyExists) {
+          showAlert('error', 'These hubs are already connected.')
+          // Keep connect mode active so the user can pick another target
+          return
+        }
         onAddEdge(connectSourceHubId, id)
         setConnectSourceHubId(null)
         setSelectedHubId(null)
@@ -87,12 +110,14 @@ export default function GraphCanvas(props: Props) {
     // Normal selection (opens settings)
     setSelectedHubId(id)
     setSelectedTaskId(null)
-  }, [canEdit, connectMode, connectSourceHubId, onAddEdge])
+    setSelectedEdgeId(null)
+  }, [canEdit, connectMode, connectSourceHubId, initialEdges, onAddEdge, showAlert])
 
-  const handleSelectTask = useCallback((taskId: number, hubId: number) => {
+  const handleSelectTask = useCallback((taskId: number) => {
     if (!canEdit) return
     setSelectedTaskId(taskId)
-    setSelectedHubId(hubId)
+    setSelectedHubId(null)
+    setSelectedEdgeId(null)
   }, [canEdit])
 
   const selectedHub = useMemo(() => initialHubs.find(h => h.id === selectedHubId) ?? null, [initialHubs, selectedHubId])
@@ -164,7 +189,10 @@ export default function GraphCanvas(props: Props) {
   }, [initialHubs, initialTasks, canEdit, handleSelectHub, handleSelectTask, selectedHubId, selectedTaskId, connectMode, connectSourceHubId, setNodes])
 
   useEffect(() => {
-    const hubHub: Edge[] = initialEdges.map(e => ({
+    // Dedupe hub->hub edges by id to avoid duplicate React keys if upstream pushed duplicates
+    const uniqueInitialEdges = Array.from(new Map(initialEdges.map(e => [e.id, e])).values())
+
+    const hubHub: Edge[] = uniqueInitialEdges.map(e => ({
       id: `edge-h2h-${e.id}`,
       source: `hub-${e.from_hub_id}`,
       target: `hub-${e.to_hub_id}`,
@@ -192,8 +220,14 @@ export default function GraphCanvas(props: Props) {
     const fromId = Number((connection.source ?? '').replace('hub-', ''))
     const toId   = Number((connection.target ?? '').replace('hub-', ''))
     if (!fromId || !toId || fromId === toId) return
+    // Prevent duplicate connections and inform user
+    const alreadyExists = initialEdges.some(e => e.from_hub_id === fromId && e.to_hub_id === toId)
+    if (alreadyExists) {
+      showAlert('error', 'These hubs are already connected.')
+      return
+    }
     await onAddEdge(fromId, toId)
-  }, [canEdit, connectMode, onAddEdge])
+  }, [canEdit, connectMode, initialEdges, onAddEdge, showAlert])
 
   // Prevent deleting hub→task edges
   const onEdgesDelete: OnEdgesDelete = useCallback((eds) => {
@@ -226,6 +260,7 @@ export default function GraphCanvas(props: Props) {
         await axios.patch(`/api/hubs/${hubId}`, { x, y })
       } catch (err) {
         console.error('Failed to persist hub position', err)
+        showAlert('error', 'Failed to save hub position. Changes were reverted.')
         if (previous) {
           const fallbackX = Math.round(previous.x)
           const fallbackY = Math.round(previous.y)
@@ -241,6 +276,7 @@ export default function GraphCanvas(props: Props) {
         await axios.patch(`/api/tasks/${taskId}`, { x, y })
       } catch (err) {
         console.error('Failed to persist task position', err)
+        showAlert('error', 'Failed to save task position. Changes were reverted.')
         if (previous) {
           const fallbackX = Math.round(previous.x ?? 0)
           const fallbackY = Math.round(previous.y ?? 0)
@@ -249,7 +285,7 @@ export default function GraphCanvas(props: Props) {
         }
       }
     }
-  }, [canEdit, onMoveHub, onMoveTask, initialHubs, initialTasks, setNodes])
+  }, [canEdit, onMoveHub, onMoveTask, initialHubs, initialTasks, setNodes, showAlert])
 
   const handleHubSubmit = useCallback(async (event: React.FormEvent) => {
     event.preventDefault()
@@ -258,8 +294,9 @@ export default function GraphCanvas(props: Props) {
       await onUpdateHub(selectedHub.id, { title: hubTitle.trim() || selectedHub.title, color: hubColor })
     } catch (err) {
       console.error('Failed to update hub', err)
+      showAlert('error', 'Failed to update hub')
     }
-  }, [hubColor, hubTitle, onUpdateHub, selectedHub])
+  }, [hubColor, hubTitle, onUpdateHub, selectedHub, showAlert])
 
   const handleHubDelete = useCallback(async () => {
     if (!selectedHub) return
@@ -271,8 +308,9 @@ export default function GraphCanvas(props: Props) {
       setSelectedTaskId(null)
     } catch (err) {
       console.error('Failed to delete hub', err)
+      showAlert('error', 'Failed to delete hub')
     }
-  }, [onDeleteHub, selectedHub])
+  }, [onDeleteHub, selectedHub, showAlert])
 
   const handleTaskSubmit = useCallback(async (event: React.FormEvent) => {
     event.preventDefault()
@@ -281,8 +319,9 @@ export default function GraphCanvas(props: Props) {
       await onUpdateTask(selectedTask.id, { title: taskTitle.trim() || selectedTask.title, task_kind: taskKind })
     } catch (err) {
       console.error('Failed to update task', err)
+      showAlert('error', 'Failed to update task')
     }
-  }, [onUpdateTask, selectedTask, taskKind, taskTitle])
+  }, [onUpdateTask, selectedTask, taskKind, taskTitle, showAlert])
 
   const handleTaskDelete = useCallback(async () => {
     if (!selectedTask) return
@@ -293,8 +332,9 @@ export default function GraphCanvas(props: Props) {
       setSelectedTaskId(null)
     } catch (err) {
       console.error('Failed to delete task', err)
+      showAlert('error', 'Failed to delete task')
     }
-  }, [onDeleteTask, selectedTask])
+  }, [onDeleteTask, selectedTask, showAlert])
 
   const handleEdgeSubmit = useCallback(async (event: React.FormEvent) => {
     event.preventDefault()
@@ -303,8 +343,9 @@ export default function GraphCanvas(props: Props) {
       await props.onUpdateEdgeColor(selectedEdge.id, edgeColor)
     } catch (err) {
       console.error('Failed to update edge color', err)
+      showAlert('error', 'Failed to update connection color')
     }
-  }, [edgeColor, props, selectedEdge])
+  }, [edgeColor, props, selectedEdge, showAlert])
 
   const handleEdgeDelete = useCallback(async () => {
     if (!selectedEdge) return
@@ -315,8 +356,9 @@ export default function GraphCanvas(props: Props) {
       setSelectedEdgeId(null)
     } catch (err) {
       console.error('Failed to delete edge', err)
+      showAlert('error', 'Failed to delete connection')
     }
-  }, [props, selectedEdge])
+  }, [props, selectedEdge, showAlert])
 
   // Deselect when clicking on empty canvas background
   const handlePaneClick = useCallback(() => {
@@ -327,11 +369,27 @@ export default function GraphCanvas(props: Props) {
   }, [])
 
   return (
-  <div className={`h-full rounded-2xl overflow-hidden relative ${canEdit ? 'border-4 border-red-700' : 'border-0'}` }>
+  <div ref={wrapperRef} className={`h-full rounded-2xl overflow-hidden relative ${canEdit ? 'border-4 border-red-700' : 'border-0'}` }>
       {canEdit && (
         <div className="absolute z-10 left-3 top-3 bg-white/90 rounded-xl shadow px-3 py-2 flex items-center gap-2">
-          <button className="border rounded px-2 py-1" onClick={() => onAddHub()}>+ Hub</button>
-          <button className="border rounded px-2 py-1" onClick={() => onAddTask(selectedHubId)}>+ Task</button>
+          <button
+            className="border rounded px-2 py-1"
+            onClick={() => {
+              const c = getViewportCenter()
+              onAddHub(c)
+            }}
+          >
+            + Hub
+          </button>
+          <button
+            className="border rounded px-2 py-1"
+            onClick={() => {
+              const c = getViewportCenter()
+              onAddTask(selectedHubId ?? (selectedTask ? selectedTask.hub_id : null), c)
+            }}
+          >
+            + Task
+          </button>
           <button
             className={`border rounded px-2 py-1 ${connectMode ? 'bg-amber-200' : ''}`}
             onClick={() => setConnectMode(v => !v)}
@@ -383,7 +441,7 @@ export default function GraphCanvas(props: Props) {
             </form>
           )}
           {selectedTask && (
-            <form onSubmit={handleTaskSubmit} className="space-y-2 border-t border-slate-200 pt-3">
+            <form onSubmit={handleTaskSubmit} className="space-y-2 pt-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-slate-700">Task settings</h3>
                 <button type="button" onClick={handleTaskDelete} className="text-xs text-red-600 hover:underline">Delete</button>
@@ -418,7 +476,7 @@ export default function GraphCanvas(props: Props) {
             </form>
           )}
           {selectedEdge && (
-            <form onSubmit={handleEdgeSubmit} className="space-y-2 border-t border-slate-200 pt-3">
+            <form onSubmit={handleEdgeSubmit} className="space-y-2 pt-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-slate-700">Connection settings</h3>
                 <button type="button" onClick={handleEdgeDelete} className="text-xs text-red-600 hover:underline">Delete</button>
@@ -448,6 +506,7 @@ export default function GraphCanvas(props: Props) {
         edges={edges}
   nodeTypes={nodeTypesRef.current}
   edgeTypes={edgeTypesRef.current}
+    onInit={(instance) => { rfInstance.current = instance }}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
   onConnect={onConnect}
@@ -474,8 +533,25 @@ export default function GraphCanvas(props: Props) {
     className="rounded-lg shadow-[inset_0_10px_10px_rgba(0,0,0,0.3),inset_10px_0_10px_rgba(0,0,0,0.14)]"
         style={{ background: '#b7c89d' }}
       >
-        {/* Plain olive background (matches page) */}
-        {showMinimap && <MiniMap />}
+        {showMinimap && (
+          <MiniMap
+            nodeBorderRadius={999}
+            nodeStrokeWidth={1.5}
+            nodeStrokeColor={() => '#00000033'}
+            nodeColor={(n: Node) => {
+              // Narrow typed access without any
+              if (n.type === 'hubNode') {
+                const c = (n.data as HubData | undefined)?.color
+                return c ?? '#9AE6B4'
+              }
+              if (n.type === 'taskNode') {
+                const c = (n.data as TaskData | undefined)?.color
+                return c ?? '#4f86c6'
+              }
+              return '#999999'
+            }}
+          />
+        )}
         <Controls showInteractive={false}>
           <ControlButton title="Toggle minimap" onClick={() => setShowMinimap(v => !v)} aria-pressed={showMinimap}>
             🗺
