@@ -29,9 +29,12 @@ const Dashboard = () => {
   if (!user) return <p style={{ color: "red" }}>{error || "Loading..."}</p>;
 
   return (
-    <div className="dashboard-container">
-  <MainCard name={user.name ?? ''} email={user.email} role={user.role} />
-    </div>
+    <MainCard name={user.name ?? ''} email={user.email} role={user.role}>
+      <div className="p-6 text-sm text-slate-600">
+        <h2 className="text-lg font-semibold text-slate-800 mb-2">Courses</h2>
+        <p>Select a course from the sidebar to explore its map.</p>
+      </div>
+    </MainCard>
   );
 };
 

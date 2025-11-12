@@ -7,6 +7,9 @@ import usersRoutes from "./routes/users";
 import rolesRoutes from "./routes/roles";
 import coursesRoutes from "./routes/courses";
 import testRoutes from "./routes/test";
+import hubsRoutes from "./routes/hubs";
+import tasksRoutes from "./routes/tasks";
+import edgesRoutes from "./routes/edges";
 import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
@@ -52,6 +55,9 @@ app.use("/api/test", testRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/roles", rolesRoutes);
 app.use("/api/courses", coursesRoutes);
+app.use("/api/hubs", hubsRoutes);
+app.use("/api/tasks", tasksRoutes);
+app.use("/api/edges", edgesRoutes);
 
 // Statuskontroll
 app.get("/", async (_req, res) => {

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import pool from '../db';
 import { verifyToken, AuthenticatedRequest } from '../middleware/verifyToken';
 import { ensureAdmin } from '../middleware/roles';
+import { getRoleName, canViewCourse, AuthUser } from './helpers/courseAccess';
 
 const router = Router();
 
@@ -36,15 +37,13 @@ router.post('/', verifyToken, ensureAdmin, async (req: AuthenticatedRequest, res
 // student: courses they are enrolled in (course_enrollments)
 router.get('/', verifyToken, async (req: AuthenticatedRequest, res) => {
   try {
-    const user = req.user;
+    const user = req.user as AuthUser | undefined;
     if (!user) {
       res.status(401).json({ error: 'Not authenticated' });
       return;
     }
 
-    // Determine role name
-    const roleRes = await pool.query('SELECT r.name FROM roles r WHERE r.id = $1', [user.role_id]);
-    const roleName = roleRes.rows[0]?.name;
+    const roleName = await getRoleName(user.role_id);
     if (!roleName) {
       res.status(403).json({ error: 'Role not found' });
       return;
@@ -95,19 +94,80 @@ router.get('/', verifyToken, async (req: AuthenticatedRequest, res) => {
   }
 });
 
-// Read one with RBAC visibility enforcement
-router.get('/:id', verifyToken, async (req: AuthenticatedRequest, res) => {
-  const { id } = req.params;
+router.get('/:id/graph', verifyToken, async (req: AuthenticatedRequest, res) => {
+  const courseId = Number(req.params.id);
+  if (!Number.isInteger(courseId)) {
+    res.status(400).json({ error: 'Invalid course id' });
+    return;
+  }
+
   try {
-    const user = req.user;
+    const user = req.user as AuthUser | undefined;
     if (!user) {
       res.status(401).json({ error: 'Not authenticated' });
       return;
     }
-    const roleRes = await pool.query('SELECT r.name FROM roles r WHERE r.id = $1', [user.role_id]);
-    const roleName = roleRes.rows[0]?.name;
-    if (!roleName) {
-      res.status(403).json({ error: 'Role not found' });
+
+    const allowed = await canViewCourse(user, courseId);
+    if (!allowed) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const [hubsRes, tasksRes, edgesRes] = await Promise.all([
+      pool.query(
+        `SELECT id, course_id, title, x, y, color, radius
+         FROM hub
+         WHERE course_id = $1
+         ORDER BY id`,
+        [courseId]
+      ),
+      pool.query(
+        `SELECT t.id, t.hub_id, t.title, t.task_kind, t.x, t.y
+         FROM task t
+         JOIN hub h ON h.id = t.hub_id
+         WHERE h.course_id = $1
+         ORDER BY t.id`,
+        [courseId]
+      ),
+      pool.query(
+        `SELECT id, course_id, from_hub_id, to_hub_id
+         FROM hub_edge
+         WHERE course_id = $1
+         ORDER BY id`,
+        [courseId]
+      ),
+    ]);
+
+    res.json({
+      graph: {
+        hubs: hubsRes.rows,
+        tasks: tasksRes.rows,
+        edges: edgesRes.rows,
+      },
+    });
+  } catch (err) {
+    console.error('Get course graph error:', err);
+    res.status(500).json({ error: 'Failed to load course graph' });
+  }
+});
+
+// Read one with RBAC visibility enforcement
+router.get('/:id', verifyToken, async (req: AuthenticatedRequest, res) => {
+  const courseId = Number(req.params.id);
+  if (!Number.isInteger(courseId)) {
+    res.status(400).json({ error: 'Invalid course id' });
+    return;
+  }
+  try {
+    const user = req.user as AuthUser | undefined;
+    if (!user) {
+      res.status(401).json({ error: 'Not authenticated' });
+      return;
+    }
+    const allowed = await canViewCourse(user, courseId);
+    if (!allowed) {
+      res.status(403).json({ error: 'Forbidden' });
       return;
     }
 
@@ -118,36 +178,13 @@ router.get('/:id', verifyToken, async (req: AuthenticatedRequest, res) => {
        FROM course c
        LEFT JOIN users u ON u.id = c.created_by
        WHERE c.id = $1`,
-      [id]
+      [courseId]
     );
     if (!courseRes.rows.length) {
       res.status(404).json({ error: 'Course not found' });
       return;
     }
     const course = courseRes.rows[0];
-
-    let allowed = false;
-    if (roleName === 'admin') {
-      allowed = true;
-    } else if (roleName === 'teacher') {
-      // Ownership check
-      const ownRes = await pool.query(
-        `SELECT 1 FROM course_teachers WHERE course_id = $1 AND user_id = $2 AND is_owner = TRUE`,
-        [id, user.id]
-      );
-      allowed = ownRes.rows.length > 0 || course.created_by === user.id;
-    } else if (roleName === 'student') {
-      const enrRes = await pool.query(
-        `SELECT 1 FROM course_enrollments WHERE course_id = $1 AND user_id = $2`,
-        [id, user.id]
-      );
-      allowed = enrRes.rows.length > 0;
-    }
-
-    if (!allowed) {
-      res.status(403).json({ error: 'Forbidden' });
-      return;
-    }
 
     res.json({ course });
   } catch (err) {

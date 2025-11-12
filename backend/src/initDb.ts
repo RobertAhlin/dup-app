@@ -79,6 +79,152 @@ async function initDb() {
       ON course_teachers (course_id);
     `);
 
+    // ─────────────────────────────────────────────────────────────
+    // 📚 Course Builder (graph) schema
+    // ─────────────────────────────────────────────────────────────
+
+    // Enums (robust creation)
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'task_type') THEN
+          CREATE TYPE task_type AS ENUM ('content','quiz','assignment','reflection');
+        END IF;
+      END$$;
+    `);
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'unlock_rule') THEN
+          CREATE TYPE unlock_rule AS ENUM ('all_tasks_complete','min_hub_score','custom');
+        END IF;
+      END$$;
+    `);
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'task_status') THEN
+          CREATE TYPE task_status AS ENUM ('not_started','in_progress','completed');
+        END IF;
+      END$$;
+    `);
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'hub_state') THEN
+          CREATE TYPE hub_state AS ENUM ('locked','unlocked','completed');
+        END IF;
+      END$$;
+    `);
+
+    // Hubs (big circles)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS hub (
+        id           SERIAL PRIMARY KEY,
+        course_id    INTEGER NOT NULL REFERENCES course(id) ON DELETE CASCADE,
+        title        TEXT NOT NULL,
+        description  TEXT,
+        x            INTEGER NOT NULL,
+        y            INTEGER NOT NULL,
+        color        TEXT DEFAULT '#3498db',
+        radius       INTEGER DEFAULT 100,
+        quiz_id      INTEGER,          -- optional: link to your quiz table
+        is_required  BOOLEAN DEFAULT TRUE,
+        created_at   TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_hub_course ON hub(course_id);`);
+
+    // Tasks (small circles attached to hubs)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS task (
+        id                    SERIAL PRIMARY KEY,
+        hub_id                INTEGER NOT NULL REFERENCES hub(id) ON DELETE CASCADE,
+        title                 TEXT NOT NULL,
+        task_kind             task_type NOT NULL,                    -- renamed from "type"
+        is_required           BOOLEAN DEFAULT TRUE,
+        order_index           INTEGER DEFAULT 0,
+        payload               JSONB NOT NULL DEFAULT '{}'::jsonb,     -- TipTap JSON etc.
+        -- Draft/Publish
+        is_published          BOOLEAN DEFAULT FALSE,
+        payload_published     JSONB DEFAULT NULL,                     -- snapshot at publish
+        -- Layout (optional, relative to hub center)
+        x                     INTEGER,
+        y                     INTEGER,
+        -- Completion rules
+        completion_rule       TEXT NOT NULL DEFAULT 'manual',         -- 'manual'|'min_score'|'duration'|'submit'|'teacher'
+        completion_criteria   JSONB NOT NULL DEFAULT '{}'::jsonb,
+        -- If task is a quiz, link it here (optional)
+        quiz_id               INTEGER,
+        created_at            TIMESTAMP DEFAULT NOW(),
+        updated_at            TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_task_hub ON task(hub_id);`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_task_published ON task(is_published);`);
+
+    // Directed edges between hubs
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS hub_edge (
+        id            SERIAL PRIMARY KEY,
+        course_id     INTEGER NOT NULL REFERENCES course(id) ON DELETE CASCADE,
+        from_hub_id   INTEGER NOT NULL REFERENCES hub(id) ON DELETE CASCADE,
+        to_hub_id     INTEGER NOT NULL REFERENCES hub(id) ON DELETE CASCADE,
+        rule          unlock_rule NOT NULL DEFAULT 'all_tasks_complete',
+        rule_value    JSONB NOT NULL DEFAULT '{}'::jsonb,
+        UNIQUE (from_hub_id, to_hub_id)
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_hub_edge_course ON hub_edge(course_id);`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_hub_edge_from ON hub_edge(from_hub_id);`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_hub_edge_to   ON hub_edge(to_hub_id);`);
+
+    // Per-user task progress
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS task_progress (
+        id           SERIAL PRIMARY KEY,
+        user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        task_id      INTEGER NOT NULL REFERENCES task(id) ON DELETE CASCADE,
+        status       task_status NOT NULL DEFAULT 'not_started',
+        score        NUMERIC,
+        completed_at TIMESTAMP,
+        updated_at   TIMESTAMP DEFAULT NOW(),
+        UNIQUE (user_id, task_id)
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_task_progress_user ON task_progress(user_id);`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_task_progress_task ON task_progress(task_id);`);
+
+    // Per-user hub state (cached unlock state)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS hub_user_state (
+        user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        hub_id       INTEGER NOT NULL REFERENCES hub(id) ON DELETE CASCADE,
+        state        hub_state NOT NULL DEFAULT 'locked',
+        unlocked_at  TIMESTAMP,
+        completed_at TIMESTAMP,
+        PRIMARY KEY (user_id, hub_id)
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_hub_user_state_hub ON hub_user_state(hub_id);`);
+
+    // Trigger to keep task.updated_at fresh
+    await client.query(`
+      CREATE OR REPLACE FUNCTION set_updated_at()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        NEW.updated_at = NOW();
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql;
+    `);
+    await client.query(`
+      DROP TRIGGER IF EXISTS trg_task_updated_at ON task;
+      CREATE TRIGGER trg_task_updated_at
+      BEFORE UPDATE ON task
+      FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+    `);
+
     // Helpers
     const userExists = async (id: number) => {
       const { rows } = await client.query<{ c: number }>(
@@ -121,7 +267,7 @@ async function initDb() {
       courseIds = rows.map(r => r.id);
     }
 
-    // 7️⃣ Koppla teacher ↔ courses (om teacher finns)
+    // 7️⃣ Connect teacher ↔ courses
     if (teacherExists && courseIds.length > 0) {
       await client.query(
         `
@@ -137,7 +283,7 @@ async function initDb() {
       console.log('ℹ️ Skipping course_teachers seed: teacher user not found');
     }
 
-    // 8️⃣ Enroll student i två kurser (om student finns)
+    // 8️⃣ Enroll student in two courses (if student exists)
     if (studentExists && courseIds.length >= 2) {
       await client.query(
         `

@@ -6,7 +6,9 @@ import App from "./App";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import CourseBuilder from "./pages/CourseBuilder";
 import "./main.css";
+import 'reactflow/dist/style.css';
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -17,6 +19,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/courses/:courseId" element={<CourseBuilder />} />
         </Routes>
       </AlertProvider>
     </BrowserRouter>
