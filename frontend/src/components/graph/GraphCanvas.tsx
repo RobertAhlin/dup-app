@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import ReactFlow, {
-  Controls, ConnectionMode, MiniMap,
+  Controls, ControlButton, ConnectionMode, MiniMap,
   useNodesState, useEdgesState
 } from 'reactflow'
 import type { Edge, Node, OnConnect, OnEdgesDelete, NodeDragHandler } from 'reactflow'
@@ -58,6 +58,7 @@ export default function GraphCanvas(props: Props) {
   const [taskKind, setTaskKind] = useState<TaskData['task_kind']>('content')
   const [selectedEdgeId, setSelectedEdgeId] = useState<number|null>(null)
   const [edgeColor, setEdgeColor] = useState<string>('#64748b')
+  const [showMinimap, setShowMinimap] = useState(true)
 
   useEffect(() => {
     if (!canEdit) {
@@ -469,12 +470,17 @@ export default function GraphCanvas(props: Props) {
     panOnDrag
   nodesConnectable={false}
   deleteKeyCode={canEdit ? 'Delete' : undefined}
+          proOptions={{ hideAttribution: true }}
     className="rounded-lg shadow-[inset_0_10px_10px_rgba(0,0,0,0.3),inset_10px_0_10px_rgba(0,0,0,0.14)]"
         style={{ background: '#b7c89d' }}
       >
         {/* Plain olive background (matches page) */}
-        <MiniMap />
-        <Controls showInteractive={false} />
+        {showMinimap && <MiniMap />}
+        <Controls showInteractive={false}>
+          <ControlButton title="Toggle minimap" onClick={() => setShowMinimap(v => !v)} aria-pressed={showMinimap}>
+            🗺
+          </ControlButton>
+        </Controls>
       </ReactFlow>
     </div>
   )
