@@ -23,11 +23,11 @@ export default memo(function TaskNode({ data }: NodeProps<TaskNodeData>) {
       title={`${data.title} (${data.task_kind})`}
     >
       <span className="px-2 text-sm">{data.title}</span>
-      {/* Target handles at cardinal points for dynamic closest-point hub->task edges */}
-      <Handle id="task-left" type="target" position={Position.Left} isConnectable={false} />
-      <Handle id="task-right" type="target" position={Position.Right} isConnectable={false} />
-      <Handle id="task-top" type="target" position={Position.Top} isConnectable={false} />
-      <Handle id="task-bottom" type="target" position={Position.Bottom} isConnectable={false} />
+  {/* Target handles (hidden) to keep compatibility while not showing dots */}
+  <Handle id="task-left" type="target" position={Position.Left} isConnectable={false} style={{ opacity: 0, pointerEvents: 'none', width: 0, height: 0 }} />
+  <Handle id="task-right" type="target" position={Position.Right} isConnectable={false} style={{ opacity: 0, pointerEvents: 'none', width: 0, height: 0 }} />
+  <Handle id="task-top" type="target" position={Position.Top} isConnectable={false} style={{ opacity: 0, pointerEvents: 'none', width: 0, height: 0 }} />
+  <Handle id="task-bottom" type="target" position={Position.Bottom} isConnectable={false} style={{ opacity: 0, pointerEvents: 'none', width: 0, height: 0 }} />
     </div>
   )
 })

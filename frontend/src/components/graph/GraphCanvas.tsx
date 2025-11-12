@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import ReactFlow, {
-  Background, Controls, ConnectionMode, MiniMap,
+  Controls, ConnectionMode, MiniMap,
   useNodesState, useEdgesState
 } from 'reactflow'
 import type { Edge, Node, OnConnect, OnEdgesDelete, NodeDragHandler } from 'reactflow'
@@ -49,6 +49,7 @@ export default function GraphCanvas(props: Props) {
     onMoveTask,
   } = props
   const [connectMode, setConnectMode] = useState(false)
+  const [connectSourceHubId, setConnectSourceHubId] = useState<number|null>(null)
   const [selectedHubId, setSelectedHubId] = useState<number|null>(null)
   const [selectedTaskId, setSelectedTaskId] = useState<number|null>(null)
   const [hubTitle, setHubTitle] = useState('')
@@ -61,6 +62,7 @@ export default function GraphCanvas(props: Props) {
   useEffect(() => {
     if (!canEdit) {
       setConnectMode(false)
+      setConnectSourceHubId(null)
       setSelectedHubId(null)
       setSelectedTaskId(null)
     }
@@ -68,9 +70,23 @@ export default function GraphCanvas(props: Props) {
 
   const handleSelectHub = useCallback((id: number) => {
     if (!canEdit) return
+    if (connectMode) {
+      // Click-to-connect flow: first click selects source, second click creates edge
+      setSelectedTaskId(null)
+      if (connectSourceHubId == null) {
+        setConnectSourceHubId(id)
+        setSelectedHubId(id)
+      } else if (connectSourceHubId !== id) {
+        onAddEdge(connectSourceHubId, id)
+        setConnectSourceHubId(null)
+        setSelectedHubId(null)
+      }
+      return
+    }
+    // Normal selection (opens settings)
     setSelectedHubId(id)
     setSelectedTaskId(null)
-  }, [canEdit])
+  }, [canEdit, connectMode, connectSourceHubId, onAddEdge])
 
   const handleSelectTask = useCallback((taskId: number, hubId: number) => {
     if (!canEdit) return
@@ -125,7 +141,7 @@ export default function GraphCanvas(props: Props) {
         ...h,
         onSelect: handleSelectHub,
         canEdit,
-        isSelected: canEdit && selectedHubId === h.id,
+        isSelected: canEdit && ((selectedHubId === h.id) || (connectMode && connectSourceHubId === h.id)),
       },
       draggable: canEdit,
     }))
@@ -144,7 +160,7 @@ export default function GraphCanvas(props: Props) {
     }))
 
     setNodes([...hubNodes, ...taskNodes])
-  }, [initialHubs, initialTasks, canEdit, handleSelectHub, handleSelectTask, selectedHubId, selectedTaskId, setNodes])
+  }, [initialHubs, initialTasks, canEdit, handleSelectHub, handleSelectTask, selectedHubId, selectedTaskId, connectMode, connectSourceHubId, setNodes])
 
   useEffect(() => {
     const hubHub: Edge[] = initialEdges.map(e => ({
@@ -314,7 +330,13 @@ export default function GraphCanvas(props: Props) {
           >
             ↔ Connect
           </button>
-          <span className="text-xs text-gray-500 ml-2">{selectedHubId ? `Selected hub: ${selectedHubId}` : 'Click a hub to select'}</span>
+          <span className="text-xs text-gray-500 ml-2">
+            {connectMode
+              ? (connectSourceHubId
+                  ? `Connecting from hub ${connectSourceHubId}: click another hub to link`
+                  : 'Click a hub to start linking, then another hub to finish')
+              : (selectedHubId ? `Selected hub: ${selectedHubId}` : 'Click a hub to select')}
+          </span>
         </div>
       )}
 
@@ -419,7 +441,7 @@ export default function GraphCanvas(props: Props) {
         edgeTypes={edgeTypesMemo}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
+  onConnect={onConnect}
         onEdgesDelete={onEdgesDelete}
         onNodeDragStop={onNodeDragStop}
         onEdgeClick={(_, edge) => {
@@ -435,13 +457,14 @@ export default function GraphCanvas(props: Props) {
         fitView
     elementsSelectable={canEdit}
     nodesDraggable={canEdit}
-    panOnDrag={!canEdit}
-    nodesConnectable={canEdit && connectMode}
+    panOnDrag
+  nodesConnectable={false}
     deleteKeyCode={canEdit ? 'Delete' : undefined}
+        style={{ background: '#b7c89d' }}
       >
-        <Background />
+        {/* Plain olive background (matches page) */}
         <MiniMap />
-        <Controls />
+        <Controls showInteractive={false} />
       </ReactFlow>
     </div>
   )
