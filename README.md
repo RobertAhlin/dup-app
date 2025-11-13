@@ -92,7 +92,7 @@ Our goal is to create a platform that supports upskilling through clarity, modul
 ![Course selection sidebar](readmefiles/course-selection-sidebar_01.png)
 ![Course selection sidebar minimized](readmefiles/course-selection-sidebar-minimized_01.png)
 ### Course view
-![Course view](readmefiles/course-view_01.png)
+![Course view](readmefiles/course-view_02.png)
 
 ## 💡 Why public?
 
