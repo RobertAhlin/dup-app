@@ -330,7 +330,7 @@ export default function GraphCanvas(props: Props) {
     const GREY = '#ababab'
 
     let hubHub: Edge[] = []
-    const edgeShadow = 'drop-shadow(4px 4px 4px rgba(0,0,0,0.8)) drop-shadow(2px 0 2px rgba(0,0,0,0.10))'
+    const edgeShadow = 'drop-shadow(4px 4px 4px rgba(0,0,0,0.5)) drop-shadow(2px 0 2px rgba(0,0,0,0.10))'
     if (canEdit) {
       hubHub = uniqueInitialEdges.map(e => ({
         id: `edge-h2h-${e.id}`,

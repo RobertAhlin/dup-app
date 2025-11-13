@@ -327,7 +327,7 @@ export default function CourseBuilderPage() {
     }
 
     return (
-      <div className="flex flex-col h-full">
+      <div className="p-2 flex flex-col h-full">
         <div className="flex items-center gap-3 mb-4">
           <div>
             <h2 className="text-xl font-semibold">{course.title}</h2>

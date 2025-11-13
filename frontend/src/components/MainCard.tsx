@@ -65,7 +65,7 @@ export default function MainCard({ name, role, children, title, chip, hideSideba
       </div>
   <div className={`p-4 md:p-4 min-h-[200px] grid ${hideSidebar ? 'grid-cols-1' : 'grid-cols-[auto_1fr]'} gap-4 overflow-auto`}>
         {!hideSidebar && (sidebar ?? <CourseSidebar onSelectCourse={handleSelectCourse} />)}
-        <div className="bg-white rounded-xl border border-dashed border-black/10">
+        <div className="bg-white rounded-xl">
           {children}
         </div>
       </div>
