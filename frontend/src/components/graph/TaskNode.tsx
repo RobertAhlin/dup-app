@@ -8,6 +8,8 @@ type TaskNodeData = {
   title: string
   task_kind: string
   color?: string
+  parentHubState?: 'locked' | 'unlocked' | 'completed'
+  isDone?: boolean
   canEdit: boolean
   onSelect: (taskId: number, hubId: number) => void
   onOpen: (taskId: number) => void
@@ -16,11 +18,19 @@ type TaskNodeData = {
 
 export default memo(function TaskNode({ data }: NodeProps<TaskNodeData>) {
   const isSelected = Boolean(data.isSelected)
+  const isLocked = !data.canEdit && data.parentHubState === 'locked'
+  // Always use student-mode color rules even in edit mode
+  const displayColor = isLocked ? '#ababab' : (data.isDone ? '#a6f273' : '#5cb0ff')
+
   return (
     <div
-      onClick={() => { if (!data.canEdit) data.onOpen(data.id); else data.onSelect(data.id, data.hub_id) }}
-      className={`relative rounded-full flex items-center justify-center ${data.canEdit ? 'cursor-pointer' : 'cursor-pointer'} shadow-[8px_8px_8px_rgba(0,0,0,0.5),5px_0_5px_rgba(0,0,0,0.10)]`}
-  style={{ width: 80, height: 80, background: data.color ?? '#4f86c6', color: 'white', border: isSelected ? '3px solid rgba(239, 68, 68, 0.7)' : 'none' }}
+      onClick={() => {
+        if (data.canEdit) { data.onSelect(data.id, data.hub_id); return }
+        if (isLocked) return
+        data.onOpen(data.id)
+      }}
+      className={`relative rounded-full flex items-center justify-center ${isLocked ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'} shadow-[8px_8px_8px_rgba(0,0,0,0.5),5px_0_5px_rgba(0,0,0,0.10)]`}
+      style={{ width: 80, height: 80, background: displayColor, color: 'black', border: isSelected ? '3px solid rgba(239, 68, 68, 0.7)' : 'none' }}
       title={`${data.title} (${data.task_kind})`}
     >
       <span className="px-2 text-sm select-none">{data.title}</span>

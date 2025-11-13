@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from 'react'
 
 // Minimal shapes to avoid circular imports
-export type HubPreview = { id: number; title: string; color?: string }
+export type HubPreview = { id: number; title: string; color?: string; is_start?: boolean }
 export type TaskPreview = { id: number; title: string; task_kind: string; color?: string }
 
 type Props = {
@@ -12,7 +12,7 @@ type Props = {
   onClose: () => void
   canEdit: boolean
   // Edit callbacks
-  onUpdateHub?: (hubId: number, updates: { title?: string; color?: string }) => Promise<void> | void
+  onUpdateHub?: (hubId: number, updates: { title?: string; color?: string; is_start?: boolean }) => Promise<void> | void
   onDeleteHub?: (hubId: number) => Promise<void> | void
   onUpdateTask?: (taskId: number, updates: { title?: string; task_kind?: 'content'|'quiz'|'assignment'|'reflection' }) => Promise<void> | void
   onDeleteTask?: (taskId: number) => Promise<void> | void
@@ -29,7 +29,6 @@ export default function NodeModal(props: Props) {
   const dialogRef = useRef<HTMLDivElement | null>(null)
   const closeBtnRef = useRef<HTMLButtonElement | null>(null)
   const [hubTitle, setHubTitle] = useState(hub?.title ?? '')
-  const [hubColor, setHubColor] = useState(hub?.color ?? '#9AE6B4')
   const [taskTitle, setTaskTitle] = useState(task?.title ?? '')
   const [taskKind, setTaskKind] = useState<'content'|'quiz'|'assignment'|'reflection'>(
     (task?.task_kind as 'content'|'quiz'|'assignment'|'reflection') ?? 'content'
@@ -60,7 +59,7 @@ export default function NodeModal(props: Props) {
   }, [open, onClose])
 
   // Reset form state when entity changes
-  useEffect(() => { setHubTitle(hub?.title ?? ''); setHubColor(hub?.color ?? '#9AE6B4') }, [hub?.id, hub?.title, hub?.color])
+  useEffect(() => { setHubTitle(hub?.title ?? '') }, [hub?.id, hub?.title])
   useEffect(() => {
     setTaskTitle(task?.title ?? '')
     setTaskKind((task?.task_kind as 'content'|'quiz'|'assignment'|'reflection') ?? 'content')
@@ -84,16 +83,13 @@ export default function NodeModal(props: Props) {
             canEdit ? (
               <form
                 className="space-y-3"
-                onSubmit={async (e) => { e.preventDefault(); await props.onUpdateHub?.(hub.id, { title: hubTitle.trim() || hub.title, color: hubColor }) }}
+                onSubmit={async (e) => { e.preventDefault(); await props.onUpdateHub?.(hub.id, { title: hubTitle.trim() || hub.title }) }}
               >
                 <label className="flex flex-col gap-1 text-xs text-slate-500">
                   Title
                   <input value={hubTitle} onChange={(e) => setHubTitle(e.target.value)} className="border border-slate-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400/50" />
                 </label>
-                <label className="flex flex-col gap-1 text-xs text-slate-500">
-                  Color
-                  <input type="color" value={hubColor} onChange={(e) => setHubColor(e.target.value)} className="h-8 w-full rounded border border-slate-300" />
-                </label>
+                {/* Hub color editing removed: edit mode uses student-mode colors */}
                 <div className="flex items-center justify-between">
                   <button type="submit" className="px-3 py-1.5 rounded bg-slate-900 text-white text-xs">Save hub</button>
                   <button type="button" onClick={() => props.onDeleteHub?.(hub.id)} className="text-xs text-red-600 hover:underline">Delete</button>
@@ -102,7 +98,6 @@ export default function NodeModal(props: Props) {
             ) : (
               <div className="space-y-3">
                 <div><span className="font-medium">Title:</span> {hub.title}</div>
-                <div><span className="font-medium">Color:</span> <span className="inline-block align-middle w-4 h-4 rounded-full border" style={{ background: hub.color ?? '#9AE6B4' }} /></div>
                 {canShowHubCheckbox ? (
                   <label className="flex items-center gap-2 text-xs text-slate-600">
                     <input type="checkbox" checked={!!props.hubDone} onChange={(e) => props.onToggleHubDone?.(hub.id, e.target.checked)} />

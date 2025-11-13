@@ -116,7 +116,7 @@ router.get('/:id/graph', verifyToken, async (req: AuthenticatedRequest, res) => 
 
     const [hubsRes, tasksRes, edgesRes] = await Promise.all([
       pool.query(
-        `SELECT id, course_id, title, x, y, color, radius
+        `SELECT id, course_id, title, x, y, color, radius, is_start
          FROM hub
          WHERE course_id = $1
          ORDER BY id`,

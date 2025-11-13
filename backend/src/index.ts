@@ -18,6 +18,19 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Ensure critical schema tweaks exist (safe to run on every start)
+async function ensureSchema() {
+  try {
+    await pool.query(`ALTER TABLE hub ADD COLUMN IF NOT EXISTS is_start BOOLEAN DEFAULT FALSE;`);
+    console.log("✅ Schema ensured: hub.is_start present");
+  } catch (err) {
+    console.warn("⚠️ Schema ensure warning:", (err as Error).message);
+  }
+}
+
+// Fire and forget; server can start while this runs
+ensureSchema();
 console.log("🔍 före ping");
 app.get("/ping", (_req, res) => {
   console.log("🔍 /ping route HIT!");

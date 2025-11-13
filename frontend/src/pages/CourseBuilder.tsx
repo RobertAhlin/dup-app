@@ -181,15 +181,21 @@ export default function CourseBuilderPage() {
     }
   }, [courseId, graph, showAlert])
 
-  const handleUpdateHub = useCallback(async (hubId: number, updates: { title?: string; color?: string }) => {
+  const handleUpdateHub = useCallback(async (hubId: number, updates: { title?: string; color?: string; is_start?: boolean }) => {
     try {
       setError(null)
       const res = await axios.patch<{ hub: HubData }>(`/api/hubs/${hubId}`, updates)
       setGraph(current => {
         if (!current) return current
+        const updatedHub = res.data.hub
+        const clearOthers = updates.is_start === true
         return {
           ...current,
-          hubs: current.hubs.map(h => (h.id === hubId ? res.data.hub : h)),
+          hubs: current.hubs.map(h => (
+            h.id === hubId
+              ? updatedHub
+              : (clearOthers ? { ...h, is_start: false } : h)
+          )),
         }
       })
     } catch (err) {

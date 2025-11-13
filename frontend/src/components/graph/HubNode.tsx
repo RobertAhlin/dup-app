@@ -6,6 +6,7 @@ type HubNodeData = {
   id: number
   title: string
   color?: string
+  hubState?: 'locked' | 'unlocked' | 'completed'
   onSelect: (id: number) => void
   onOpen: (id: number) => void
   canEdit: boolean
@@ -14,13 +15,23 @@ type HubNodeData = {
 
 export default memo(function HubNode({ data }: NodeProps<HubNodeData>) {
   const isSelected = Boolean(data.isSelected)
+  const isLocked = !data.canEdit && data.hubState === 'locked'
+  // Derive display color: always use state mapping (edit mode follows student mode colors)
+  const displayColor = (data.hubState === 'completed' ? '#a6f273' : data.hubState === 'unlocked' ? '#5cb0ff' : '#ababab')
+
   return (
       <div
-        onClick={() => { if (!data.canEdit) data.onOpen(data.id); else data.onSelect(data.id) }}
-        className={`relative rounded-full flex items-center justify-center ${data.canEdit ? 'cursor-pointer' : 'cursor-pointer'} shadow-[8px_8px_8px_rgba(0,0,0,0.5),5px_0_5px_rgba(0,0,0,0.10)]`}
-        style={{ width: 160, height: 160, background: data.color ?? '#9AE6B4', border: isSelected ? '3px solid rgba(239, 68, 68, 0.7)' : 'none' }}
+        onClick={() => {
+          if (data.canEdit) { data.onSelect(data.id); return }
+          if (isLocked) return // block opening modal when locked
+          data.onOpen(data.id)
+        }}
+        className={`relative rounded-full flex items-center justify-center ${isLocked ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'} shadow-[8px_8px_8px_rgba(0,0,0,0.5),5px_0_5px_rgba(0,0,0,0.10)]`}
+        style={{ width: 160, height: 160, background: displayColor, color: 'black', border: isSelected ? '3px solid rgba(239, 68, 68, 0.7)' : 'none' }}
       >
-      <div className="text-center px-2 font-semibold select-none">{data.title}</div>
+      <span className="px-3 text-base md:text-lg font-semibold text-center select-none leading-snug">
+        {data.title}
+      </span>
       {data.canEdit && (
         <button
           type="button"

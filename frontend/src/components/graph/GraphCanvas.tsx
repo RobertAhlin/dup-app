@@ -11,7 +11,7 @@ import { useAlert } from '../../contexts/useAlert'
 
 // nodeTypes and edgeTypes are defined outside this module in graphTypes to ensure stable identity
 
-export type HubData = { id: number; course_id: number; title: string; x: number; y: number; color?: string; radius?: number }
+export type HubData = { id: number; course_id: number; title: string; x: number; y: number; color?: string; radius?: number; is_start?: boolean }
 export type TaskData = { id: number; hub_id: number; title: string; task_kind: 'content'|'quiz'|'assignment'|'reflection'; x: number|null; y: number|null; color?: string }
 export type HubEdgeData = { id: number; course_id: number; from_hub_id: number; to_hub_id: number; color?: string|null }
 
@@ -29,7 +29,7 @@ type Props = {
   onAddHub: (coords?: { x: number; y: number }) => Promise<void> | void
   onAddTask: (selectedHubId: number|null, coords?: { x: number; y: number }) => Promise<void> | void
   onAddEdge: (fromHubId: number, toHubId: number) => Promise<void> | void
-  onUpdateHub: (hubId: number, updates: { title?: string; color?: string }) => Promise<void> | void
+  onUpdateHub: (hubId: number, updates: { title?: string; color?: string; is_start?: boolean }) => Promise<void> | void
   onDeleteHub: (hubId: number) => Promise<void> | void
   onUpdateTask: (taskId: number, updates: { title?: string; task_kind?: TaskData['task_kind'] }) => Promise<void> | void
   onDeleteTask: (taskId: number) => Promise<void> | void
@@ -64,7 +64,8 @@ export default function GraphCanvas(props: Props) {
   const [selectedHubId, setSelectedHubId] = useState<number|null>(null)
   const [selectedTaskId, setSelectedTaskId] = useState<number|null>(null)
   const [hubTitle, setHubTitle] = useState('')
-  const [hubColor, setHubColor] = useState('#9AE6B4')
+  const [hubIsStart, setHubIsStart] = useState(false)
+  const startHubId = useMemo(() => initialHubs.find(h => h.is_start)?.id ?? null, [initialHubs])
   const [taskTitle, setTaskTitle] = useState('')
   const [taskKind, setTaskKind] = useState<TaskData['task_kind']>('content')
   const [selectedEdgeId, setSelectedEdgeId] = useState<number|null>(null)
@@ -206,11 +207,11 @@ export default function GraphCanvas(props: Props) {
   useEffect(() => {
     if (!selectedHub) {
       setHubTitle('')
-      setHubColor('#9AE6B4')
+      setHubIsStart(false)
       return
     }
     setHubTitle(selectedHub.title)
-    setHubColor(selectedHub.color ?? '#9AE6B4')
+    setHubIsStart(!!selectedHub.is_start)
   }, [selectedHub])
 
   useEffect(() => {
@@ -238,6 +239,36 @@ export default function GraphCanvas(props: Props) {
   const edgeTypesRef = useRef(edgeTypes)
 
   useEffect(() => {
+    // Compute hub state (locked/unlocked/completed)
+    const completedSet = new Set(completedHubIds)
+    const prereqMap = new Map<number, number[]>()
+    initialEdges.forEach(e => {
+      const arr = prereqMap.get(e.to_hub_id) ?? []
+      arr.push(e.from_hub_id)
+      prereqMap.set(e.to_hub_id, arr)
+    })
+    const hubState: Record<number, 'locked' | 'unlocked' | 'completed'> = {}
+    initialHubs.forEach(h => {
+      if (completedSet.has(h.id)) {
+        hubState[h.id] = 'completed'
+        return
+      }
+      // Start hub is always active (never locked) unless completed
+      if (h.is_start) {
+        hubState[h.id] = 'unlocked'
+        return
+      }
+      const prereqs = prereqMap.get(h.id) || []
+      if (prereqs.length === 0) {
+        hubState[h.id] = 'locked'
+        return
+      }
+      const allDone = prereqs.every(pid => completedSet.has(pid))
+      hubState[h.id] = allDone ? 'unlocked' : 'locked'
+    })
+
+    // Coloring now handled inside HubNode / TaskNode components
+
     const hubNodes: Node[] = initialHubs.map(h => ({
       id: `hub-${h.id}`,
       type: 'hubNode',
@@ -248,6 +279,7 @@ export default function GraphCanvas(props: Props) {
         onOpen: openHubModal,
         canEdit,
         isSelected: canEdit && ((selectedHubId === h.id) || (connectMode && connectSourceHubId === h.id)),
+        hubState: hubState[h.id],
       },
       draggable: canEdit,
     }))
@@ -262,12 +294,14 @@ export default function GraphCanvas(props: Props) {
         onOpen: openTaskModal,
         canEdit,
         isSelected: canEdit && selectedTaskId === t.id,
+        parentHubState: hubState[t.hub_id],
+        isDone: completedTaskIds.has(t.id),
       },
       draggable: canEdit,
     }))
 
     setNodes([...hubNodes, ...taskNodes])
-  }, [initialHubs, initialTasks, canEdit, handleSelectHub, handleSelectTask, openHubModal, openTaskModal, selectedHubId, selectedTaskId, connectMode, connectSourceHubId, setNodes])
+  }, [initialHubs, initialTasks, initialEdges, completedHubIds, completedTaskIds, canEdit, handleSelectHub, handleSelectTask, openHubModal, openTaskModal, selectedHubId, selectedTaskId, connectMode, connectSourceHubId, setNodes])
 
   useEffect(() => {
     // Dedupe hub->hub edges by id to avoid duplicate React keys if upstream pushed duplicates
@@ -372,12 +406,12 @@ export default function GraphCanvas(props: Props) {
     event.preventDefault()
     if (!selectedHub) return
     try {
-      await onUpdateHub(selectedHub.id, { title: hubTitle.trim() || selectedHub.title, color: hubColor })
+      await onUpdateHub(selectedHub.id, { title: hubTitle.trim() || selectedHub.title, is_start: hubIsStart })
     } catch (err) {
       console.error('Failed to update hub', err)
       showAlert('error', 'Failed to update hub')
     }
-  }, [hubColor, hubTitle, onUpdateHub, selectedHub, showAlert])
+  }, [hubTitle, hubIsStart, onUpdateHub, selectedHub, showAlert])
 
   const handleHubDelete = useCallback(async () => {
     if (!selectedHub) return
@@ -497,6 +531,12 @@ export default function GraphCanvas(props: Props) {
                 <h3 className="text-sm font-semibold text-slate-700">Hub settings</h3>
                 <button type="button" onClick={handleHubDelete} className="text-xs text-red-600 hover:underline">Delete</button>
               </div>
+              {(!startHubId || (selectedHub && startHubId === selectedHub.id)) && (
+                <label className="flex items-center gap-2 text-xs text-slate-500">
+                  <input type="checkbox" checked={hubIsStart} onChange={(e) => setHubIsStart(e.target.checked)} />
+                  Starting hub
+                </label>
+              )}
               <label className="flex flex-col gap-1 text-xs text-slate-500">
                 Title
                 <input
@@ -505,15 +545,7 @@ export default function GraphCanvas(props: Props) {
                   className="border border-slate-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400/50"
                 />
               </label>
-              <label className="flex flex-col gap-1 text-xs text-slate-500">
-                Color
-                <input
-                  type="color"
-                  value={hubColor}
-                  onChange={(e) => setHubColor(e.target.value)}
-                  className="h-8 w-full rounded border border-slate-300"
-                />
-              </label>
+              {/* Color editing removed: editing follows student-mode colors */}
               <button
                 type="submit"
                 className="w-full bg-slate-900 text-white text-xs font-semibold uppercase tracking-wide rounded-full py-2"
@@ -598,13 +630,15 @@ export default function GraphCanvas(props: Props) {
         onNodeClick={(_, node) => {
           if (canEdit) return
           if (node.type === 'hubNode') {
-            const hubId = (node.data as HubData).id
-            openHubModal(hubId)
+            const data = node.data as HubData & { hubState?: string }
+            if (data.hubState === 'locked') return
+            openHubModal(data.id)
             return
           }
           if (node.type === 'taskNode') {
-            const taskId = (node.data as TaskData).id
-            openTaskModal(taskId)
+            const data = node.data as TaskData & { parentHubState?: string }
+            if (data.parentHubState === 'locked') return
+            openTaskModal(data.id)
           }
         }}
         onEdgeClick={(_, edge) => {
@@ -633,14 +667,18 @@ export default function GraphCanvas(props: Props) {
             nodeStrokeWidth={1.5}
             nodeStrokeColor={() => '#00000033'}
             nodeColor={(n: Node) => {
-              // Narrow typed access without any
+              // Reflect live state-driven colors
               if (n.type === 'hubNode') {
-                const c = (n.data as HubData | undefined)?.color
-                return c ?? '#9AE6B4'
+                const d = n.data as (HubData & { hubState?: 'locked'|'unlocked'|'completed' })
+                const state = d?.hubState
+                if (state === 'completed') return '#a6f273'
+                if (state === 'unlocked') return '#5cb0ff'
+                return '#ababab'
               }
               if (n.type === 'taskNode') {
-                const c = (n.data as TaskData | undefined)?.color
-                return c ?? '#4f86c6'
+                const d = n.data as (TaskData & { parentHubState?: 'locked'|'unlocked'|'completed'; isDone?: boolean })
+                if (d?.parentHubState === 'locked') return '#ababab'
+                return d?.isDone ? '#a6f273' : '#5cb0ff'
               }
               return '#999999'
             }}

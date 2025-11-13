@@ -33,11 +33,18 @@ router.post('/', verifyToken, async (req: AuthenticatedRequest, res) => {
       return;
     }
 
+    // If this is the first hub for the course, mark it as the starting hub
+    const { rows: countRows } = await pool.query<{ c: number }>(
+      `SELECT COUNT(*)::int AS c FROM hub WHERE course_id = $1`,
+      [courseId]
+    );
+    const isStart = (countRows[0]?.c ?? 0) === 0;
+
     const result = await pool.query(
-      `INSERT INTO hub (course_id, title, x, y, color, radius)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id, course_id, title, x, y, color, radius`,
-      [courseId, title, x ?? 0, y ?? 0, color ?? '#3498db', radius ?? 100]
+      `INSERT INTO hub (course_id, title, x, y, color, radius, is_start)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING id, course_id, title, x, y, color, radius, is_start`,
+      [courseId, title, x ?? 0, y ?? 0, color ?? '#3498db', radius ?? 100, isStart]
     );
 
     res.status(201).json({ hub: result.rows[0] });
@@ -54,12 +61,13 @@ router.patch('/:id', verifyToken, async (req: AuthenticatedRequest, res) => {
     return;
   }
 
-  const { title, x, y, color, radius } = req.body as {
+  const { title, x, y, color, radius, is_start } = req.body as {
     title?: string;
     x?: number | null;
     y?: number | null;
     color?: string | null;
     radius?: number | null;
+    is_start?: boolean | null;
   };
 
   try {
@@ -85,21 +93,28 @@ router.patch('/:id', verifyToken, async (req: AuthenticatedRequest, res) => {
       return;
     }
 
+    // If marking this hub as start, clear is_start from others in same course
+    if (is_start === true) {
+      await pool.query(`UPDATE hub SET is_start = FALSE WHERE course_id = $1 AND id <> $2`, [courseId, hubId])
+    }
+
     const result = await pool.query(
       `UPDATE hub
          SET title = COALESCE($1, title),
              x = COALESCE($2, x),
              y = COALESCE($3, y),
              color = COALESCE($4, color),
-             radius = COALESCE($5, radius)
-       WHERE id = $6
-       RETURNING id, course_id, title, x, y, color, radius`,
+             radius = COALESCE($5, radius),
+             is_start = COALESCE($6, is_start)
+       WHERE id = $7
+       RETURNING id, course_id, title, x, y, color, radius, is_start`,
       [
         title ?? null,
         x ?? null,
         y ?? null,
         color ?? null,
         radius ?? null,
+        is_start === undefined ? null : is_start,
         hubId,
       ]
     );

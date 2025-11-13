@@ -130,10 +130,24 @@ async function initDb() {
         radius       INTEGER DEFAULT 100,
         quiz_id      INTEGER,          -- optional: link to your quiz table
         is_required  BOOLEAN DEFAULT TRUE,
+        is_start     BOOLEAN DEFAULT FALSE,
         created_at   TIMESTAMP DEFAULT NOW()
       );
     `);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_hub_course ON hub(course_id);`);
+    // Ensure column exists if table pre-dated this field
+    await client.query(`ALTER TABLE hub ADD COLUMN IF NOT EXISTS is_start BOOLEAN DEFAULT FALSE;`);
+    // Enforce at most one starting hub per course
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_indexes WHERE indexname = 'uniq_start_hub_per_course'
+        ) THEN
+          CREATE UNIQUE INDEX uniq_start_hub_per_course ON hub (course_id) WHERE is_start = TRUE;
+        END IF;
+      END$$;
+    `);
 
     // Tasks (small circles attached to hubs)
     await client.query(`
