@@ -470,6 +470,7 @@ export default function GraphCanvas(props: Props) {
     if (!selectedHub) return
     try {
       await onUpdateHub(selectedHub.id, { title: hubTitle.trim() || selectedHub.title, is_start: hubIsStart })
+      showAlert('success', 'Hub saved')
     } catch (err) {
       console.error('Failed to update hub', err)
       showAlert('error', 'Failed to update hub')
@@ -495,6 +496,7 @@ export default function GraphCanvas(props: Props) {
     if (!selectedTask) return
     try {
       await onUpdateTask(selectedTask.id, { title: taskTitle.trim() || selectedTask.title, task_kind: taskKind })
+      showAlert('success', 'Task saved')
     } catch (err) {
       console.error('Failed to update task', err)
       showAlert('error', 'Failed to update task')
@@ -519,6 +521,7 @@ export default function GraphCanvas(props: Props) {
     if (!selectedEdge) return
     try {
       await props.onUpdateEdgeColor(selectedEdge.id, edgeColor)
+      showAlert('success', 'Connection saved')
     } catch (err) {
       console.error('Failed to update edge color', err)
       showAlert('error', 'Failed to update connection color')

@@ -4,6 +4,7 @@ import axios from '../api/axios'
 import SimpleEditor from './editor/SimpleEditor'
 import QuizEditor from './quiz/QuizEditor'
 import type { QuizQuestion } from './quiz/QuizEditor'
+import { useAlert } from '../contexts/useAlert'
 
 // Convert a variety of YouTube URLs to a strict embed URL on youtube-nocookie domain
 function toYouTubeEmbed(raw: string): string | null {
@@ -74,6 +75,7 @@ type Props = {
 
 export default function NodeModal(props: Props) {
   const { open, type, hub, task, onClose, canEdit } = props
+  const { showAlert } = useAlert()
   const dialogRef = useRef<HTMLDivElement | null>(null)
   const closeBtnRef = useRef<HTMLButtonElement | null>(null)
   // hub metadata editing removed from modal
@@ -209,8 +211,10 @@ export default function NodeModal(props: Props) {
                           onClick={async () => {
                             try {
                               await axios.patch(`/api/hubs/${hub.id}/content`, { html, youtubeUrls, imageUrls, quiz })
+                              showAlert('success', 'Hub content saved')
                             } catch (err) {
                               console.error('Failed to save hub content', err)
+                              showAlert('error', 'Failed to save hub content')
                             }
                           }}
                         >Save content</button>
@@ -301,8 +305,10 @@ export default function NodeModal(props: Props) {
                             onClick={async () => {
                               try {
                                 await axios.patch(`/api/tasks/${task.id}/content`, { html, youtubeUrls, imageUrls, quiz })
+                                showAlert('success', 'Task content saved')
                               } catch (err) {
                                 console.error('Failed to save content', err)
+                                showAlert('error', 'Failed to save task content')
                               }
                             }}
                           >Save content</button>
