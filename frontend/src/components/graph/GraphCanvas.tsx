@@ -4,6 +4,7 @@ import ReactFlow, {
   useNodesState, useEdgesState
 } from 'reactflow'
 import type { Edge, Node, OnConnect, OnEdgesDelete, NodeDragHandler, ReactFlowInstance } from 'reactflow'
+import { MarkerType } from 'reactflow'
 import { nodeTypes, edgeTypes } from './graphTypes'
 import NodeModal from '../NodeModal'
 import axios from '../../api/axios'
@@ -339,6 +340,7 @@ export default function GraphCanvas(props: Props) {
         type: 'floatingHubHub',
         selectable: canEdit,
         style: { strokeWidth: 6, stroke: BLUE, filter: edgeShadow },
+  markerEnd: { type: MarkerType.ArrowClosed, color: BLUE, width: 10, height: 10 },
       }))
     } else {
       hubHub = uniqueInitialEdges.map(e => {
@@ -359,6 +361,7 @@ export default function GraphCanvas(props: Props) {
           type: 'floatingHubHub',
           selectable: canEdit,
           style: { strokeWidth: 6, stroke, filter: edgeShadow },
+          markerEnd: { type: MarkerType.ArrowClosed, color: stroke, width: 10, height: 10 },
         }
       })
     }
