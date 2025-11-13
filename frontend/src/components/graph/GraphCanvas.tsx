@@ -306,28 +306,88 @@ export default function GraphCanvas(props: Props) {
   useEffect(() => {
     // Dedupe hub->hub edges by id to avoid duplicate React keys if upstream pushed duplicates
     const uniqueInitialEdges = Array.from(new Map(initialEdges.map(e => [e.id, e])).values())
+    // Recompute hub state (must mirror logic used for nodes) so we can color edges dynamically
+    const completedSet = new Set(completedHubIds)
+    const prereqMap = new Map<number, number[]>()
+    initialEdges.forEach(e => {
+      const arr = prereqMap.get(e.to_hub_id) ?? []
+      arr.push(e.from_hub_id)
+      prereqMap.set(e.to_hub_id, arr)
+    })
+    const hubState: Record<number, 'locked' | 'unlocked' | 'completed'> = {}
+    initialHubs.forEach(h => {
+      if (completedSet.has(h.id)) { hubState[h.id] = 'completed'; return }
+      if (h.is_start) { hubState[h.id] = 'unlocked'; return }
+      const prereqs = prereqMap.get(h.id) || []
+      if (prereqs.length === 0) { hubState[h.id] = 'locked'; return }
+      const allDone = prereqs.every(pid => completedSet.has(pid))
+      hubState[h.id] = allDone ? 'unlocked' : 'locked'
+    })
 
-    const hubHub: Edge[] = uniqueInitialEdges.map(e => ({
-      id: `edge-h2h-${e.id}`,
-      source: `hub-${e.from_hub_id}`,
-      target: `hub-${e.to_hub_id}`,
-      type: 'floatingHubHub',
-      selectable: canEdit,
-      style: { strokeWidth: 3, stroke: e.color ?? '#64748b' },
-    }))
+    // Helper to decide edge color based on source hub state and destination state/completion
+    const GREEN = '#a6f273'
+    const BLUE = '#5cb0ff'
+    const GREY = '#ababab'
 
-    const hubTask: Edge[] = initialTasks.map(t => ({
-      id: `edge-h2t-${t.id}`,
-      source: `hub-${t.hub_id}`,
-      target: `task-${t.id}`,
-      type: 'floatingHubTask',
-      animated: false,
-      selectable: false,
-      style: { strokeWidth: 3, stroke: t.color ?? '#4f86c6' },
-    }))
+    let hubHub: Edge[] = []
+    const edgeShadow = 'drop-shadow(4px 4px 4px rgba(0,0,0,0.8)) drop-shadow(2px 0 2px rgba(0,0,0,0.10))'
+    if (canEdit) {
+      hubHub = uniqueInitialEdges.map(e => ({
+        id: `edge-h2h-${e.id}`,
+        source: `hub-${e.from_hub_id}`,
+        target: `hub-${e.to_hub_id}`,
+        type: 'floatingHubHub',
+        selectable: canEdit,
+        style: { strokeWidth: 6, stroke: BLUE, filter: edgeShadow },
+      }))
+    } else {
+      hubHub = uniqueInitialEdges.map(e => {
+      const fromState = hubState[e.from_hub_id]
+      const toState = hubState[e.to_hub_id]
+      let stroke: string
+      if (fromState === 'completed') stroke = GREEN
+      else if (fromState === 'locked') stroke = GREY
+      else { // from unlocked (blue)
+        if (toState === 'completed') stroke = GREEN
+        else if (toState === 'unlocked') stroke = BLUE
+        else stroke = GREY
+      }
+        return {
+          id: `edge-h2h-${e.id}`,
+          source: `hub-${e.from_hub_id}`,
+          target: `hub-${e.to_hub_id}`,
+          type: 'floatingHubHub',
+          selectable: canEdit,
+          style: { strokeWidth: 6, stroke, filter: edgeShadow },
+        }
+      })
+    }
+
+    const taskDoneSet = completedTaskIds // Set<number>
+    const hubTask: Edge[] = initialTasks.map(t => {
+      const fromState = hubState[t.hub_id]
+      const taskDone = taskDoneSet.has(t.id)
+      let stroke: string
+      if (canEdit) {
+        stroke = BLUE
+      } else if (fromState === 'completed') stroke = GREEN
+      else if (fromState === 'locked') stroke = GREY
+      else { // from unlocked
+        stroke = taskDone ? GREEN : BLUE
+      }
+      return {
+        id: `edge-h2t-${t.id}`,
+        source: `hub-${t.hub_id}`,
+        target: `task-${t.id}`,
+        type: 'floatingHubTask',
+        animated: false,
+        selectable: false,
+        style: { strokeWidth: 3, stroke, filter: edgeShadow },
+      }
+    })
 
     setEdges([...hubHub, ...hubTask])
-  }, [initialEdges, initialTasks, initialHubs, canEdit, setEdges])
+  }, [initialEdges, initialTasks, initialHubs, completedHubIds, completedTaskIds, canEdit, setEdges])
 
   // Connect hubs in connect mode
   const onConnect: OnConnect = useCallback(async (connection) => {
@@ -667,7 +727,7 @@ export default function GraphCanvas(props: Props) {
             nodeStrokeWidth={1.5}
             nodeStrokeColor={() => '#00000033'}
             nodeColor={(n: Node) => {
-              // Reflect live state-driven colors
+              if (canEdit) return '#5cb0ff'
               if (n.type === 'hubNode') {
                 const d = n.data as (HubData & { hubState?: 'locked'|'unlocked'|'completed' })
                 const state = d?.hubState

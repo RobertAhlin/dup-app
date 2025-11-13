@@ -19,8 +19,10 @@ type TaskNodeData = {
 export default memo(function TaskNode({ data }: NodeProps<TaskNodeData>) {
   const isSelected = Boolean(data.isSelected)
   const isLocked = !data.canEdit && data.parentHubState === 'locked'
-  // Always use student-mode color rules even in edit mode
-  const displayColor = isLocked ? '#ababab' : (data.isDone ? '#a6f273' : '#5cb0ff')
+  // Edit mode override: all tasks blue; student mode uses state mapping
+  const displayColor = data.canEdit
+    ? '#5cb0ff'
+    : (isLocked ? '#ababab' : (data.isDone ? '#a6f273' : '#5cb0ff'))
 
   return (
     <div

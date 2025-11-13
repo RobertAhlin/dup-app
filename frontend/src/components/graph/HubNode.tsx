@@ -16,8 +16,10 @@ type HubNodeData = {
 export default memo(function HubNode({ data }: NodeProps<HubNodeData>) {
   const isSelected = Boolean(data.isSelected)
   const isLocked = !data.canEdit && data.hubState === 'locked'
-  // Derive display color: always use state mapping (edit mode follows student mode colors)
-  const displayColor = (data.hubState === 'completed' ? '#a6f273' : data.hubState === 'unlocked' ? '#5cb0ff' : '#ababab')
+  // Edit mode override: all hubs blue; student mode uses state mapping
+  const displayColor = data.canEdit
+    ? '#5cb0ff'
+    : (data.hubState === 'completed' ? '#a6f273' : data.hubState === 'unlocked' ? '#5cb0ff' : '#ababab')
 
   return (
       <div
