@@ -119,17 +119,24 @@ export default function NodeModal(props: Props) {
   // no hub title syncing needed in modal (metadata editing handled elsewhere)
   // metadata editing removed from modal; no need to sync task title/kind here
 
-  // Load task content lazily when opening a task modal
+  // Load content lazily when opening a modal (hub or task)
   useEffect(() => {
     let cancelled = false
     const fetchContent = async () => {
-      if (!open || type !== 'task' || !task) return
+      if (!open) return
       setContentLoading(true)
       try {
         type TaskContentPayload = { html?: string; youtubeUrls?: string[]; imageUrls?: string[]; quiz?: QuizQuestion[] }
-        const res = await axios.get<{ payload: TaskContentPayload }>(`/api/tasks/${task.id}/content`)
+        let res: { data: { payload: TaskContentPayload } } | null = null
+        if (type === 'task' && task) {
+          res = await axios.get<{ payload: TaskContentPayload }>(`/api/tasks/${task.id}/content`)
+        } else if (type === 'hub' && hub) {
+          res = await axios.get<{ payload: TaskContentPayload }>(`/api/hubs/${hub.id}/content`)
+        } else {
+          return
+        }
         if (cancelled) return
-        const p = res.data.payload || {}
+        const p = res?.data.payload || {}
         setHtml(p.html || '')
         setYoutubeUrls(Array.isArray(p.youtubeUrls) ? p.youtubeUrls : [])
         setImageUrls(Array.isArray(p.imageUrls) ? p.imageUrls : [])
@@ -142,7 +149,7 @@ export default function NodeModal(props: Props) {
     }
     fetchContent()
     return () => { cancelled = true }
-  }, [open, type, task])
+  }, [open, type, task, hub])
 
   const canShowHubCheckbox = useMemo(() => !canEdit && type === 'hub' && !!props.allHubTasksDone, [canEdit, type, props.allHubTasksDone])
 
@@ -159,20 +166,96 @@ export default function NodeModal(props: Props) {
         </div>
         <div className="p-4 text-sm text-slate-700">
           {type === 'hub' && hub && (
-            // In edit mode, no hub metadata edits here; content-only philosophy (no hub content to edit yet)
-            (
-              <div className="space-y-3">
-                <div><span className="font-medium">Title:</span> {hub.title}</div>
-                {canShowHubCheckbox ? (
-                  <label className="flex items-center gap-2 text-xs text-slate-600">
-                    <input type="checkbox" checked={!!props.hubDone} onChange={(e) => props.onToggleHubDone?.(hub.id, e.target.checked)} />
-                    Mark hub as done
-                  </label>
-                ) : (
-                  <div className="text-xs text-slate-400">Complete all tasks to mark this hub as done.</div>
-                )}
-              </div>
-            )
+            <div className="space-y-3">
+              <div><span className="font-medium">Title:</span> {hub.title}</div>
+              {canEdit ? (
+                <>
+                  {contentLoading ? (
+                    <div className="text-xs text-slate-500">Loading content…</div>
+                  ) : (
+                    <>
+                      <div>
+                        <div className="text-xs text-slate-500 mb-1">Text content</div>
+                        <SimpleEditor value={html} onChange={setHtml} readOnly={false} />
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-xs text-slate-500">YouTube links</div>
+                        {youtubeUrls.map((u, i) => (
+                          <div key={i} className="flex gap-2 items-center">
+                            <input className="flex-1 border rounded px-2 py-1 text-sm" value={u} placeholder="https://www.youtube.com/watch?v=..." onChange={(e) => { const arr=[...youtubeUrls]; arr[i]=e.target.value; setYoutubeUrls(arr) }} />
+                            <button type="button" className="text-xs text-red-600" onClick={() => { const arr=[...youtubeUrls]; arr.splice(i,1); setYoutubeUrls(arr) }}>Remove</button>
+                          </div>
+                        ))}
+                        <button type="button" className="px-2 py-1 border rounded text-xs" onClick={() => setYoutubeUrls([...youtubeUrls, ''])}>+ Add YouTube link</button>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-xs text-slate-500">Image links</div>
+                        {imageUrls.map((u, i) => (
+                          <div key={i} className="flex gap-2 items-center">
+                            <input className="flex-1 border rounded px-2 py-1 text-sm" value={u} placeholder="https://example.com/image.jpg" onChange={(e) => { const arr=[...imageUrls]; arr[i]=e.target.value; setImageUrls(arr) }} />
+                            <button type="button" className="text-xs text-red-600" onClick={() => { const arr=[...imageUrls]; arr.splice(i,1); setImageUrls(arr) }}>Remove</button>
+                          </div>
+                        ))}
+                        <button type="button" className="px-2 py-1 border rounded text-xs" onClick={() => setImageUrls([...imageUrls, ''])}>+ Add image link</button>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-xs text-slate-500">Quiz</div>
+                        <QuizEditor value={quiz ?? []} onChange={(q) => setQuiz(q)} readOnly={false} />
+                      </div>
+                      <div className="flex justify-end pt-2">
+                        <button
+                          type="button"
+                          className="px-3 py-1.5 rounded bg-slate-900 text-white text-xs"
+                          onClick={async () => {
+                            try {
+                              await axios.patch(`/api/hubs/${hub.id}/content`, { html, youtubeUrls, imageUrls, quiz })
+                            } catch (err) {
+                              console.error('Failed to save hub content', err)
+                            }
+                          }}
+                        >Save content</button>
+                      </div>
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: html || '' }} />
+                  {youtubeUrls.map((u, i) => {
+                    const src = toYouTubeEmbed(u)
+                    if (!src) return null
+                    return (
+                      <div key={i} className="mt-2">
+                        <iframe
+                          title={`yt-hub-${i}`}
+                          className="w-full aspect-video"
+                          src={src}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allowFullScreen
+                          referrerPolicy="strict-origin-when-cross-origin"
+                        />
+                      </div>
+                    )
+                  })}
+                  {imageUrls.map((u, i) => (
+                    <img key={i} src={u} alt="" className="mt-2 max-w-full rounded" />
+                  ))}
+                  {quiz && quiz.length > 0 && (
+                    <div className="mt-3">
+                      <QuizEditor value={quiz} onChange={() => {}} readOnly={true} />
+                    </div>
+                  )}
+                  {canShowHubCheckbox ? (
+                    <label className="flex items-center gap-2 text-xs text-slate-600 mt-3">
+                      <input type="checkbox" checked={!!props.hubDone} onChange={(e) => props.onToggleHubDone?.(hub.id, e.target.checked)} />
+                      Mark hub as done
+                    </label>
+                  ) : (
+                    <div className="text-xs text-slate-400 mt-2">Complete all tasks to mark this hub as done.</div>
+                  )}
+                </>
+              )}
+            </div>
           )}
           {type === 'task' && task && (
             (

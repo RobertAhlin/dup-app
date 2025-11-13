@@ -230,3 +230,91 @@ router.put('/:id/progress', verifyToken, async (req: AuthenticatedRequest, res) 
     res.status(500).json({ error: 'Failed to update hub progress' })
   }
 })
+
+// Content endpoints for hub payload (WYSIWYG, embeds, quiz)
+router.get('/:id/content', verifyToken, async (req: AuthenticatedRequest, res) => {
+  const hubId = Number(req.params.id)
+  if (!Number.isInteger(hubId)) {
+    res.status(400).json({ error: 'Invalid hub id' })
+    return
+  }
+  try {
+    const user = req.user as AuthUser | undefined
+    if (!user) {
+      res.status(401).json({ error: 'Not authenticated' })
+      return
+    }
+    const { rows: hubRows } = await pool.query<{ course_id: number }>(
+      `SELECT course_id FROM hub WHERE id = $1`,
+      [hubId]
+    )
+    const courseId = hubRows[0]?.course_id
+    if (!courseId) {
+      res.status(404).json({ error: 'Hub not found' })
+      return
+    }
+    const canView = await canViewCourse(user, courseId)
+    if (!canView) {
+      res.status(403).json({ error: 'Forbidden' })
+      return
+    }
+    const { rows } = await pool.query<{ payload: any }>(
+      `SELECT payload FROM hub WHERE id = $1`,
+      [hubId]
+    )
+    res.json({ payload: rows[0]?.payload ?? {} })
+  } catch (err) {
+    console.error('Get hub content error:', err)
+    res.status(500).json({ error: 'Failed to load hub content' })
+  }
+})
+
+router.patch('/:id/content', verifyToken, async (req: AuthenticatedRequest, res) => {
+  const hubId = Number(req.params.id)
+  if (!Number.isInteger(hubId)) {
+    res.status(400).json({ error: 'Invalid hub id' })
+    return
+  }
+  try {
+    const user = req.user as AuthUser | undefined
+    if (!user) {
+      res.status(401).json({ error: 'Not authenticated' })
+      return
+    }
+    const { rows: hubRows } = await pool.query<{ course_id: number }>(
+      `SELECT course_id FROM hub WHERE id = $1`,
+      [hubId]
+    )
+    const courseId = hubRows[0]?.course_id
+    if (!courseId) {
+      res.status(404).json({ error: 'Hub not found' })
+      return
+    }
+    const allowed = await canEditCourse(user, courseId)
+    if (!allowed) {
+      res.status(403).json({ error: 'Forbidden' })
+      return
+    }
+    // Validate and sanitize incoming payload shape
+    const { html, youtubeUrls, imageUrls, quiz } = req.body as {
+      html?: string
+      youtubeUrls?: string[]
+      imageUrls?: string[]
+      quiz?: any
+    }
+    const newPayload = {
+      html: typeof html === 'string' ? html : '',
+      youtubeUrls: Array.isArray(youtubeUrls) ? youtubeUrls.filter(u => typeof u === 'string') : [],
+      imageUrls: Array.isArray(imageUrls) ? imageUrls.filter(u => typeof u === 'string') : [],
+      quiz: Array.isArray(quiz) ? quiz : (quiz ?? [])
+    }
+    const { rows } = await pool.query<{ id: number; payload: any }>(
+      `UPDATE hub SET payload = $1::jsonb WHERE id = $2 RETURNING id, payload`,
+      [JSON.stringify(newPayload), hubId]
+    )
+    res.json({ hub: rows[0] })
+  } catch (err) {
+    console.error('Update hub content error:', err)
+    res.status(500).json({ error: 'Failed to update hub content' })
+  }
+})

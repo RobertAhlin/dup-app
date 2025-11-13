@@ -23,7 +23,8 @@ const PORT = process.env.PORT || 5000;
 async function ensureSchema() {
   try {
     await pool.query(`ALTER TABLE hub ADD COLUMN IF NOT EXISTS is_start BOOLEAN DEFAULT FALSE;`);
-    console.log("✅ Schema ensured: hub.is_start present");
+    await pool.query(`ALTER TABLE hub ADD COLUMN IF NOT EXISTS payload JSONB NOT NULL DEFAULT '{}'::jsonb;`);
+    console.log("✅ Schema ensured: hub.is_start and hub.payload present");
   } catch (err) {
     console.warn("⚠️ Schema ensure warning:", (err as Error).message);
   }

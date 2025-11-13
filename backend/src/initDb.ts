@@ -137,6 +137,8 @@ async function initDb() {
     await client.query(`CREATE INDEX IF NOT EXISTS idx_hub_course ON hub(course_id);`);
     // Ensure column exists if table pre-dated this field
     await client.query(`ALTER TABLE hub ADD COLUMN IF NOT EXISTS is_start BOOLEAN DEFAULT FALSE;`);
+    // Add content payload support for hubs (similar to tasks)
+    await client.query(`ALTER TABLE hub ADD COLUMN IF NOT EXISTS payload JSONB NOT NULL DEFAULT '{}'::jsonb;`);
     // Enforce at most one starting hub per course
     await client.query(`
       DO $$
