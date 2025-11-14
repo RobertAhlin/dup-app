@@ -17,6 +17,8 @@ type Props = {
 export default function ActivityLog({ limit = 20 }: Props) {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
+  // Socket stored in state to maintain WebSocket connection lifecycle
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
@@ -54,8 +56,8 @@ export default function ActivityLog({ limit = 20 }: Props) {
       return;
     }
     
-    // Ensure we connect to the backend server, not the Vite dev server
-    const backendUrl = 'http://localhost:5000';
+    // Connect to backend server for Socket.IO
+    const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
     // Initialize Socket.IO connection
     const newSocket = io(backendUrl, {
@@ -110,7 +112,7 @@ export default function ActivityLog({ limit = 20 }: Props) {
   };
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-1">
       <div className="flex items-center justify-between mb-1">
         <h3 className="text-base font-semibold text-slate-800">Recent Activity</h3>
         <div className="flex items-center gap-2">
@@ -134,26 +136,20 @@ export default function ActivityLog({ limit = 20 }: Props) {
       ) : activities.length === 0 ? (
         <p className="text-xs text-slate-500">No recent activity</p>
       ) : (
-        <div className="flex flex-col gap-1.5 max-h-96 overflow-y-auto">
+        <div className="flex flex-col gap-1 max-h-full overflow-y-auto">
           {activities.map((activity, index) => (
             <div 
               key={index} 
-              className="flex items-start gap-2 p-2 rounded bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-100"
+              className="flex items-start gap-2 p-0.5 rounded bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-200"
             >
-              <div className="shrink-0 mt-0.5">
-                {activity.type === 'task' ? (
-                  <div className="w-2 h-2 rounded-full bg-blue-500" title="Task" />
-                ) : (
-                  <div className="w-2 h-2 rounded-full bg-green-500" title="Hub" />
-                )}
-              </div>
+              {/* status indicator removed */}
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-slate-700 leading-snug">
                   <span className="font-semibold">{activity.userName}</span> completed a{' '}
                   <span className="font-medium">{activity.type}</span> in{' '}
-                  <span className="font-medium">{activity.courseTitle}</span>
+                  <span className="font-medium">{activity.courseTitle}</span>{' '}
+                  <span className="text-xs text-slate-500 mt-0.5">{getRelativeTime(activity.timestamp)}</span>
                 </p>
-                <p className="text-xs text-slate-500 mt-0.5">{getRelativeTime(activity.timestamp)}</p>
               </div>
             </div>
           ))}

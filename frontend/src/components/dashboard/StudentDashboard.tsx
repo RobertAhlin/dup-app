@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import CircularProgressBar from "../CircularProgressBar";
-import ActivityLog from "./ActivityLog";
+import StudentActivityNotification from "./StudentActivityNotification";
 
 type CourseProgress = {
   id: number
@@ -88,10 +88,8 @@ export default function StudentDashboard({ courses }: Props) {
             </div>
           </div>
 
-          {/* Activity Log below */}
-          <div className="border-t border-slate-200 pt-6">
-            <ActivityLog limit={10} />
-          </div>
+          {/* Student Activity Notification (toast-style) */}
+          <StudentActivityNotification />
         </div>
       )}
     </div>
