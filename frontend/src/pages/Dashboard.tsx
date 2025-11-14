@@ -86,7 +86,6 @@ const Dashboard = () => {
           <div className="flex gap-8 items-start">
             {/* Course list on the left */}
             <div className="w-60 shrink-0">
-              <h3 className="text-lg font-semibold text-slate-700 mb-4">Enrolled Courses</h3>
               <div className="flex flex-col gap-2">
                 {sortedCourses.map((course, index) => (
                   <div
@@ -113,7 +112,7 @@ const Dashboard = () => {
             </div>
 
             {/* Circular progress visualization on the right */}
-            <div className="flex-1 flex justify-center">
+            <div className="flex-1 flex">
               <CircularProgressBar courses={coursesWithColors} />
             </div>
           </div>

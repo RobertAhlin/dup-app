@@ -31,7 +31,7 @@ export default memo(function HubNode({ data }: NodeProps<HubNodeData>) {
         className={`relative rounded-full flex items-center justify-center ${isLocked ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'} shadow-[8px_8px_8px_rgba(0,0,0,0.5),5px_0_5px_rgba(0,0,0,0.10)]`}
         style={{ width: 160, height: 160, background: displayColor, color: 'black', border: isSelected ? '3px solid rgba(239, 68, 68, 0.7)' : 'none' }}
       >
-      <span className="px-3 text-base md:text-lg font-semibold text-center select-none leading-snug">
+      <span className="px-3 text-base md:text-lg font-semibold text-center select-none leading-snug wrap-break-word">
         {data.title}
       </span>
       {data.canEdit && (

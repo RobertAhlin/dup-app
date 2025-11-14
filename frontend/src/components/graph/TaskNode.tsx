@@ -35,7 +35,7 @@ export default memo(function TaskNode({ data }: NodeProps<TaskNodeData>) {
       style={{ width: 80, height: 80, background: displayColor, color: 'black', border: isSelected ? '3px solid rgba(239, 68, 68, 0.7)' : 'none' }}
       title={`${data.title} (${data.task_kind})`}
     >
-      <span className="px-2 text-sm select-none">{data.title}</span>
+      <span className="px-2 text-sm select-none text-center leading-tight wrap-break-word">{data.title}</span>
       {data.canEdit && (
         <button
           type="button"
