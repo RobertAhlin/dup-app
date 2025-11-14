@@ -156,6 +156,99 @@ router.get('/dashboard/progress', verifyToken, async (req: AuthenticatedRequest,
   }
 });
 
+// Teacher dashboard: average completion rate per course
+router.get('/dashboard/teacher-stats', verifyToken, async (req: AuthenticatedRequest, res) => {
+  try {
+    const user = req.user as AuthUser | undefined;
+    if (!user) {
+      res.status(401).json({ error: 'Not authenticated' });
+      return;
+    }
+
+    const roleName = await getRoleName(user.role_id);
+    if (roleName !== 'teacher') {
+      res.json({ courses: [] });
+      return;
+    }
+
+    // Get courses where user is a teacher
+    const result = await pool.query(
+      `WITH course_stats AS (
+        SELECT 
+          c.id,
+          c.title,
+          c.icon,
+          COUNT(DISTINCT ce.user_id) AS total_students,
+          (SELECT COUNT(*) FROM task t JOIN hub h ON h.id = t.hub_id WHERE h.course_id = c.id) AS total_tasks,
+          (SELECT COUNT(*) FROM hub WHERE course_id = c.id) AS total_hubs,
+          COALESCE(
+            (SELECT COUNT(*) 
+             FROM task_progress tp 
+             JOIN task t ON t.id = tp.task_id 
+             JOIN hub h ON h.id = t.hub_id 
+             JOIN course_enrollments ce2 ON ce2.user_id = tp.user_id AND ce2.course_id = c.id
+             WHERE h.course_id = c.id AND tp.status = 'completed'), 0
+          ) AS total_completed_tasks,
+          COALESCE(
+            (SELECT COUNT(*) 
+             FROM hub_user_state hus 
+             JOIN hub h ON h.id = hus.hub_id 
+             JOIN course_enrollments ce2 ON ce2.user_id = hus.user_id AND ce2.course_id = c.id
+             WHERE h.course_id = c.id AND hus.state = 'completed'), 0
+          ) AS total_completed_hubs
+        FROM course c
+        JOIN course_teachers ct ON ct.course_id = c.id AND ct.user_id = $1
+        LEFT JOIN course_enrollments ce ON ce.course_id = c.id
+        GROUP BY c.id, c.title, c.icon
+      )
+      SELECT 
+        id,
+        title,
+        icon,
+        total_students,
+        total_tasks,
+        total_hubs,
+        total_completed_tasks,
+        total_completed_hubs,
+        (total_tasks + total_hubs) AS total_items,
+        (total_completed_tasks + total_completed_hubs) AS total_completed_items
+      FROM course_stats
+      ORDER BY title`,
+      [user.id]
+    );
+
+    const courses = result.rows.map(row => {
+      const totalItems = Number(row.total_items);
+      const totalCompletedItems = Number(row.total_completed_items);
+      const totalStudents = Number(row.total_students);
+      
+      // Calculate average completion percentage across all students
+      const averagePercentage = totalStudents > 0 && totalItems > 0
+        ? Math.round((totalCompletedItems / (totalItems * totalStudents)) * 100)
+        : 0;
+      
+      return {
+        id: row.id,
+        title: row.title,
+        icon: row.icon,
+        stats: {
+          totalStudents,
+          totalTasks: Number(row.total_tasks),
+          totalHubs: Number(row.total_hubs),
+          totalItems,
+          totalCompletedItems,
+          averagePercentage,
+        },
+      };
+    });
+
+    res.json({ courses });
+  } catch (err) {
+    console.error('Get teacher dashboard stats error:', err);
+    res.status(500).json({ error: 'Failed to load teacher dashboard stats' });
+  }
+});
+
 router.get('/:id/graph', verifyToken, async (req: AuthenticatedRequest, res) => {
   const courseId = Number(req.params.id);
   if (!Number.isInteger(courseId)) {

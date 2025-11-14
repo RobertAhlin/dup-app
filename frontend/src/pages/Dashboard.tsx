@@ -20,9 +20,24 @@ type CourseProgress = {
   }
 }
 
+type TeacherCourseStats = {
+  id: number
+  title: string
+  icon?: string
+  stats: {
+    totalStudents: number
+    totalTasks: number
+    totalHubs: number
+    totalItems: number
+    totalCompletedItems: number
+    averagePercentage: number
+  }
+}
+
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [courses, setCourses] = useState<CourseProgress[]>([]);
+  const [teacherCourses, setTeacherCourses] = useState<TeacherCourseStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -30,12 +45,23 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [userRes, coursesRes] = await Promise.all([
-          axios.get<{ user: User }>("/api/auth/me", { withCredentials: true }),
-          axios.get<{ courses: CourseProgress[] }>("/api/courses/dashboard/progress", { withCredentials: true })
-        ]);
+        const userRes = await axios.get<{ user: User }>("/api/auth/me", { withCredentials: true });
         setUser(userRes.data.user);
-        setCourses(coursesRes.data.courses);
+        
+        // Fetch appropriate dashboard data based on role
+        if (userRes.data.user.role === 'teacher') {
+          const statsRes = await axios.get<{ courses: TeacherCourseStats[] }>(
+            "/api/courses/dashboard/teacher-stats", 
+            { withCredentials: true }
+          );
+          setTeacherCourses(statsRes.data.courses);
+        } else {
+          const coursesRes = await axios.get<{ courses: CourseProgress[] }>(
+            "/api/courses/dashboard/progress", 
+            { withCredentials: true }
+          );
+          setCourses(coursesRes.data.courses);
+        }
       } catch (err: unknown) {
         console.error("❌ Error loading dashboard:", err);
         setError("Not authenticated. Redirecting...");
@@ -62,7 +88,60 @@ const Dashboard = () => {
     '#ffeb3b', // yellow
   ];
 
-  // Sort courses by percentage (highest to lowest) for display in rings
+  // Teacher view
+  if (user.role === 'teacher') {
+    const sortedTeacherCourses = [...teacherCourses].sort((a, b) => b.stats.averagePercentage - a.stats.averagePercentage);
+
+    return (
+      <MainCard name={user.name ?? ''} email={user.email} role={user.role}>
+        <div className="p-2">
+          <h2 className="text-2xl font-bold text-slate-800 mb-8">Course Completion Overview</h2>
+          
+          {teacherCourses.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-slate-600">You are not assigned to any courses yet.</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2 max-w-1/4">
+              {sortedTeacherCourses.map((course, index) => (
+                <div
+                  key={course.id}
+                  className="flex flex-col px-2 rounded-lg border border-slate-200 hover:border-slate-300 cursor-pointer hover:shadow-md transition-all"
+                  onClick={() => navigate(`/course/${course.id}`)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <p className="text-base font-semibold text-slate-800 truncate">{course.title}</p>
+                    </div>
+                    <div className="text-right ml-2">
+                      <p className="text-1xl font-bold text-slate-800">{course.stats.averagePercentage}%</p>
+                    </div>
+                  </div>
+                  
+                  <p className="text-xs text-slate-500">
+                    {course.stats.totalStudents} {course.stats.totalStudents === 1 ? 'student' : 'students'} • {course.stats.totalItems} items
+                  </p>
+                  
+                  {/* Progress bar */}
+                  <div className="w-full mb-2 bg-slate-200 rounded-full h-2 overflow-hidden">
+                    <div 
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{ 
+                        width: `${course.stats.averagePercentage}%`,
+                        backgroundColor: colors[index % colors.length]
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </MainCard>
+    );
+  }
+
+  // Student view
   const sortedCourses = [...courses].sort((a, b) => b.progress.percentage - a.progress.percentage);
 
   const coursesWithColors = sortedCourses.map((course, index) => ({
