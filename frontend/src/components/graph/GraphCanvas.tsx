@@ -70,7 +70,6 @@ export default function GraphCanvas(props: Props) {
   const [taskTitle, setTaskTitle] = useState('')
   const [taskKind, setTaskKind] = useState<TaskData['task_kind']>('content')
   const [selectedEdgeId, setSelectedEdgeId] = useState<number|null>(null)
-  const [edgeColor, setEdgeColor] = useState<string>('#64748b')
   const [showMinimap, setShowMinimap] = useState(false)
   const { showAlert } = useAlert()
   const rfInstance = useRef<ReactFlowInstance | null>(null)
@@ -224,14 +223,6 @@ export default function GraphCanvas(props: Props) {
     setTaskTitle(selectedTask.title)
     setTaskKind(selectedTask.task_kind)
   }, [selectedTask])
-
-  useEffect(() => {
-    if (!selectedEdge) {
-      setEdgeColor('#64748b')
-      return
-    }
-    setEdgeColor(selectedEdge.color ?? '#64748b')
-  }, [selectedEdge])
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node[]>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge[]>([])
@@ -516,18 +507,6 @@ export default function GraphCanvas(props: Props) {
     }
   }, [onDeleteTask, selectedTask, showAlert])
 
-  const handleEdgeSubmit = useCallback(async (event: React.FormEvent) => {
-    event.preventDefault()
-    if (!selectedEdge) return
-    try {
-      await props.onUpdateEdgeColor(selectedEdge.id, edgeColor)
-      showAlert('success', 'Connection saved')
-    } catch (err) {
-      console.error('Failed to update edge color', err)
-      showAlert('error', 'Failed to update connection color')
-    }
-  }, [edgeColor, props, selectedEdge, showAlert])
-
   const handleEdgeDelete = useCallback(async () => {
     if (!selectedEdge) return
     const confirmed = window.confirm('Delete this connection between hubs?')
@@ -535,6 +514,7 @@ export default function GraphCanvas(props: Props) {
     try {
       await props.onDeleteEdge(selectedEdge.id)
       setSelectedEdgeId(null)
+      showAlert('success', 'Connection deleted')
     } catch (err) {
       console.error('Failed to delete edge', err)
       showAlert('error', 'Failed to delete connection')
@@ -659,27 +639,16 @@ export default function GraphCanvas(props: Props) {
             </form>
           )}
           {selectedEdge && (
-            <form onSubmit={handleEdgeSubmit} className="space-y-2 pt-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-slate-700">Connection settings</h3>
-                <button type="button" onClick={handleEdgeDelete} className="text-xs text-red-600 hover:underline">Delete</button>
-              </div>
-              <label className="flex flex-col gap-1 text-xs text-slate-500">
-                Color
-                <input
-                  type="color"
-                  value={edgeColor}
-                  onChange={(e) => setEdgeColor(e.target.value)}
-                  className="h-8 w-full rounded border border-slate-300"
-                />
-              </label>
-              <button
-                type="submit"
-                className="w-full bg-slate-900 text-white text-xs font-semibold uppercase tracking-wide rounded-full py-2"
+            <div className="space-y-3 pt-3">
+              <h3 className="text-sm font-semibold text-slate-700">Connection settings</h3>
+              <button 
+                type="button" 
+                onClick={handleEdgeDelete} 
+                className="w-full bg-red-600 hover:bg-red-700 text-white text-xs font-semibold uppercase tracking-wide rounded-full py-2.5 transition-colors shadow-sm"
               >
-                Save connection
+                Delete Connection
               </button>
-            </form>
+            </div>
           )}
         </div>
       )}
