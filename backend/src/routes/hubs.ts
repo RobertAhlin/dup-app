@@ -48,6 +48,30 @@ router.post('/', verifyToken, async (req: AuthenticatedRequest, res) => {
       [courseId, title, x ?? 0, y ?? 0, color ?? '#3498db', radius ?? 100, isStart]
     );
 
+    // Emit Socket.IO event for hub creation
+    try {
+      const activityResult = await pool.query(
+        `SELECT 
+          'hub_created' as type,
+          u.name as "userName",
+          h.title as "itemTitle",
+          c.title as "courseTitle",
+          NOW() as timestamp
+        FROM hub h
+        JOIN course c ON c.id = h.course_id
+        JOIN users u ON u.id = $1
+        WHERE h.id = $2`,
+        [user.id, result.rows[0].id]
+      );
+
+      if (activityResult.rows[0]) {
+        emitActivityUpdate(activityResult.rows[0]);
+      }
+    } catch (socketErr) {
+      console.error('Socket.IO emit error:', socketErr);
+      // Don't fail the request if socket emission fails
+    }
+
     res.status(201).json({ hub: result.rows[0] });
   } catch (err) {
     console.error('Create hub error:', err);

@@ -4,7 +4,7 @@ import { io, Socket } from "socket.io-client";
 import AlertBanner from "../AlertBanner";
 
 type Activity = {
-  type: 'task' | 'hub'
+  type: 'task' | 'hub' | 'task_created' | 'hub_created'
   userName: string
   itemTitle: string
   courseTitle: string
@@ -105,11 +105,33 @@ export default function StudentActivityNotification() {
   };
 
   const getActivityMessage = (activity: Activity) => {
+    let actionText = '';
+    let itemType = '';
+    
+    switch (activity.type) {
+      case 'task':
+        actionText = 'completed';
+        itemType = 'task';
+        break;
+      case 'hub':
+        actionText = 'completed';
+        itemType = 'hub';
+        break;
+      case 'task_created':
+        actionText = 'added a new';
+        itemType = 'task';
+        break;
+      case 'hub_created':
+        actionText = 'added a new';
+        itemType = 'hub';
+        break;
+    }
+
     return (
       <div className="flex flex-col gap-1">
         <p className="text-sm font-medium">
-          <span className="font-semibold text-sm">{activity.userName}</span> completed a{' '}
-          <span className="font-medium">{activity.type}</span> in{' '}
+          <span className="font-semibold text-xs">{activity.userName}</span> {actionText}{' '}
+          <span className="font-medium">{itemType}</span> in{' '}
           <span className="font-medium">{activity.courseTitle}</span>{' - '}
           <span className="text-xs opacity-75">{getRelativeTime(activity.timestamp)}</span>
         </p>
@@ -127,7 +149,7 @@ export default function StudentActivityNotification() {
           onClose={() => setLatestActivity(null)}
           autoHide={true}
           duration={10000}
-          width="500px"
+          width="40%"
           actionButton={{
             label: "View activities",
             onClick: handleViewActivities
@@ -165,9 +187,12 @@ export default function StudentActivityNotification() {
                     >
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-slate-700 leading-snug">
-                          <span className="font-semibold">{activity.userName}</span> completed a{' '}
-                          <span className="font-medium">{activity.type}</span> in{' '}
-                          <span className="font-medium">{activity.courseTitle}</span>{' '}
+                          <span className="font-semibold">{activity.userName}</span>{' '}
+                          {activity.type === 'task' || activity.type === 'hub' ? 'completed' : 'added a new'}{' '}
+                          <span className="font-medium">
+                            {activity.type === 'task_created' ? 'task' : activity.type === 'hub_created' ? 'hub' : activity.type}
+                          </span>{' '}
+                          in <span className="font-medium">{activity.courseTitle}</span>{' '}
                           <span className="text-xs text-slate-500 mt-1">{getRelativeTime(activity.timestamp)}</span>
                         </p>
                       </div>

@@ -50,6 +50,31 @@ router.post('/', verifyToken, async (req: AuthenticatedRequest, res) => {
       [hubId, title, task_kind, x ?? 0, y ?? 0]
     );
 
+    // Emit Socket.IO event for task creation
+    try {
+      const activityResult = await pool.query(
+        `SELECT 
+          'task_created' as type,
+          u.name as "userName",
+          t.title as "itemTitle",
+          c.title as "courseTitle",
+          NOW() as timestamp
+        FROM task t
+        JOIN hub h ON h.id = t.hub_id
+        JOIN course c ON c.id = h.course_id
+        JOIN users u ON u.id = $1
+        WHERE t.id = $2`,
+        [user.id, result.rows[0].id]
+      );
+
+      if (activityResult.rows[0]) {
+        emitActivityUpdate(activityResult.rows[0]);
+      }
+    } catch (socketErr) {
+      console.error('Socket.IO emit error:', socketErr);
+      // Don't fail the request if socket emission fails
+    }
+
     res.status(201).json({ task: result.rows[0] });
   } catch (err) {
     console.error('Create task error:', err);
