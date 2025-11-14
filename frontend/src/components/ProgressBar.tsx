@@ -19,7 +19,7 @@ function ProgressBar({ percentage, completedItems, totalItems, className = '' }:
         
         {/* Progress fill with diagonal stripes */}
         <div
-          className="relative h-full bg-linear-to-r from-cyan-400 via-blue-500 to-cyan-400 transition-all duration-700 ease-out"
+          className="relative h-full bg-linear-to-r from-violet-800 via-green-500 to-lime-400 transition-all duration-700 ease-out"
           style={{ 
             width: `${percentage}%`,
             boxShadow: '0 0 20px rgba(34, 211, 238, 0.6), inset 0 1px 0 rgba(255,255,255,0.3)',
@@ -48,11 +48,12 @@ function ProgressBar({ percentage, completedItems, totalItems, className = '' }:
           </span>
         </div>
         
-        {/* Outer glow effect */}
+        {/* Convex glass effect overlay */}
         <div 
           className="absolute inset-0 rounded-full pointer-events-none"
           style={{
-            boxShadow: 'inset 0 0 10px rgba(0,0,0,0.5)'
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 30%, transparent 50%, rgba(0,0,0,0.1) 70%, rgba(0,0,0,0.3) 100%)',
+            boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.5), inset 0 -2px 4px rgba(0,0,0,0.3), inset 0 0 10px rgba(0,0,0,0.2)'
           }}
         />
       </div>
