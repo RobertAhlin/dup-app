@@ -94,6 +94,68 @@ router.get('/', verifyToken, async (req: AuthenticatedRequest, res) => {
   }
 });
 
+// Dashboard: Get user's enrolled courses with progress summary
+router.get('/dashboard/progress', verifyToken, async (req: AuthenticatedRequest, res) => {
+  try {
+    const user = req.user as AuthUser | undefined;
+    if (!user) {
+      res.status(401).json({ error: 'Not authenticated' });
+      return;
+    }
+
+    const roleName = await getRoleName(user.role_id);
+    if (roleName !== 'student') {
+      // Only students have enrollment-based progress view
+      res.json({ courses: [] });
+      return;
+    }
+
+    // Get enrolled courses with progress
+    const result = await pool.query(
+      `SELECT 
+         c.id, 
+         c.title, 
+         c.icon,
+         (SELECT COUNT(*) FROM task t JOIN hub h ON h.id = t.hub_id WHERE h.course_id = c.id) AS total_tasks,
+         (SELECT COUNT(*) FROM hub WHERE course_id = c.id) AS total_hubs,
+         (SELECT COUNT(*) FROM task_progress tp JOIN task t ON t.id = tp.task_id JOIN hub h ON h.id = t.hub_id 
+          WHERE tp.user_id = $1 AND h.course_id = c.id AND tp.status = 'completed') AS completed_tasks,
+         (SELECT COUNT(*) FROM hub_user_state hus JOIN hub h ON h.id = hus.hub_id 
+          WHERE hus.user_id = $1 AND h.course_id = c.id AND hus.state = 'completed') AS completed_hubs
+       FROM course c
+       JOIN course_enrollments ce ON ce.course_id = c.id AND ce.user_id = $1
+       ORDER BY c.created_at DESC`,
+      [user.id]
+    );
+
+    const courses = result.rows.map(row => {
+      const totalItems = Number(row.total_tasks) + Number(row.total_hubs);
+      const completedItems = Number(row.completed_tasks) + Number(row.completed_hubs);
+      const percentage = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+      
+      return {
+        id: row.id,
+        title: row.title,
+        icon: row.icon,
+        progress: {
+          totalTasks: Number(row.total_tasks),
+          totalHubs: Number(row.total_hubs),
+          completedTasks: Number(row.completed_tasks),
+          completedHubs: Number(row.completed_hubs),
+          totalItems,
+          completedItems,
+          percentage,
+        },
+      };
+    });
+
+    res.json({ courses });
+  } catch (err) {
+    console.error('Get dashboard progress error:', err);
+    res.status(500).json({ error: 'Failed to load dashboard progress' });
+  }
+});
+
 router.get('/:id/graph', verifyToken, async (req: AuthenticatedRequest, res) => {
   const courseId = Number(req.params.id);
   if (!Number.isInteger(courseId)) {
