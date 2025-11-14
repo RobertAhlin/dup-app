@@ -94,15 +94,15 @@ const Dashboard = () => {
 
     return (
       <MainCard name={user.name ?? ''} email={user.email} role={user.role}>
-        <div className="p-2">
-          <h2 className="text-2xl font-bold text-slate-800 mb-8">Course Completion Overview</h2>
+        <div className="p-1">
+          <h2 className="text-lg font-bold text-slate-800 mb-3">Course Completion Overview</h2>
           
           {teacherCourses.length === 0 ? (
-            <div className="text-center py-12">
+            <div>
               <p className="text-slate-600">You are not assigned to any courses yet.</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-2 max-w-1/4">
+            <div className="flex flex-col gap-2 max-w-1/6">
               {sortedTeacherCourses.map((course, index) => (
                 <div
                   key={course.id}
