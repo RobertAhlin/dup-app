@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import axios from "../../api/axios";
 import { io, Socket } from "socket.io-client";
+import AlertBanner from "../AlertBanner";
 
 type Activity = {
   type: 'task' | 'hub'
@@ -23,7 +24,7 @@ export default function StudentActivityNotification() {
     try {
       setLoading(true);
       const response = await axios.get<{ activities: Activity[] }>(
-        `/api/courses/dashboard/activity?limit=20`,
+        `/api/courses/dashboard/activity?limit=25`,
         { withCredentials: true }
       );
       setActivities(response.data.activities);
@@ -103,37 +104,35 @@ export default function StudentActivityNotification() {
     return `${diffDays} days ago`;
   };
 
+  const getActivityMessage = (activity: Activity) => {
+    return (
+      <div className="flex flex-col gap-1">
+        <p className="text-sm font-medium">
+          <span className="font-semibold text-sm">{activity.userName}</span> completed a{' '}
+          <span className="font-medium">{activity.type}</span> in{' '}
+          <span className="font-medium">{activity.courseTitle}</span>{' - '}
+          <span className="text-xs opacity-75">{getRelativeTime(activity.timestamp)}</span>
+        </p>
+      </div>
+    );
+  };
+
   return (
     <>
-      {/* Activity Notification Banner */}
+      {/* Activity Notification Banner using AlertBanner component */}
       {latestActivity && (
-        <div className="fixed top-4 right-4 z-50 w-lg">
-          <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg shadow-lg">
-            <div className="flex items-start gap-3">
-              <div className="text-blue-500 text-xl">ℹ</div>
-              <div className="flex-1">
-                <p className="text-sm text-slate-700 font-medium">
-                  <span className="font-semibold">{latestActivity.userName}</span> completed a{' '}
-                  <span className="font-medium">{latestActivity.type}</span> in{' '}
-                  <span className="font-medium">{latestActivity.courseTitle}</span>{' '}
-                  <span className="text-xs text-slate-500 mt-1">{getRelativeTime(latestActivity.timestamp)}</span>
-                </p>
-                <button
-                  onClick={handleViewActivities}
-                  className="text-xs text-blue-600 hover:text-blue-700 font-medium mt-1 underline"
-                >
-                  View activities
-                </button>
-              </div>
-              <button
-                onClick={() => setLatestActivity(null)}
-                className="text-slate-400 hover:text-slate-600 text-lg leading-none"
-              >
-                ×
-              </button>
-            </div>
-          </div>
-        </div>
+        <AlertBanner
+          type="info"
+          message={getActivityMessage(latestActivity)}
+          onClose={() => setLatestActivity(null)}
+          autoHide={true}
+          duration={10000}
+          width="500px"
+          actionButton={{
+            label: "View activities",
+            onClick: handleViewActivities
+          }}
+        />
       )}
 
       {/* Activities Modal */}
@@ -182,7 +181,7 @@ export default function StudentActivityNotification() {
             <div className="p-4 border-t border-slate-200">
               <button
                 onClick={() => setShowModal(false)}
-                className="w-full px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition-colors"
+                className="w-full px-4 py-2 bg-slate-100 hover:bg-slate-400 text-slate-700 font-medium rounded-lg transition-colors"
               >
                 Close
               </button>

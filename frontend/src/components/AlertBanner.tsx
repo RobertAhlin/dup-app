@@ -4,10 +4,15 @@ import type { AlertType } from "../types/alert";
 
 interface AlertBannerProps {
   type: AlertType;
-  message: string;
+  message: string | React.ReactNode;
   onClose?: () => void;
   autoHide?: boolean;
   duration?: number;
+  actionButton?: {
+    label: string;
+    onClick: () => void;
+  };
+  width?: string;
 }
 
 export default function AlertBanner({
@@ -16,6 +21,8 @@ export default function AlertBanner({
   onClose,
   autoHide = false,
   duration = 2000,
+  actionButton,
+  width = '350px',
 }: AlertBannerProps) {
   const [isSlidingOut, setIsSlidingOut] = useState(false);
 
@@ -52,10 +59,19 @@ export default function AlertBanner({
       className={`alert-banner alert-${type} ${
         isSlidingOut ? "slide-out" : ""
       }`}
+      style={{ width }}
     >
       <div className="alert-content">
         <span className="alert-icon">{getIcon(type)}</span>
         <span className="alert-message">{message}</span>
+        {actionButton && (
+          <button
+            className="alert-action"
+            onClick={actionButton.onClick}
+          >
+            {actionButton.label}
+          </button>
+        )}
         {onClose && (
           <button
             className="alert-close"

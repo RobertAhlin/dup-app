@@ -54,6 +54,23 @@
   background-color: rgba(0, 0, 0, 0.1);
 }
 
+.alert-action {
+  background: none;
+  border: none;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  text-decoration: underline;
+  flex-shrink: 0;
+}
+
+.alert-action:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
 /* Success styling - Green */
 .alert-success {
   border-left-color: #27ae60;
