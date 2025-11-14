@@ -35,12 +35,11 @@ export default function TeacherDashboard({ courses }: Props) {
   const sortedCourses = [...courses].sort((a, b) => b.stats.averagePercentage - a.stats.averagePercentage);
 
   return (
-    <div className="p-1">
-      <h2 className="text-lg font-bold text-slate-800 mb-3">Course Completion Overview</h2>
-      
-      <div className="flex gap-6">
+    <div>
+      <div className="flex justify-between gap-2 w-full min-w-0">
         {/* Course list */}
-        <div className="flex-1">
+        <div className="border rounded-md border-slate-200 p-2">
+            <h2 className="text-sm font-bold text-slate-800 mb-3">Course Completion Overview</h2>
           {courses.length === 0 ? (
             <div>
               <p className="text-slate-600">You are not assigned to any courses yet.</p>
@@ -81,10 +80,12 @@ export default function TeacherDashboard({ courses }: Props) {
             </div>
           )}
         </div>
-
+        <div className="shrink min-w-0 w-full border rounded-md  border-slate-200 p-2">
+            Middle content
+        </div>
         {/* Activity Log */}
-        <div className="w-80 shrink-0">
-          <ActivityLog limit={15} />
+        <div className="w-60 shrink-0 border rounded-md  border-slate-200 p-2">
+          <ActivityLog limit={10} />
         </div>
       </div>
     </div>
