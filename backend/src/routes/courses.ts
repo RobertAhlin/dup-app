@@ -172,7 +172,7 @@ router.get('/:id/progress', verifyToken, async (req: AuthenticatedRequest, res) 
       return
     }
 
-    const [taskProgRes, hubProgRes] = await Promise.all([
+    const [taskProgRes, hubProgRes, totalsRes] = await Promise.all([
       pool.query(
         `SELECT tp.task_id, tp.status
            FROM task_progress tp
@@ -187,12 +187,36 @@ router.get('/:id/progress', verifyToken, async (req: AuthenticatedRequest, res) 
            JOIN hub h ON h.id = hus.hub_id
           WHERE hus.user_id = $1 AND h.course_id = $2`,
         [user.id, courseId]
+      ),
+      pool.query(
+        `SELECT 
+           (SELECT COUNT(*) FROM task t JOIN hub h ON h.id = t.hub_id WHERE h.course_id = $2) AS total_tasks,
+           (SELECT COUNT(*) FROM hub WHERE course_id = $2) AS total_hubs,
+           (SELECT COUNT(*) FROM task_progress tp JOIN task t ON t.id = tp.task_id JOIN hub h ON h.id = t.hub_id 
+            WHERE tp.user_id = $1 AND h.course_id = $2 AND tp.status = 'completed') AS completed_tasks,
+           (SELECT COUNT(*) FROM hub_user_state hus JOIN hub h ON h.id = hus.hub_id 
+            WHERE hus.user_id = $1 AND h.course_id = $2 AND hus.state = 'completed') AS completed_hubs`,
+        [user.id, courseId]
       )
     ])
+
+    const totals = totalsRes.rows[0]
+    const totalItems = Number(totals.total_tasks) + Number(totals.total_hubs)
+    const completedItems = Number(totals.completed_tasks) + Number(totals.completed_hubs)
+    const percentage = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0
 
     res.json({
       taskProgress: taskProgRes.rows,
       hubProgress: hubProgRes.rows,
+      summary: {
+        totalTasks: Number(totals.total_tasks),
+        totalHubs: Number(totals.total_hubs),
+        completedTasks: Number(totals.completed_tasks),
+        completedHubs: Number(totals.completed_hubs),
+        totalItems,
+        completedItems,
+        percentage,
+      },
     })
   } catch (err) {
     console.error('Get course progress error:', err)

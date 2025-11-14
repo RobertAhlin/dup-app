@@ -8,11 +8,22 @@ import { useAuth } from '../hooks/useAuth'
 import { getCourse } from '../api/courses'
 import type { Course } from '../types/course'
 import { useAlert } from '../contexts/useAlert'
+import ProgressBar from '../components/ProgressBar'
 
 type GraphResponse = {
   hubs: HubData[]
   tasks: TaskData[]
   edges: HubEdgeData[]
+}
+
+type ProgressSummary = {
+  totalTasks: number
+  totalHubs: number
+  completedTasks: number
+  completedHubs: number
+  totalItems: number
+  completedItems: number
+  percentage: number
 }
 
 type AxiosLikeError = {
@@ -31,6 +42,7 @@ export default function CourseBuilderPage() {
   const [graph, setGraph] = useState<GraphResponse | null>(null)
   const [taskDoneIds, setTaskDoneIds] = useState<number[] | null>(null)
   const [hubDoneIds, setHubDoneIds] = useState<number[] | null>(null)
+  const [progressSummary, setProgressSummary] = useState<ProgressSummary | null>(null)
   const [mode, setMode] = useState<'student' | 'edit'>('student')
   const [loading, setLoading] = useState(true)
   const [, setError] = useState<string | null>(null)
@@ -74,7 +86,11 @@ export default function CourseBuilderPage() {
 
     Promise.all([
       axios.get<{ graph: GraphResponse }>(`/api/courses/${courseId}/graph`),
-      axios.get<{ taskProgress: Array<{ task_id: number; status: string }>; hubProgress: Array<{ hub_id: number; state: string }> }>(`/api/courses/${courseId}/progress`),
+      axios.get<{ 
+        taskProgress: Array<{ task_id: number; status: string }>
+        hubProgress: Array<{ hub_id: number; state: string }>
+        summary: ProgressSummary
+      }>(`/api/courses/${courseId}/progress`),
       getCourse(courseId),
     ])
       .then(([graphRes, progressRes, courseData]) => {
@@ -84,6 +100,7 @@ export default function CourseBuilderPage() {
         const hubIds = progressRes.data.hubProgress.filter(p => p.state === 'completed').map(p => p.hub_id)
         setTaskDoneIds(taskIds)
         setHubDoneIds(hubIds)
+        setProgressSummary(progressRes.data.summary)
         setCourse(courseData)
       })
       .catch((err: unknown) => {
@@ -289,6 +306,23 @@ export default function CourseBuilderPage() {
 
   const canEdit = isTeacher && mode === 'edit'
 
+  const refetchProgress = useCallback(async () => {
+    try {
+      const res = await axios.get<{ 
+        taskProgress: Array<{ task_id: number; status: string }>
+        hubProgress: Array<{ hub_id: number; state: string }>
+        summary: ProgressSummary
+      }>(`/api/courses/${courseId}/progress`)
+      const taskIds = res.data.taskProgress.filter(p => p.status === 'completed').map(p => p.task_id)
+      const hubIds = res.data.hubProgress.filter(p => p.state === 'completed').map(p => p.hub_id)
+      setTaskDoneIds(taskIds)
+      setHubDoneIds(hubIds)
+      setProgressSummary(res.data.summary)
+    } catch (err) {
+      console.error('Failed to refetch progress', err)
+    }
+  }, [courseId])
+
   const handleDeleteEdge = useCallback(async (edgeId: number) => {
     try {
       setError(null)
@@ -375,6 +409,7 @@ export default function CourseBuilderPage() {
             onSetTaskDone={async (taskId, done) => {
               try {
                 await axios.put(`/api/tasks/${taskId}/progress`, { done })
+                await refetchProgress()
               } catch (err) {
                 const axiosErr = err as AxiosLikeError
                 const msg = axiosErr.response?.data?.error ?? 'Failed to update task progress'
@@ -385,6 +420,7 @@ export default function CourseBuilderPage() {
             onSetHubDone={async (hubId, done) => {
               try {
                 await axios.put(`/api/hubs/${hubId}/progress`, { done })
+                await refetchProgress()
               } catch (err) {
                 const axiosErr = err as AxiosLikeError
                 const msg = axiosErr.response?.data?.error ?? 'Failed to update hub progress'
@@ -405,6 +441,16 @@ export default function CourseBuilderPage() {
             onUpdateEdgeColor={handleUpdateEdgeColor}
           />
         </div>
+
+        {!canEdit && progressSummary && (
+          <div className="mt-4">
+            <ProgressBar
+              percentage={progressSummary.percentage}
+              completedItems={progressSummary.completedItems}
+              totalItems={progressSummary.totalItems}
+            />
+          </div>
+        )}
       </div>
     )
   }
