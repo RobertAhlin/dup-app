@@ -20,10 +20,13 @@ function CircularProgressBar({
   size = 400, 
   className = '' 
 }: Props) {
-  const strokeWidth = 20
+  const strokeWidth = 25
   const spacing = 8
   const centerX = size / 2
   const centerY = size / 2
+
+  // Filter out completed courses (100%)
+  const incompleteCourses = courses.filter(course => course.percentage < 100)
 
   // Calculate radii for concentric circles, working from outside to inside
   const getRadius = (index: number) => {
@@ -35,7 +38,7 @@ function CircularProgressBar({
       <div className="relative" style={{ width: size, height: size }}>
         <svg width={size} height={size} className="transform -rotate-90">
           <defs>
-            {courses.map((course, index) => (
+            {incompleteCourses.map((course, index) => (
               <linearGradient key={`gradient-${index}`} id={`gradient-${index}`} x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stopColor={course.color} stopOpacity="0.8" />
                 <stop offset="100%" stopColor={course.color} stopOpacity="1" />
@@ -43,7 +46,7 @@ function CircularProgressBar({
             ))}
           </defs>
 
-          {courses.map((course, index) => {
+          {incompleteCourses.map((course, index) => {
             const radius = getRadius(index)
             const circumference = 2 * Math.PI * radius
             const offset = circumference - (course.percentage / 100) * circumference
@@ -81,12 +84,20 @@ function CircularProgressBar({
         </svg>
 
         {/* Overlay icons and percentages for each ring */}
-        {courses.map((course, index) => {
+        {incompleteCourses.map((course, index) => {
           const radius = getRadius(index)
-          const angle = (course.percentage / 100) * 360 - 90 // -90 to start at top
-          const radians = (angle * Math.PI) / 180
-          const iconX = centerX + radius * Math.cos(radians)
-          const iconY = centerY + radius * Math.sin(radians)
+          
+          // Center of icon position at the top
+          const iconCenterAngle = -90
+          const iconRadians = (iconCenterAngle * Math.PI) / 180
+          const iconX = centerX + radius * Math.cos(iconRadians)
+          const iconY = centerY + radius * Math.sin(iconRadians)
+
+          // Position percentage at the end of progress
+          const endAngle = (course.percentage / 100) * 360 - 90
+          const endRadians = (endAngle * Math.PI) / 180
+          const percentX = centerX + radius * Math.cos(endRadians)
+          const percentY = centerY + radius * Math.sin(endRadians)
 
           const IconComponent = course.icon 
             ? (HeroIcons as Record<string, React.ComponentType<{ className?: string }>>)[
@@ -97,21 +108,42 @@ function CircularProgressBar({
             : null
 
           return (
-            <div
-              key={`label-${course.id}`}
-              className="absolute transform -translate-x-1/2 -translate-y-1/2"
-              style={{
-                left: `${iconX}px`,
-                top: `${iconY}px`,
-              }}
-            >
-              <div className="flex flex-col items-center bg-white rounded-full p-1.5 shadow-lg border border-slate-200">
-                {IconComponent && (
-                  <IconComponent className="w-5 h-5 text-slate-700" />
-                )}
-                <span className="text-xs font-bold text-slate-800 mt-0.5">
-                  {course.percentage}%
-                </span>
+            <div key={`label-${course.id}`}>
+              {/* Icon positioned on the ring */}
+              <div
+                className="absolute transform -translate-x-1/2 -translate-y-1/2"
+                style={{
+                  left: `${iconX}px`,
+                  top: `${iconY}px`,
+                }}
+              >
+                <div 
+                  className="flex items-center justify-center rounded-full shadow-lg"
+                  style={{
+                    width: `${strokeWidth}px`,
+                    height: `${strokeWidth}px`,
+                    backgroundColor: course.color,
+                  }}
+                >
+                  {IconComponent && (
+                    <IconComponent className="w-5 h-5 text-white" />
+                  )}
+                </div>
+              </div>
+
+              {/* Percentage at end */}
+              <div
+                className="absolute transform -translate-x-1/2 -translate-y-1/2"
+                style={{
+                  left: `${percentX}px`,
+                  top: `${percentY}px`,
+                }}
+              >
+                <div className="flex items-center justify-center bg-white rounded-full px-2 py-1 shadow-lg border border-slate-200">
+                  <span className="text-xs font-bold text-slate-800">
+                    {course.percentage}%
+                  </span>
+                </div>
               </div>
             </div>
           )
@@ -124,7 +156,7 @@ function CircularProgressBar({
               Progress
             </p>
             <p className="text-xs text-slate-400 mt-1">
-              {courses.length} {courses.length === 1 ? 'Course' : 'Courses'}
+              {incompleteCourses.length} {incompleteCourses.length === 1 ? 'Course' : 'Courses'}
             </p>
           </div>
         </div>

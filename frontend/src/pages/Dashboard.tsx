@@ -75,7 +75,7 @@ const Dashboard = () => {
 
   return (
     <MainCard name={user.name ?? ''} email={user.email} role={user.role}>
-      <div className="p-6">
+      <div className="p-2">
         <h2 className="text-2xl font-bold text-slate-800 mb-8">My Courses Progress</h2>
         
         {courses.length === 0 ? (
@@ -83,37 +83,38 @@ const Dashboard = () => {
             <p className="text-slate-600">You are not enrolled in any courses yet.</p>
           </div>
         ) : (
-          <div className="flex justify-center">
-            <CircularProgressBar courses={coursesWithColors} />
-          </div>
-        )}
+          <div className="flex gap-8 items-start">
+            {/* Course list on the left */}
+            <div className="w-60 shrink-0">
+              <h3 className="text-lg font-semibold text-slate-700 mb-4">Enrolled Courses</h3>
+              <div className="flex flex-col gap-2">
+                {sortedCourses.map((course, index) => (
+                  <div
+                    key={course.id}
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg border border-slate-200 hover:border-slate-300 cursor-pointer hover:shadow-md transition-all"
+                    onClick={() => navigate(`/course/${course.id}`)}
+                  >
+                    <div 
+                      className="w-3 h-3 rounded-full shrink-0"
+                      style={{ backgroundColor: colors[index % colors.length] }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-800 truncate">{course.title}</p>
+                      <p className="text-xs text-slate-500">
+                        {course.progress.completedItems} / {course.progress.totalItems} completed
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-base font-bold text-slate-800">{course.progress.percentage}%</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-        {/* Course list below */}
-        {courses.length > 0 && (
-          <div className="mt-12">
-            <h3 className="text-lg font-semibold text-slate-700 mb-4">Enrolled Courses</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {sortedCourses.map((course, index) => (
-                <div
-                  key={course.id}
-                  className="flex items-center gap-3 p-4 rounded-lg border border-slate-200 hover:border-slate-300 cursor-pointer hover:shadow-md transition-all"
-                  onClick={() => navigate(`/course/${course.id}`)}
-                >
-                  <div 
-                    className="w-3 h-3 rounded-full shrink-0"
-                    style={{ backgroundColor: colors[index % colors.length] }}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-slate-800 truncate">{course.title}</p>
-                    <p className="text-sm text-slate-500">
-                      {course.progress.completedItems} / {course.progress.totalItems} completed
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-slate-800">{course.progress.percentage}%</p>
-                  </div>
-                </div>
-              ))}
+            {/* Circular progress visualization on the right */}
+            <div className="flex-1 flex justify-center">
+              <CircularProgressBar courses={coursesWithColors} />
             </div>
           </div>
         )}
