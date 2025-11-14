@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, memo } from 'react'
 
 type Props = {
   value: string
@@ -6,7 +6,7 @@ type Props = {
   readOnly?: boolean
 }
 
-export default function SimpleEditor({ value, onChange, readOnly }: Props) {
+function SimpleEditor({ value, onChange, readOnly }: Props) {
   const ref = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
@@ -48,3 +48,5 @@ export default function SimpleEditor({ value, onChange, readOnly }: Props) {
     </div>
   )
 }
+
+export default memo(SimpleEditor)

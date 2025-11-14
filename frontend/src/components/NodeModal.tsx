@@ -78,6 +78,8 @@ export default function NodeModal(props: Props) {
   const { showAlert } = useAlert()
   const dialogRef = useRef<HTMLDivElement | null>(null)
   const closeBtnRef = useRef<HTMLButtonElement | null>(null)
+  const onCloseRef = useRef(onClose)
+  useEffect(() => { onCloseRef.current = onClose }, [onClose])
   // hub metadata editing removed from modal
   // metadata editing removed from modal; title/kind handled elsewhere
   // Task content fields
@@ -94,7 +96,7 @@ export default function NodeModal(props: Props) {
     const prevOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { e.preventDefault(); onClose(); return }
+      if (e.key === 'Escape') { e.preventDefault(); onCloseRef.current?.(); return }
       if (e.key !== 'Tab') return
       const container = dialogRef.current
       if (!container) return
@@ -115,7 +117,7 @@ export default function NodeModal(props: Props) {
       document.removeEventListener('keydown', handleKeyDown)
       document.body.style.overflow = prevOverflow
     }
-  }, [open, onClose])
+  }, [open])
 
   // Reset form state when entity changes
   // no hub title syncing needed in modal (metadata editing handled elsewhere)
@@ -123,19 +125,21 @@ export default function NodeModal(props: Props) {
 
   // Load content lazily when opening a modal (hub or task)
   useEffect(() => {
+    // Only refetch when the entity actually changes (by id), not on unrelated re-renders
     let cancelled = false
     const fetchContent = async () => {
       if (!open) return
+      const taskId = type === 'task' ? task?.id : undefined
+      const hubId = type === 'hub' ? hub?.id : undefined
+      if (!taskId && !hubId) return
       setContentLoading(true)
       try {
         type TaskContentPayload = { html?: string; youtubeUrls?: string[]; imageUrls?: string[]; quiz?: QuizQuestion[] }
         let res: { data: { payload: TaskContentPayload } } | null = null
-        if (type === 'task' && task) {
-          res = await axios.get<{ payload: TaskContentPayload }>(`/api/tasks/${task.id}/content`)
-        } else if (type === 'hub' && hub) {
-          res = await axios.get<{ payload: TaskContentPayload }>(`/api/hubs/${hub.id}/content`)
-        } else {
-          return
+        if (taskId) {
+          res = await axios.get<{ payload: TaskContentPayload }>(`/api/tasks/${taskId}/content`)
+        } else if (hubId) {
+          res = await axios.get<{ payload: TaskContentPayload }>(`/api/hubs/${hubId}/content`)
         }
         if (cancelled) return
         const p = res?.data.payload || {}
@@ -151,20 +155,34 @@ export default function NodeModal(props: Props) {
     }
     fetchContent()
     return () => { cancelled = true }
-  }, [open, type, task, hub])
+  }, [open, type, task?.id, hub?.id])
 
   const canShowHubCheckbox = useMemo(() => !canEdit && type === 'hub' && !!props.allHubTasksDone, [canEdit, type, props.allHubTasksDone])
 
   if (!open) return null
 
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) onCloseRef.current?.()
+  }
+
   return createPortal(
-    <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/30" role="dialog" aria-modal="true" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
-      <div ref={dialogRef} className="bg-white rounded-xl shadow-xl w-[min(560px,90vw)] max-h-[80vh] overflow-auto">
+    <div
+      className="fixed inset-0 flex items-center justify-center bg-black/30"
+      style={{ zIndex: 9999, willChange: 'opacity, transform', transform: 'translateZ(0)' }}
+      role="dialog"
+      aria-modal="true"
+      onClick={handleBackdropClick}
+    >
+      <div
+        ref={dialogRef}
+        className="bg-white rounded-xl shadow-xl w-[min(560px,90vw)] max-h-[80vh] overflow-auto"
+        style={{ zIndex: 9999, willChange: 'opacity, transform', transform: 'translateZ(0)' }}
+      >
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
           <h3 id="node-modal-title" className="text-sm font-semibold text-slate-700">
             {type === 'hub' ? (hub?.title ?? 'Hub') : (task?.title ?? 'Task')} details
           </h3>
-          <button ref={closeBtnRef} className="text-slate-500 hover:text-slate-700" onClick={onClose} aria-label="Close">×</button>
+          <button ref={closeBtnRef} className="text-slate-500 hover:text-slate-700" onClick={() => onCloseRef.current?.()} aria-label="Close">×</button>
         </div>
         <div className="p-4 text-sm text-slate-700">
           {type === 'hub' && hub && (
@@ -172,10 +190,11 @@ export default function NodeModal(props: Props) {
               <div><span className="font-medium">Title:</span> {hub.title}</div>
               {canEdit ? (
                 <>
-                  {contentLoading ? (
-                    <div className="text-xs text-slate-500">Loading content…</div>
-                  ) : (
-                    <>
+                  <div className="min-h-80">
+                    {contentLoading ? (
+                      <div className="text-xs text-slate-500">Loading content…</div>
+                    ) : (
+                      <>
                       <div>
                         <div className="text-xs text-slate-500 mb-1">Text content</div>
                         <SimpleEditor value={html} onChange={setHtml} readOnly={false} />
@@ -219,8 +238,9 @@ export default function NodeModal(props: Props) {
                           }}
                         >Save content</button>
                       </div>
-                    </>
-                  )}
+                      </>
+                    )}
+                  </div>
                 </>
               ) : (
                 <>
@@ -266,10 +286,11 @@ export default function NodeModal(props: Props) {
               <div className="space-y-3">
                 {canEdit ? (
                   <>
-                    {contentLoading ? (
-                      <div className="text-xs text-slate-500">Loading content…</div>
-                    ) : (
-                      <>
+                    <div className="min-h-80">
+                      {contentLoading ? (
+                        <div className="text-xs text-slate-500">Loading content…</div>
+                      ) : (
+                        <>
                         <div>
                           <div className="text-xs text-slate-500 mb-1">Text content</div>
                           <SimpleEditor value={html} onChange={setHtml} readOnly={false} />
@@ -313,8 +334,9 @@ export default function NodeModal(props: Props) {
                             }}
                           >Save content</button>
                         </div>
-                      </>
-                    )}
+                        </>
+                      )}
+                    </div>
                   </>
                 ) : (
                   <>

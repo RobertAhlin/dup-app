@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import type { ReactNode } from "react";
 import AlertBanner from "../components/AlertBanner";
 import type { AlertType, Alert } from "../types/alert";
@@ -50,10 +50,10 @@ export function AlertProvider({ children }: AlertProviderProps) {
     setAlerts((prev) => prev.filter((alert) => alert.id !== id));
   }, []);
 
-  const value = {
+  const value = useMemo(() => ({
     showAlert,
     hideAlert,
-  };
+  }), [showAlert, hideAlert]);
 
   return (
     <AlertContext.Provider value={value}>

@@ -541,6 +541,9 @@ export default function GraphCanvas(props: Props) {
     }
   }, [props, selectedEdge, showAlert])
 
+  // Stable modal close handler to avoid re-creating on each render
+  const handleModalClose = useCallback(() => setModal(null), [])
+
   // Deselect when clicking on empty canvas background
   const handlePaneClick = useCallback(() => {
     setSelectedHubId(null)
@@ -551,7 +554,7 @@ export default function GraphCanvas(props: Props) {
   }, [])
 
   return (
-  <div ref={wrapperRef} className={`h-full rounded-2xl overflow-hidden relative ${canEdit ? 'border-4 border-red-700' : 'border-0'}` }>
+  <div ref={wrapperRef} className={`h-full rounded-2xl overflow-hidden relative ${canEdit ? 'border-2 border-red-700' : 'border-0'}` }>
       {canEdit && (
         <div className="absolute z-10 left-3 top-3 bg-white/90 rounded-xl shadow px-3 py-2 flex items-center gap-2">
           <button
@@ -763,7 +766,7 @@ export default function GraphCanvas(props: Props) {
           canEdit={canEdit}
           hub={modal.type === 'hub' ? { id: modal.hub.id, title: modal.hub.title, color: modal.hub.color } : undefined}
           task={modal.type === 'task' ? { id: modal.task.id, title: modal.task.title, task_kind: modal.task.task_kind, color: modal.task.color } : undefined}
-          onClose={() => setModal(null)}
+          onClose={handleModalClose}
           // Edit callbacks
           onUpdateHub={onUpdateHub}
           onDeleteHub={onDeleteHub}

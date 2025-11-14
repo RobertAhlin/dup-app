@@ -1,15 +1,18 @@
 .alert-banner {
   position: fixed;
   top: 20px;
-  right: -400px; /* Start off-screen */
+  right: 20px;
   width: 350px;
   background: white;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 9999; /* Higher z-index to appear over all content */
+  z-index: 10000; /* Ensure above modal overlay (which uses 9999) */
   border-left: 4px solid;
   font-family: sans-serif;
-  animation: slideIn 0.3s ease-out forwards; /* Use forwards to maintain final state */
+  /* Use transform-based animation to avoid layout/reflow and prevent flicker */
+  transform: translateX(400px);
+  will-change: transform, opacity;
+  animation: slideInX 0.3s ease-out forwards; /* Use forwards to maintain final state */
 }
 
 .alert-content {
@@ -111,30 +114,30 @@
   color: #3498db;
 }
 
-/* Slide in animation */
-@keyframes slideIn {
+/* Slide in animation using transform */
+@keyframes slideInX {
   from {
-    right: -400px;
+    transform: translateX(400px);
     opacity: 0;
   }
   to {
-    right: 20px;
+    transform: translateX(0);
     opacity: 1;
   }
 }
 
-/* Slide out animation */
-@keyframes slideOut {
+/* Slide out animation using transform */
+@keyframes slideOutX {
   from {
-    right: 20px;
+    transform: translateX(0);
     opacity: 1;
   }
   to {
-    right: -400px;
+    transform: translateX(400px);
     opacity: 0;
   }
 }
 
 .alert-banner.slide-out {
-  animation: slideOut 0.3s ease-in forwards;
+  animation: slideOutX 0.3s ease-in forwards;
 }

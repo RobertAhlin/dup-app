@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { memo, useState } from 'react'
 
 export type QuizQuestion = {
   question: string
@@ -12,7 +12,7 @@ type Props = {
   readOnly?: boolean
 }
 
-export default function QuizEditor({ value, onChange, readOnly }: Props) {
+function QuizEditor({ value, onChange, readOnly }: Props) {
   const [local, setLocal] = useState<QuizQuestion[]>(value ?? [])
 
   const pushChange = (next: QuizQuestion[]) => {
@@ -62,3 +62,5 @@ export default function QuizEditor({ value, onChange, readOnly }: Props) {
     </div>
   )
 }
+
+export default memo(QuizEditor)
