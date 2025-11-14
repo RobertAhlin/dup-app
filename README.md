@@ -88,6 +88,8 @@ Our goal is to create a platform that supports upskilling through clarity, modul
 ## UI examples
 ### Login page
 ![Login page](readmefiles/login-page_01.png)
+### Student dashboard
+![Studen dashboard](readmefiles/student-dashboard_01.png)
 ### Course selection sidebar
 ![Course selection sidebar](readmefiles/course-selection-sidebar_01.png)
 ![Course selection sidebar minimized](readmefiles/course-selection-sidebar-minimized_01.png)
