@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import ActivityLog from "./ActivityLog";
 
 type TeacherCourseStats = {
   id: number
@@ -37,45 +38,55 @@ export default function TeacherDashboard({ courses }: Props) {
     <div className="p-1">
       <h2 className="text-lg font-bold text-slate-800 mb-3">Course Completion Overview</h2>
       
-      {courses.length === 0 ? (
-        <div>
-          <p className="text-slate-600">You are not assigned to any courses yet.</p>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-2 max-w-1/6">
-          {sortedCourses.map((course, index) => (
-            <div
-              key={course.id}
-              className="flex flex-col px-2 rounded-lg border border-slate-200 hover:border-slate-300 cursor-pointer hover:shadow-md transition-all"
-              onClick={() => navigate(`/course/${course.id}`)}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <p className="text-base font-semibold text-slate-800 truncate">{course.title}</p>
-                </div>
-                <div className="text-right ml-2">
-                  <p className="text-1xl font-bold text-slate-800">{course.stats.averagePercentage}%</p>
-                </div>
-              </div>
-              
-              <p className="text-xs text-slate-500">
-                {course.stats.totalStudents} {course.stats.totalStudents === 1 ? 'student' : 'students'} • {course.stats.totalItems} items
-              </p>
-              
-              {/* Progress bar */}
-              <div className="w-full mb-2 bg-slate-200 rounded-full h-2 overflow-hidden">
-                <div 
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{ 
-                    width: `${course.stats.averagePercentage}%`,
-                    backgroundColor: colors[index % colors.length]
-                  }}
-                />
-              </div>
+      <div className="flex gap-6">
+        {/* Course list */}
+        <div className="flex-1">
+          {courses.length === 0 ? (
+            <div>
+              <p className="text-slate-600">You are not assigned to any courses yet.</p>
             </div>
-          ))}
+          ) : (
+            <div className="flex flex-col gap-2">
+              {sortedCourses.map((course, index) => (
+                <div
+                  key={course.id}
+                  className="flex flex-col px-2 rounded-lg border border-slate-200 hover:border-slate-300 cursor-pointer hover:shadow-md transition-all"
+                  onClick={() => navigate(`/course/${course.id}`)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <p className="text-base font-semibold text-slate-800 truncate">{course.title}</p>
+                    </div>
+                    <div className="text-right ml-2">
+                      <p className="text-1xl font-bold text-slate-800">{course.stats.averagePercentage}%</p>
+                    </div>
+                  </div>
+                  
+                  <p className="text-xs text-slate-500">
+                    {course.stats.totalStudents} {course.stats.totalStudents === 1 ? 'student' : 'students'} • {course.stats.totalItems} items
+                  </p>
+                  
+                  {/* Progress bar */}
+                  <div className="w-full mb-2 bg-slate-200 rounded-full h-2 overflow-hidden">
+                    <div 
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{ 
+                        width: `${course.stats.averagePercentage}%`,
+                        backgroundColor: colors[index % colors.length]
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      )}
+
+        {/* Activity Log */}
+        <div className="w-80 shrink-0">
+          <ActivityLog limit={15} />
+        </div>
+      </div>
     </div>
   );
 }

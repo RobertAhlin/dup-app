@@ -2,6 +2,7 @@ import { Router } from 'express';
 import pool from '../db';
 import { verifyToken, AuthenticatedRequest } from '../middleware/verifyToken';
 import { canEditCourse, canViewCourse, AuthUser } from './helpers/courseAccess';
+import { emitActivityUpdate } from '../socket';
 
 const router = Router();
 
@@ -223,6 +224,32 @@ router.put('/:id/progress', verifyToken, async (req: AuthenticatedRequest, res) 
                      completed_at = CASE WHEN EXCLUDED.state = 'completed'::hub_state THEN NOW() ELSE NULL END`,
       [user.id, hubId, done ? 'completed' : 'unlocked']
     )
+
+    // Emit Socket.IO event if hub was completed
+    if (done) {
+      try {
+        const activityResult = await pool.query(
+          `SELECT 
+            'hub' as type,
+            u.name as "userName",
+            h.title as "itemTitle",
+            c.title as "courseTitle",
+            NOW() as timestamp
+          FROM hub h
+          JOIN users u ON u.id = $1
+          JOIN course c ON c.id = h.course_id
+          WHERE h.id = $2`,
+          [user.id, hubId]
+        );
+
+        if (activityResult.rows[0]) {
+          emitActivityUpdate(activityResult.rows[0]);
+        }
+      } catch (socketErr) {
+        console.error('Socket.IO emit error:', socketErr);
+        // Don't fail the request if socket emission fails
+      }
+    }
 
     res.json({ success: true })
   } catch (err) {

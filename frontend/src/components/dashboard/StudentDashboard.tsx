@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import CircularProgressBar from "../CircularProgressBar";
+import ActivityLog from "./ActivityLog";
 
 type CourseProgress = {
   id: number
@@ -52,37 +53,44 @@ export default function StudentDashboard({ courses }: Props) {
           <p className="text-slate-600">You are not enrolled in any courses yet.</p>
         </div>
       ) : (
-        <div className="flex gap-8 items-start">
-          {/* Course list on the left */}
-          <div className="w-60 shrink-0">
-            <div className="flex flex-col gap-2">
-              {sortedCourses.map((course, index) => (
-                <div
-                  key={course.id}
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg border border-slate-200 hover:border-slate-300 cursor-pointer hover:shadow-md transition-all"
-                  onClick={() => navigate(`/course/${course.id}`)}
-                >
-                  <div 
-                    className="w-3 h-3 rounded-full shrink-0"
-                    style={{ backgroundColor: colors[index % colors.length] }}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-800 truncate">{course.title}</p>
-                    <p className="text-xs text-slate-500">
-                      {course.progress.completedItems} / {course.progress.totalItems} completed
-                    </p>
+        <div className="flex flex-col gap-6">
+          <div className="flex gap-8 items-start">
+            {/* Course list on the left */}
+            <div className="w-60 shrink-0">
+              <div className="flex flex-col gap-2">
+                {sortedCourses.map((course, index) => (
+                  <div
+                    key={course.id}
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg border border-slate-200 hover:border-slate-300 cursor-pointer hover:shadow-md transition-all"
+                    onClick={() => navigate(`/course/${course.id}`)}
+                  >
+                    <div 
+                      className="w-3 h-3 rounded-full shrink-0"
+                      style={{ backgroundColor: colors[index % colors.length] }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-800 truncate">{course.title}</p>
+                      <p className="text-xs text-slate-500">
+                        {course.progress.completedItems} / {course.progress.totalItems} completed
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-base font-bold text-slate-800">{course.progress.percentage}%</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-base font-bold text-slate-800">{course.progress.percentage}%</p>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
+            </div>
+
+            {/* Circular progress visualization on the right */}
+            <div className="flex-1 flex">
+              <CircularProgressBar courses={coursesWithColors} />
             </div>
           </div>
 
-          {/* Circular progress visualization on the right */}
-          <div className="flex-1 flex">
-            <CircularProgressBar courses={coursesWithColors} />
+          {/* Activity Log below */}
+          <div className="border-t border-slate-200 pt-6">
+            <ActivityLog limit={10} />
           </div>
         </div>
       )}

@@ -249,6 +249,118 @@ router.get('/dashboard/teacher-stats', verifyToken, async (req: AuthenticatedReq
   }
 });
 
+// Activity log for dashboard
+router.get('/dashboard/activity', verifyToken, async (req: AuthenticatedRequest, res) => {
+  try {
+    const user = req.user as AuthUser | undefined;
+    if (!user) {
+      res.status(401).json({ error: 'Not authenticated' });
+      return;
+    }
+
+    const roleName = await getRoleName(user.role_id);
+    const limit = Number(req.query.limit) || 20;
+
+    if (roleName === 'teacher') {
+      // Get activity from all courses the teacher is assigned to
+      const result = await pool.query(
+        `SELECT 
+          'task' AS activity_type,
+          u.name AS user_name,
+          t.title AS item_title,
+          c.title AS course_title,
+          tp.completed_at AS timestamp
+         FROM task_progress tp
+         JOIN users u ON u.id = tp.user_id
+         JOIN task t ON t.id = tp.task_id
+         JOIN hub h ON h.id = t.hub_id
+         JOIN course c ON c.id = h.course_id
+         JOIN course_teachers ct ON ct.course_id = c.id AND ct.user_id = $1
+         WHERE tp.status = 'completed' AND tp.completed_at IS NOT NULL
+         
+         UNION ALL
+         
+         SELECT 
+          'hub' AS activity_type,
+          u.name AS user_name,
+          h.title AS item_title,
+          c.title AS course_title,
+          hus.completed_at AS timestamp
+         FROM hub_user_state hus
+         JOIN users u ON u.id = hus.user_id
+         JOIN hub h ON h.id = hus.hub_id
+         JOIN course c ON c.id = h.course_id
+         JOIN course_teachers ct ON ct.course_id = c.id AND ct.user_id = $1
+         WHERE hus.state = 'completed' AND hus.completed_at IS NOT NULL
+         
+         ORDER BY timestamp DESC
+         LIMIT $2`,
+        [user.id, limit]
+      );
+
+      const activities = result.rows.map(row => ({
+        type: row.activity_type,
+        userName: row.user_name,
+        itemTitle: row.item_title,
+        courseTitle: row.course_title,
+        timestamp: row.timestamp,
+      }));
+
+      res.json({ activities });
+    } else {
+      // Student view: activity from enrolled courses
+      const result = await pool.query(
+        `SELECT 
+          'task' AS activity_type,
+          u.name AS user_name,
+          t.title AS item_title,
+          c.title AS course_title,
+          tp.completed_at AS timestamp
+         FROM task_progress tp
+         JOIN users u ON u.id = tp.user_id
+         JOIN task t ON t.id = tp.task_id
+         JOIN hub h ON h.id = t.hub_id
+         JOIN course c ON c.id = h.course_id
+         JOIN course_enrollments ce ON ce.course_id = c.id AND ce.user_id = $1
+         WHERE tp.status = 'completed' AND tp.completed_at IS NOT NULL
+         
+         UNION ALL
+         
+         SELECT 
+          'hub' AS activity_type,
+          u.name AS user_name,
+          h.title AS item_title,
+          c.title AS course_title,
+          hus.completed_at AS timestamp
+         FROM hub_user_state hus
+         JOIN users u ON u.id = hus.user_id
+         JOIN hub h ON h.id = hus.hub_id
+         JOIN course c ON c.id = h.course_id
+         JOIN course_enrollments ce ON ce.course_id = c.id AND ce.user_id = $1
+         WHERE hus.state = 'completed' AND hus.completed_at IS NOT NULL
+         
+         ORDER BY timestamp DESC
+         LIMIT $2`,
+        [user.id, limit]
+      );
+
+      const activities = result.rows.map(row => ({
+        type: row.activity_type,
+        userName: row.user_name,
+        itemTitle: row.item_title,
+        courseTitle: row.course_title,
+        timestamp: row.timestamp,
+      }));
+
+      res.json({ activities });
+    }
+  } catch (err) {
+    console.error('Get dashboard activity error:', err);
+    res.status(500).json({ error: 'Failed to load activity log' });
+  }
+});
+
+
 router.get('/:id/graph', verifyToken, async (req: AuthenticatedRequest, res) => {
   const courseId = Number(req.params.id);
   if (!Number.isInteger(courseId)) {

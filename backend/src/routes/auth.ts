@@ -99,6 +99,12 @@ const loginHandler = async (req: Request, res: Response) => {
       sameSite: 'lax',
       maxAge: 2 * 60 * 60 * 1000 // 2 timmar
     })
+    .cookie('socketToken', token, {
+      httpOnly: false, // Accessible to JavaScript for Socket.IO
+      secure: process.env.NODE_ENV === 'production' ? true : false,
+      sameSite: 'lax',
+      maxAge: 2 * 60 * 60 * 1000 // 2 timmar
+    })
   .json({ message: 'Login successful' });
   } catch (err) {
     console.error('❌ Login error:', err);
@@ -155,6 +161,11 @@ router.get('/me', verifyToken, getProfileHandler);
 router.post('/logout', (_req, res) => {
   res.clearCookie('token', {
     httpOnly: true,
+    secure: true,
+    sameSite: 'strict',
+  });
+  res.clearCookie('socketToken', {
+    httpOnly: false,
     secure: true,
     sameSite: 'strict',
   });

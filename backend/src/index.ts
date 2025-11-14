@@ -1,6 +1,7 @@
 //backend/src/index.ts
 
 import express from "express";
+import http from "http";
 import pool from "./db";
 import authRoutes from "./routes/auth";
 import usersRoutes from "./routes/users";
@@ -13,11 +14,16 @@ import edgesRoutes from "./routes/edges";
 import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
+import { initializeSocket } from "./socket";
 
 dotenv.config();
 
 const app = express();
+const httpServer = http.createServer(app);
 const PORT = process.env.PORT || 5000;
+
+// Initialize Socket.IO
+initializeSocket(httpServer);
 
 // Ensure critical schema tweaks exist (safe to run on every start)
 async function ensureSchema() {
@@ -86,6 +92,6 @@ app.get("/", async (_req, res) => {
 console.log("✅ All routes registered");
 
 // Start server
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`🚀 Server listening on port ${PORT}`);
 });
