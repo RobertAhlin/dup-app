@@ -1,4 +1,4 @@
-import { useEffect, useState, lazy, Suspense, useCallback } from 'react';
+import { useEffect, useState, lazy, Suspense, useCallback, Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from '../api/axios';
 import { listUsers, createUser, updateUser, deleteUser } from '../api/users';
@@ -109,9 +109,13 @@ export default function AdminDashboard() {
     load();
   }, [tab, courses.length]);
 
-  const [form, setForm] = useState({ email: '', name: '', password: '', role: 'user' });
+  const [form, setForm] = useState({ email: '', name: '', password: '', role: 'student' });
   const [editing, setEditing] = useState<null | number>(null);
   const [iconPickerTarget, setIconPickerTarget] = useState<null | { type: 'create' } | { type: 'edit'; courseId: number }>(null);
+  
+  // Pagination state
+  const [usersPerPage, setUsersPerPage] = useState(15);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const refresh = async () => {
     const list = await listUsers();
@@ -122,7 +126,7 @@ export default function AdminDashboard() {
     e.preventDefault();
     try {
       await createUser({ email: form.email, password: form.password, name: form.name || undefined, role: form.role });
-      setForm({ email: '', name: '', password: '', role: 'user' });
+      setForm({ email: '', name: '', password: '', role: 'student' });
       await refresh();
     } catch {
       setError('Failed to create user');
@@ -133,7 +137,7 @@ export default function AdminDashboard() {
     try {
       await updateUser(id, { name: form.name || undefined, role: form.role || undefined, password: form.password || undefined });
       setEditing(null);
-      setForm({ email: '', name: '', password: '', role: 'user' });
+      setForm({ email: '', name: '', password: '', role: 'student' });
       await refresh();
     } catch {
       setError('Failed to update user');
@@ -219,6 +223,12 @@ export default function AdminDashboard() {
     }
   };
 
+  // Calculate paginated users
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = usersPerPage === -1 ? users : users.slice(indexOfFirstUser, indexOfLastUser);
+  const totalPages = usersPerPage === -1 ? 1 : Math.ceil(users.length / usersPerPage);
+
   if (loading) return <p>Loading...</p>;
   if (error) return <p style={{ color: 'red' }}>{error}</p>;
   if (!me) return null;
@@ -238,6 +248,26 @@ export default function AdminDashboard() {
           <h2 className="text-xl font-semibold text-gray-800">
             Admin • {tab === 'users' ? 'Users' : tab === 'courses' ? 'Courses' : 'Enrollments'}
           </h2>
+          {tab === 'users' && (
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600">Show:</label>
+              <select 
+                className="border rounded-lg px-3 py-1 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                value={usersPerPage}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value);
+                  setUsersPerPage(value);
+                  setCurrentPage(1);
+                }}
+              >
+                <option value={10}>10</option>
+                <option value={15}>15</option>
+                <option value={25}>25</option>
+                <option value={100}>100</option>
+                <option value={-1}>All</option>
+              </select>
+            </div>
+          )}
         </div>
 
         {tab === 'users' && (
@@ -259,9 +289,17 @@ export default function AdminDashboard() {
           <div>
             <label className="block text-sm text-gray-600 mb-1">Role</label>
             <select className="w-full border rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40" value={form.role} onChange={e => setForm(f => ({...f, role: e.target.value}))}>
-              {roles.map(r => (
-                <option key={r.id} value={r.name}>{r.name}</option>
-              ))}
+              {roles
+                .sort((a, b) => a.id - b.id)
+                .map(r => (
+                  <option 
+                    key={r.id} 
+                    value={r.name}
+                    style={r.name.toLowerCase() === 'admin' ? { color: '#9ca3af' } : undefined}
+                  >
+                    {r.name}
+                  </option>
+                ))}
             </select>
           </div>
           <div className="md:col-span-1 md:justify-self-end">
@@ -270,9 +308,9 @@ export default function AdminDashboard() {
         </form>
 
         {/* List */}
-        <div className="overflow-x-auto">
+        <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 400px)' }}>
           <table className="w-full text-sm">
-            <thead>
+            <thead className="sticky top-0 bg-white">
               <tr className="text-left border-b border-black/10 text-gray-600">
                 <th className="py-2 pr-2">ID</th>
                 <th className="pr-2">Name</th>
@@ -282,7 +320,7 @@ export default function AdminDashboard() {
               </tr>
             </thead>
             <tbody>
-              {users.map(u => (
+              {currentUsers.map(u => (
                 <tr key={u.id} className="border-b border-black/5 hover:bg-black/5">
                   <td className="py-2 pr-2">{u.id}</td>
                   <td className="pr-2">
@@ -318,6 +356,57 @@ export default function AdminDashboard() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {usersPerPage !== -1 && totalPages > 1 && (
+          <div className="flex items-center justify-between mt-4">
+            <p className="text-sm text-gray-600">
+              Showing {indexOfFirstUser + 1} to {Math.min(indexOfLastUser, users.length)} of {users.length} users
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 border rounded-lg text-sm bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(page => {
+                    if (totalPages <= 7) return true;
+                    if (page === 1 || page === totalPages) return true;
+                    if (page >= currentPage - 1 && page <= currentPage + 1) return true;
+                    return false;
+                  })
+                  .map((page, index, array) => (
+                    <Fragment key={page}>
+                      {index > 0 && array[index - 1] !== page - 1 && (
+                        <span className="px-2 text-gray-400">...</span>
+                      )}
+                      <button
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-3 py-1 border rounded-lg text-sm ${
+                          currentPage === page
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-white hover:bg-gray-50'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    </Fragment>
+                  ))}
+              </div>
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 border rounded-lg text-sm bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
           </>
         )}
 
