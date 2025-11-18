@@ -83,6 +83,12 @@ const loginHandler = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Invalid email or password.' });
     }
 
+    // Update last login timestamp
+    await pool.query(
+      'UPDATE users SET last_login_at = NOW() WHERE id = $1',
+      [user.id]
+    );
+
     const tokenPayload = {
       id: user.id,
       email: user.email,

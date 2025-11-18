@@ -6,8 +6,8 @@ import { emitActivityUpdate } from '../socket';
 
 const router = Router();
 
-// Get members for a course
-router.get('/:courseId/members', verifyToken, ensureAdmin, async (req: AuthenticatedRequest, res) => {
+// Get members for a course (with last login info)
+router.get('/:courseId/members', verifyToken, async (req: AuthenticatedRequest, res) => {
   const { courseId } = req.params;
   const { role, search } = req.query;
 
@@ -23,7 +23,23 @@ router.get('/:courseId/members', verifyToken, ensureAdmin, async (req: Authentic
           WHEN ce.user_id IS NOT NULL THEN 'student'
           ELSE NULL
         END as role_in_course,
-        COALESCE(ct.assigned_at, ce.enrolled_at) as joined_at
+        COALESCE(ct.assigned_at, ce.enrolled_at) as joined_at,
+        u.last_login_at,
+        (
+          (SELECT COUNT(*)::integer FROM task t JOIN hub h ON h.id = t.hub_id WHERE h.course_id = $1) +
+          (SELECT COUNT(*)::integer FROM hub WHERE course_id = $1)
+        ) AS total_tasks,
+        (
+          COALESCE((SELECT COUNT(*)::integer 
+           FROM task_progress tp 
+           JOIN task t ON t.id = tp.task_id 
+           JOIN hub h ON h.id = t.hub_id 
+           WHERE tp.user_id = u.id AND h.course_id = $1 AND tp.status = 'completed'), 0) +
+          COALESCE((SELECT COUNT(*)::integer 
+           FROM hub_user_state hus 
+           JOIN hub h ON h.id = hus.hub_id 
+           WHERE hus.user_id = u.id AND h.course_id = $1 AND hus.state = 'completed'), 0)
+        ) AS completed_tasks
       FROM users u
       LEFT JOIN roles r ON r.id = u.role_id
       LEFT JOIN course_teachers ct ON ct.user_id = u.id AND ct.course_id = $1
