@@ -84,7 +84,7 @@ const Dashboard = () => {
   return (
     <MainCard name={user.name ?? ''} email={user.email} role={user.role}>
       {user.role === 'teacher' || user.role === 'admin' ? (
-        <TeacherDashboard courses={teacherCourses} />
+        <TeacherDashboard courses={teacherCourses} userRole={user.role} />
       ) : (
         <StudentDashboard courses={courses} />
       )}

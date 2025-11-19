@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import axios from "../../api/axios";
 import { io, Socket } from "socket.io-client";
+import { CheckIcon } from "@heroicons/react/24/solid";
 
 type Activity = {
   type: 'task' | 'hub'
@@ -142,11 +143,11 @@ export default function ActivityLog({ limit = 20 }: Props) {
               key={index} 
               className="flex items-start gap-2 p-0.5 rounded bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-200"
             >
-              {/* status indicator removed */}
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-slate-700 leading-snug">
-                  <span className="font-semibold">{activity.userName}</span> completed a{' '}
-                  <span className="font-medium">{activity.type}</span> in{' '}
+                  <span className="font-semibold">{activity.userName}</span>{' '}
+                  <CheckIcon className="w-3 h-3 text-green-600 inline" />{' '}
+                  a <span className="font-medium">{activity.type}</span> in{' '}
                   <span className="font-medium">{activity.courseTitle}</span>{' '}
                   <span className="text-xs text-slate-500 mt-0.5">{getRelativeTime(activity.timestamp)}</span>
                 </p>

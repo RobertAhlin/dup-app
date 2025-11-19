@@ -559,6 +559,53 @@ router.put('/:id', verifyToken, ensureAdmin, async (req, res) => {
   }
 });
 
+// Admin stats endpoint
+router.get('/dashboard/admin-stats', verifyToken, ensureAdmin, async (req: AuthenticatedRequest, res) => {
+  try {
+    // Get total users (teachers and students)
+    const usersResult = await pool.query(
+      `SELECT 
+        COUNT(CASE WHEN r.name = 'teacher' THEN 1 END) AS total_teachers,
+        COUNT(CASE WHEN r.name = 'student' THEN 1 END) AS total_students,
+        COUNT(*) AS total_users
+       FROM users u
+       JOIN roles r ON r.id = u.role_id
+       WHERE r.name IN ('teacher', 'student')`
+    );
+
+    // Get total courses
+    const coursesResult = await pool.query('SELECT COUNT(*) AS total_courses FROM course');
+
+    // Get logins in last week
+    const weekAgoResult = await pool.query(
+      `SELECT COUNT(*) AS logins_last_week
+       FROM users
+       WHERE last_login_at >= NOW() - INTERVAL '7 days'`
+    );
+
+    // Get active sessions (users logged in within last 30 minutes)
+    const activeSessionsResult = await pool.query(
+      `SELECT COUNT(*) AS active_sessions
+       FROM users
+       WHERE last_login_at >= NOW() - INTERVAL '30 minutes'`
+    );
+
+    res.json({
+      stats: {
+        totalTeachers: parseInt(usersResult.rows[0].total_teachers || '0'),
+        totalStudents: parseInt(usersResult.rows[0].total_students || '0'),
+        totalUsers: parseInt(usersResult.rows[0].total_users || '0'),
+        totalCourses: parseInt(coursesResult.rows[0].total_courses || '0'),
+        loginsLastWeek: parseInt(weekAgoResult.rows[0].logins_last_week || '0'),
+        activeSessions: parseInt(activeSessionsResult.rows[0].active_sessions || '0'),
+      }
+    });
+  } catch (err) {
+    console.error('Admin stats error:', err);
+    res.status(500).json({ error: 'Failed to fetch admin stats' });
+  }
+});
+
 // Delete
 router.delete('/:id', verifyToken, ensureAdmin, async (req, res) => {
   const { id } = req.params;

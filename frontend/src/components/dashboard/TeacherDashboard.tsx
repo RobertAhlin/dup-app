@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import ActivityLog from "./ActivityLog";
+import AdminStats from "./AdminStats";
 import LoadingSpinner from "../LoadingSpinner";
 import { getCourseMembers } from "../../api/courseMembers";
 import type { CourseMember } from "../../types/courseMember";
@@ -20,6 +21,7 @@ type TeacherCourseStats = {
 
 type Props = {
   courses: TeacherCourseStats[]
+  userRole?: string
 }
 
 const colors = [
@@ -33,7 +35,7 @@ const colors = [
   '#ffeb3b', // yellow
 ];
 
-export default function TeacherDashboard({ courses }: Props) {
+export default function TeacherDashboard({ courses, userRole }: Props) {
   const sortedCourses = [...courses].sort((a, b) => b.stats.averagePercentage - a.stats.averagePercentage);
   
   const [selectedCourse, setSelectedCourse] = useState<TeacherCourseStats | null>(null);
@@ -131,9 +133,13 @@ export default function TeacherDashboard({ courses }: Props) {
         </div>
         <div className="shrink min-w-0 w-full border rounded-md border-slate-200 p-4 overflow-auto" style={{ maxHeight: 'calc(100vh - 120px)' }}>
           {!selectedCourse ? (
-            <div className="flex items-center justify-center h-full text-slate-500">
-              <p>Select a course to view details</p>
-            </div>
+            userRole === 'admin' ? (
+              <AdminStats />
+            ) : (
+              <div className="flex items-center justify-center h-full text-slate-500">
+                <p>Select a course to view details</p>
+              </div>
+            )
           ) : (
             <div>
               <div className="mb-4 pb-3 border-b border-slate-200">
