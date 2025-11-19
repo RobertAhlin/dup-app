@@ -51,7 +51,7 @@ const Dashboard = () => {
         setUser(userRes.data.user);
         
         // Fetch appropriate dashboard data based on role
-        if (userRes.data.user.role === 'teacher') {
+        if (userRes.data.user.role === 'teacher' || userRes.data.user.role === 'admin') {
           const statsRes = await axios.get<{ courses: TeacherCourseStats[] }>(
             "/api/courses/dashboard/teacher-stats", 
             { withCredentials: true }
@@ -83,7 +83,7 @@ const Dashboard = () => {
 
   return (
     <MainCard name={user.name ?? ''} email={user.email} role={user.role}>
-      {user.role === 'teacher' ? (
+      {user.role === 'teacher' || user.role === 'admin' ? (
         <TeacherDashboard courses={teacherCourses} />
       ) : (
         <StudentDashboard courses={courses} />

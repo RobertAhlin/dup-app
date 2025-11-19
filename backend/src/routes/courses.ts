@@ -166,12 +166,13 @@ router.get('/dashboard/teacher-stats', verifyToken, async (req: AuthenticatedReq
     }
 
     const roleName = await getRoleName(user.role_id);
-    if (roleName !== 'teacher') {
+    if (roleName !== 'teacher' && roleName !== 'admin') {
       res.json({ courses: [] });
       return;
     }
 
-    // Get courses where user is a teacher
+    // Get courses where user is a teacher, or all courses if admin
+    const isAdmin = roleName === 'admin';
     const result = await pool.query(
       `WITH course_stats AS (
         SELECT 
@@ -197,7 +198,7 @@ router.get('/dashboard/teacher-stats', verifyToken, async (req: AuthenticatedReq
              WHERE h.course_id = c.id AND hus.state = 'completed'), 0
           ) AS total_completed_hubs
         FROM course c
-        JOIN course_teachers ct ON ct.course_id = c.id AND ct.user_id = $1
+        ${isAdmin ? '' : 'JOIN course_teachers ct ON ct.course_id = c.id AND ct.user_id = $1'}
         LEFT JOIN course_enrollments ce ON ce.course_id = c.id
         GROUP BY c.id, c.title, c.icon
       )
@@ -214,7 +215,7 @@ router.get('/dashboard/teacher-stats', verifyToken, async (req: AuthenticatedReq
         (total_completed_tasks + total_completed_hubs) AS total_completed_items
       FROM course_stats
       ORDER BY title`,
-      [user.id]
+      isAdmin ? [] : [user.id]
     );
 
     const courses = result.rows.map(row => {
@@ -261,8 +262,9 @@ router.get('/dashboard/activity', verifyToken, async (req: AuthenticatedRequest,
     const roleName = await getRoleName(user.role_id);
     const limit = Number(req.query.limit) || 20;
 
-    if (roleName === 'teacher') {
-      // Get activity from all courses the teacher is assigned to
+    if (roleName === 'teacher' || roleName === 'admin') {
+      // Get activity from all courses the teacher is assigned to, or all courses for admin
+      const isAdmin = roleName === 'admin';
       const result = await pool.query(
         `SELECT 
           'task' AS activity_type,
@@ -275,7 +277,7 @@ router.get('/dashboard/activity', verifyToken, async (req: AuthenticatedRequest,
          JOIN task t ON t.id = tp.task_id
          JOIN hub h ON h.id = t.hub_id
          JOIN course c ON c.id = h.course_id
-         JOIN course_teachers ct ON ct.course_id = c.id AND ct.user_id = $1
+         ${isAdmin ? '' : 'JOIN course_teachers ct ON ct.course_id = c.id AND ct.user_id = $1'}
          WHERE tp.status = 'completed' AND tp.completed_at IS NOT NULL
          
          UNION ALL
@@ -290,12 +292,12 @@ router.get('/dashboard/activity', verifyToken, async (req: AuthenticatedRequest,
          JOIN users u ON u.id = hus.user_id
          JOIN hub h ON h.id = hus.hub_id
          JOIN course c ON c.id = h.course_id
-         JOIN course_teachers ct ON ct.course_id = c.id AND ct.user_id = $1
+         ${isAdmin ? '' : 'JOIN course_teachers ct ON ct.course_id = c.id AND ct.user_id = $1'}
          WHERE hus.state = 'completed' AND hus.completed_at IS NOT NULL
          
          ORDER BY timestamp DESC
-         LIMIT $2`,
-        [user.id, limit]
+         LIMIT ${isAdmin ? '$1' : '$2'}`,
+        isAdmin ? [limit] : [user.id, limit]
       );
 
       const activities = result.rows.map(row => ({
