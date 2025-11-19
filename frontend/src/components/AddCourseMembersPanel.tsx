@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { AvailableUser } from '../types/courseMember';
+import LoadingSpinner from './LoadingSpinner';
 import { MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline';
 
 type Props = {
@@ -76,7 +77,7 @@ export default function AddCourseMembersPanel({ users, loading, onAdd, onFilterC
       <div className="flex-1 overflow-auto border border-slate-200 rounded-lg">
         {loading ? (
           <div className="flex items-center justify-center h-64">
-            <p className="text-slate-500">Loading users...</p>
+            <LoadingSpinner size="small" text="Loading users..." />
           </div>
         ) : users.length === 0 ? (
           <div className="flex items-center justify-center h-64">

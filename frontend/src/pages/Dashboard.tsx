@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import MainCard from "../components/MainCard";
 import TeacherDashboard from "../components/dashboard/TeacherDashboard";
 import StudentDashboard from "../components/dashboard/StudentDashboard";
+import LoadingSpinner from "../components/LoadingSpinner";
 import type { User } from "../types/user";
 
 type CourseProgress = {
@@ -75,7 +76,10 @@ const Dashboard = () => {
     fetchData();
   }, [navigate]);
 
-  if (loading || !user) return <p style={{ color: "red" }}>{error || "Loading..."}</p>;
+  if (loading || !user) {
+    if (error) return <p style={{ color: "red" }}>{error}</p>;
+    return <LoadingSpinner size="medium" />;
+  }
 
   return (
     <MainCard name={user.name ?? ''} email={user.email} role={user.role}>

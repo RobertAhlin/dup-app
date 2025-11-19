@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { CourseMember } from '../types/courseMember';
+import LoadingSpinner from './LoadingSpinner';
 import { MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 type Props = {
@@ -89,7 +90,7 @@ export default function CourseMembersList({ members, loading, onRemove, onFilter
       <div className="flex-1 overflow-auto border border-slate-200 rounded-lg">
         {loading ? (
           <div className="flex items-center justify-center h-64">
-            <p className="text-slate-500">Loading members...</p>
+            <LoadingSpinner size="small" text="Loading members..." />
           </div>
         ) : members.length === 0 ? (
           <div className="flex items-center justify-center h-64">

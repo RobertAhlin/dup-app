@@ -9,6 +9,7 @@ import { getCourse } from '../api/courses'
 import type { Course } from '../types/course'
 import { useAlert } from '../contexts/useAlert'
 import ProgressBar from '../components/ProgressBar'
+import LoadingSpinner from '../components/LoadingSpinner'
 
 type GraphResponse = {
   hubs: HubData[]
@@ -351,7 +352,7 @@ export default function CourseBuilderPage() {
 
   const renderContent = () => {
     if (loading || authLoading) {
-      return <div className="p-6 text-sm text-gray-500">Loading course…</div>
+      return <div className="p-6"><LoadingSpinner size="medium" text="Loading course..." /></div>
     }
 
     // Errors are surfaced exclusively via AlertBanner; no inline error UI here

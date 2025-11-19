@@ -1,5 +1,6 @@
 import { useEffect, useState, lazy, Suspense, useCallback, Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
+import LoadingSpinner from '../components/LoadingSpinner';
 import axios from '../api/axios';
 import { listUsers, createUser, updateUser, deleteUser } from '../api/users';
 import { listRoles } from '../api/roles';
@@ -229,7 +230,7 @@ export default function AdminDashboard() {
   const currentUsers = usersPerPage === -1 ? users : users.slice(indexOfFirstUser, indexOfLastUser);
   const totalPages = usersPerPage === -1 ? 1 : Math.ceil(users.length / usersPerPage);
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) return <LoadingSpinner size="medium" />;
   if (error) return <p style={{ color: 'red' }}>{error}</p>;
   if (!me) return null;
 

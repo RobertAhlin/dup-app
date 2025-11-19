@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import ActivityLog from "./ActivityLog";
+import LoadingSpinner from "../LoadingSpinner";
 import { getCourseMembers } from "../../api/courseMembers";
 import type { CourseMember } from "../../types/courseMember";
 
@@ -156,7 +157,7 @@ export default function TeacherDashboard({ courses }: Props) {
               </div>
 
               {loadingMembers ? (
-                <p className="text-slate-500">Loading members...</p>
+                <LoadingSpinner size="small" text="Loading members..." />
               ) : (
                 <div className="space-y-6">
                   {/* Teachers Section */}

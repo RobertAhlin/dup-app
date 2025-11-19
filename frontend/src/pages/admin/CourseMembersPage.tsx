@@ -6,6 +6,7 @@ import { getCourseMembers, addCourseMember, removeCourseMember, getUsersForCours
 import type { Course } from '../../types/course';
 import type { CourseMember, AvailableUser } from '../../types/courseMember';
 import type { User } from '../../types/user';
+import LoadingSpinner from '../../components/LoadingSpinner';
 import CourseSelector from '../../components/CourseSelector';
 import CourseMembersList from '../../components/CourseMembersList';
 import AddCourseMembersPanel from '../../components/AddCourseMembersPanel';
@@ -139,7 +140,7 @@ export default function CourseMembersPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <p className="text-slate-600">Loading...</p>
+        <LoadingSpinner size="medium" />
       </div>
     );
   }
