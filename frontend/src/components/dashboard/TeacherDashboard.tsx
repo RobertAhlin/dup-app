@@ -1,4 +1,3 @@
-import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import ActivityLog from "./ActivityLog";
 import LoadingSpinner from "../LoadingSpinner";
@@ -35,7 +34,6 @@ const colors = [
 ];
 
 export default function TeacherDashboard({ courses }: Props) {
-  const navigate = useNavigate();
   const sortedCourses = [...courses].sort((a, b) => b.stats.averagePercentage - a.stats.averagePercentage);
   
   const [selectedCourse, setSelectedCourse] = useState<TeacherCourseStats | null>(null);
@@ -72,17 +70,6 @@ export default function TeacherDashboard({ courses }: Props) {
     if (diffHours < 24) return 'Within 24h';
     if (diffHours < 168) return 'Last week'; // 7 days
     return 'Inactive';
-  };
-
-  const getLoginStatusColor = (lastLogin?: string) => {
-    if (!lastLogin) return 'bg-gray-400';
-    
-    const diffMs = new Date().getTime() - new Date(lastLogin).getTime();
-    const diffHours = diffMs / 3600000;
-    
-    if (diffHours < 24) return 'bg-green-500';
-    if (diffHours < 168) return 'bg-yellow-500'; // 7 days
-    return 'bg-red-500';
   };
 
   const handleCourseClick = (course: TeacherCourseStats) => {
@@ -164,7 +151,7 @@ export default function TeacherDashboard({ courses }: Props) {
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="text-sm font-semibold text-slate-700">Teachers ({teachers.length})</h3>
-                      <h3 className="text-sm font-semibold text-slate-700">Login Status</h3>
+                      <h3 className="text-sm font-semibold text-slate-700">Logins</h3>
                     </div>
                     {teachers.length === 0 ? (
                       <p className="text-sm text-slate-500">No teachers assigned</p>
@@ -193,7 +180,7 @@ export default function TeacherDashboard({ courses }: Props) {
                       <h3 className="text-sm font-semibold text-slate-700">Students ({students.length})</h3>
                       <div className="flex gap-8">
                         <h3 className="text-sm font-semibold text-slate-700">Progress</h3>
-                        <h3 className="text-sm font-semibold text-slate-700">Login Status</h3>
+                        <h3 className="text-sm font-semibold text-slate-700">Logins</h3>
                       </div>
                     </div>
                     {students.length === 0 ? (

@@ -414,18 +414,19 @@ export default function AdminDashboard() {
         {tab === 'courses' && (
           <>
             {/* Create course */}
-            <form onSubmit={async (e) => {
-              e.preventDefault();
-              if (!courseForm.title.trim()) return;
-              try {
-                await createCourse({ title: courseForm.title, description: courseForm.description || undefined, icon: courseForm.icon || undefined });
-                setCourseForm({ title: '', description: '', icon: '' });
-                const list = await listCourses();
-                setCourses(list);
-              } catch {
-                setError('Failed to create course');
-              }
-            }} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end mb-6">
+            <div className="bg-gray-100 rounded-lg p-2 mb-6">
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                if (!courseForm.title.trim()) return;
+                try {
+                  await createCourse({ title: courseForm.title, description: courseForm.description || undefined, icon: courseForm.icon || undefined });
+                  setCourseForm({ title: '', description: '', icon: '' });
+                  const list = await listCourses();
+                  setCourses(list);
+                } catch {
+                  setError('Failed to create course');
+                }
+              }} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
               <div className="md:col-span-1">
                 <label className="block text-sm text-gray-600 mb-1">Icon</label>
                 <button
@@ -448,10 +449,11 @@ export default function AdminDashboard() {
                 <label className="block text-sm text-gray-600 mb-1">Description</label>
                 <input className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/40" value={courseForm.description} onChange={e => setCourseForm(f => ({...f, description: e.target.value}))} />
               </div>
-              <div className="md:col-span-2 md:justify-self-end">
-                <button className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 transition-colors" type="submit">Create course</button>
+              <div className="md:col-span-2">
+                <button className="w-full md:w-auto bg-blue-600 hover:bg-blue-800 text-white rounded-lg px-4 py-2 transition-colors" type="submit">Create course</button>
               </div>
             </form>
+            </div>
 
             {iconPickerTarget && (
               <Suspense fallback={<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"><div className="bg-white px-4 py-2 rounded shadow">Loading icons…</div></div>}>

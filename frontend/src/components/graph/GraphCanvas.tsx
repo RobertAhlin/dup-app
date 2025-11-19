@@ -226,9 +226,6 @@ export default function GraphCanvas(props: Props) {
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node[]>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge[]>([])
-  // Lock node/edge types for the lifetime of this component instance to avoid React Flow #002 warnings
-  const nodeTypesRef = useRef(nodeTypes)
-  const edgeTypesRef = useRef(edgeTypes)
 
   useEffect(() => {
     // Compute hub state (locked/unlocked/completed)
@@ -656,9 +653,9 @@ export default function GraphCanvas(props: Props) {
       <ReactFlow
         nodes={nodes}
         edges={edges}
-  nodeTypes={nodeTypesRef.current}
-  edgeTypes={edgeTypesRef.current}
-    onInit={(instance) => { rfInstance.current = instance }}
+        nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        onInit={(instance) => { rfInstance.current = instance }}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
   onConnect={onConnect}
