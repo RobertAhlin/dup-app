@@ -71,38 +71,43 @@ export default function AdminStats() {
       <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
         <h3 className="text-lg font-semibold text-slate-800 mb-4">Platform Statistics</h3>
         <div className="grid grid-cols-2 gap-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
             <p className="text-sm text-slate-600 mb-1">Total Users</p>
-            <p className="text-3xl font-bold text-blue-700">{stats.totalUsers}</p>
-            <p className="text-xs text-slate-500 mt-1">
-              {stats.totalTeachers} teachers • {stats.totalStudents} students
-            </p>
+            <div className="flex items-center gap-4">
+              <p className="text-3xl font-bold text-blue-700">{stats.totalUsers}</p>
+              <div className="text-xs text-slate-600 space-y-0.5">
+                <div>{stats.totalTeachers} teachers</div>
+                <div>{stats.totalStudents} students</div>
+              </div>
+            </div>
           </div>
 
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-2">
             <p className="text-sm text-slate-600 mb-1">Total Courses</p>
             <p className="text-3xl font-bold text-green-700">{stats.totalCourses}</p>
           </div>
 
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-2">
             <p className="text-sm text-slate-600 mb-1">Logins Last Week</p>
             <p className="text-3xl font-bold text-purple-700">{stats.loginsLastWeek}</p>
           </div>
 
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-2">
             <p className="text-sm text-slate-600 mb-1">Active Sessions</p>
-            <p className="text-3xl font-bold text-orange-700">{stats.activeSessions}</p>
-            <p className="text-xs text-slate-500 mt-1">Last 30 minutes</p>
+            <div className="flex items-end gap-4">
+              <p className="text-3xl font-bold text-orange-700">{stats.activeSessions}</p>
+              <p className="text-xs text-slate-500">Last 30 minutes</p>
+            </div>
           </div>
         </div>
       </div>
 
       {/* System Status Card */}
-      <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
-        <h3 className="text-lg font-semibold text-slate-800 mb-4">System Status</h3>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-            <div className="flex items-center gap-3">
+      <div className="bg-white border border-slate-200 rounded-lg p-4 shadow-sm">
+        <h3 className="text-lg font-semibold text-slate-800 mb-2">System Status</h3>
+        <div className="space-y-1">
+          <div className="flex items-center justify-between p-1 bg-slate-50 rounded-lg">
+            <div className="flex items-center gap-2">
               {dbStatus === 'connected' ? (
                 <CheckCircleIcon className="w-6 h-6 text-green-600" />
               ) : (
@@ -122,8 +127,8 @@ export default function AdminStats() {
             </span>
           </div>
 
-          <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between p-1 bg-slate-50 rounded-lg">
+            <div className="flex items-center gap-2">
               {socketStatus === 'active' ? (
                 <CheckCircleIcon className="w-6 h-6 text-green-600" />
               ) : (
@@ -143,8 +148,8 @@ export default function AdminStats() {
             </span>
           </div>
 
-          <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between p-1 bg-slate-50 rounded-lg">
+            <div className="flex items-center gap-2">
               <CheckCircleIcon className="w-6 h-6 text-green-600" />
               <div>
                 <p className="text-sm font-semibold text-slate-800">API Server</p>
