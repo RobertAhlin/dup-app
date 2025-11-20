@@ -319,7 +319,6 @@ export default function CourseBuilderPage() {
     try {
       const data = await getQuizzes({ courseId })
       setQuizzes(data)
-      console.log('Loaded quizzes:', data)
     } catch (err) {
       console.error('Failed to load quizzes', err)
       setQuizzes([])

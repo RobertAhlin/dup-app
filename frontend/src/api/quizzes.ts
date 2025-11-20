@@ -94,8 +94,6 @@ export const createAnswer = async (questionId: number, data: {
     isCorrect: data.is_correct,
     orderIndex: data.order_index
   })
-  console.log('Raw answer response:', response.data)
-  console.log('Extracted answer:', response.data.answer)
   return response.data.answer
 }
 

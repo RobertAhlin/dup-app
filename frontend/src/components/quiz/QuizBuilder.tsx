@@ -33,7 +33,6 @@ export default function QuizBuilder({ courseId, quizId, onClose, onSave, availab
     setLoading(true)
     try {
       const quiz = await quizApi.getQuiz(currentQuizId)
-      console.log('Loaded quiz:', quiz)
       setTitle(quiz.title)
       setDescription(quiz.description || '')
       setQuestionsPerAttempt(quiz.questions_per_attempt)
@@ -163,15 +162,11 @@ export default function QuizBuilder({ courseId, quizId, onClose, onSave, availab
       const question = questions.find(q => q.id === questionId)
       if (!question) return
 
-      console.log('About to create answer for question:', questionId)
       const newAnswer = await quizApi.createAnswer(questionId, {
         answer_text: ' ',
         is_correct: false,
         order_index: question.answers?.length || 0
       })
-      console.log('Created answer:', newAnswer)
-      console.log('Answer ID:', newAnswer?.id)
-      console.log('Answer object keys:', newAnswer ? Object.keys(newAnswer) : 'newAnswer is undefined')
 
       setQuestions(questions.map(q =>
         q.id === questionId
@@ -186,10 +181,7 @@ export default function QuizBuilder({ courseId, quizId, onClose, onSave, availab
   }
 
   const handleUpdateAnswer = (answerId: number, data: { answer_text?: string, is_correct?: boolean }) => {
-    if (!answerId) {
-      console.error('Cannot update answer: answerId is null/undefined')
-      return
-    }
+    if (!answerId) return
     setQuestions(questions.map(q => ({
       ...q,
       answers: q.answers?.map(a =>
