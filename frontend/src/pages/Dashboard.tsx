@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "../api/axios";
 import { useNavigate } from "react-router-dom";
 import MainCard from "../components/MainCard";
+import AdminDashboard from "../components/dashboard/AdminDashboard";
 import TeacherDashboard from "../components/dashboard/TeacherDashboard";
 import StudentDashboard from "../components/dashboard/StudentDashboard";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -51,19 +52,20 @@ const Dashboard = () => {
         setUser(userRes.data.user);
         
         // Fetch appropriate dashboard data based on role
-        if (userRes.data.user.role === 'teacher' || userRes.data.user.role === 'admin') {
+        if (userRes.data.user.role === 'teacher') {
           const statsRes = await axios.get<{ courses: TeacherCourseStats[] }>(
             "/api/courses/dashboard/teacher-stats", 
             { withCredentials: true }
           );
           setTeacherCourses(statsRes.data.courses);
-        } else {
+        } else if (userRes.data.user.role === 'student') {
           const coursesRes = await axios.get<{ courses: CourseProgress[] }>(
             "/api/courses/dashboard/progress", 
             { withCredentials: true }
           );
           setCourses(coursesRes.data.courses);
         }
+        // Admin doesn't need to fetch course data since AdminDashboard handles its own data
       } catch (err: unknown) {
         console.error("❌ Error loading dashboard:", err);
         setError("Not authenticated. Redirecting...");
@@ -83,8 +85,10 @@ const Dashboard = () => {
 
   return (
     <MainCard name={user.name ?? ''} email={user.email} role={user.role}>
-      {user.role === 'teacher' || user.role === 'admin' ? (
-        <TeacherDashboard courses={teacherCourses} userRole={user.role} />
+      {user.role === 'admin' ? (
+        <AdminDashboard />
+      ) : user.role === 'teacher' ? (
+        <TeacherDashboard courses={teacherCourses} />
       ) : (
         <StudentDashboard courses={courses} />
       )}

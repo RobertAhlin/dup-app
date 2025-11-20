@@ -66,10 +66,10 @@ export default function AdminStats() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-2">
       {/* Platform Statistics Card */}
       <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
-        <h3 className="text-lg font-semibold text-slate-800 mb-4">Platform Statistics</h3>
+        <h3 className="text-lg font-semibold text-slate-800 mb-1">Platform Statistics</h3>
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
             <p className="text-sm text-slate-600 mb-1">Total Users</p>
@@ -88,7 +88,7 @@ export default function AdminStats() {
           </div>
 
           <div className="bg-purple-50 border border-purple-200 rounded-lg p-2">
-            <p className="text-sm text-slate-600 mb-1">Logins Last Week</p>
+            <p className="text-sm text-slate-600 mb-1">Active users last week</p>
             <p className="text-3xl font-bold text-purple-700">{stats.loginsLastWeek}</p>
           </div>
 

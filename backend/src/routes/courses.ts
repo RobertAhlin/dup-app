@@ -265,6 +265,37 @@ router.get('/dashboard/activity', verifyToken, async (req: AuthenticatedRequest,
     if (roleName === 'teacher' || roleName === 'admin') {
       // Get activity from all courses the teacher is assigned to, or all courses for admin
       const isAdmin = roleName === 'admin';
+      
+      // For admins, include creation activities; for teachers, only completions
+      const creationQuery = isAdmin ? `
+         UNION ALL
+         
+         SELECT 
+          'task_created' AS activity_type,
+          COALESCE(u.name, 'Teacher') AS user_name,
+          t.title AS item_title,
+          c.title AS course_title,
+          t.created_at AS timestamp
+         FROM task t
+         JOIN hub h ON h.id = t.hub_id
+         JOIN course c ON c.id = h.course_id
+         LEFT JOIN users u ON u.id = c.created_by
+         WHERE t.created_at IS NOT NULL
+         
+         UNION ALL
+         
+         SELECT 
+          'hub_created' AS activity_type,
+          COALESCE(u.name, 'Teacher') AS user_name,
+          h.title AS item_title,
+          c.title AS course_title,
+          h.created_at AS timestamp
+         FROM hub h
+         JOIN course c ON c.id = h.course_id
+         LEFT JOIN users u ON u.id = c.created_by
+         WHERE h.created_at IS NOT NULL
+      ` : '';
+      
       const result = await pool.query(
         `SELECT 
           'task' AS activity_type,
@@ -294,6 +325,7 @@ router.get('/dashboard/activity', verifyToken, async (req: AuthenticatedRequest,
          JOIN course c ON c.id = h.course_id
          ${isAdmin ? '' : 'JOIN course_teachers ct ON ct.course_id = c.id AND ct.user_id = $1'}
          WHERE hus.state = 'completed' AND hus.completed_at IS NOT NULL
+         ${creationQuery}
          
          ORDER BY timestamp DESC
          LIMIT ${isAdmin ? '$1' : '$2'}`,

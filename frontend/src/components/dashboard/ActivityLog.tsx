@@ -1,10 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
 import axios from "../../api/axios";
 import { io, Socket } from "socket.io-client";
-import { CheckIcon } from "@heroicons/react/24/solid";
+import { CheckIcon, PlusCircleIcon } from "@heroicons/react/24/solid";
 
 type Activity = {
-  type: 'task' | 'hub'
+  type: 'task' | 'hub' | 'task_created' | 'hub_created'
   userName: string
   itemTitle: string
   courseTitle: string
@@ -138,22 +138,36 @@ export default function ActivityLog({ limit = 20 }: Props) {
         <p className="text-xs text-slate-500">No recent activity</p>
       ) : (
         <div className="flex flex-col gap-1 max-h-full overflow-y-auto">
-          {activities.map((activity, index) => (
-            <div 
-              key={index} 
-              className="flex items-start gap-2 p-0.5 rounded bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-200"
-            >
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-slate-700 leading-snug">
-                  <span className="font-semibold">{activity.userName}</span>{' '}
-                  <CheckIcon className="w-3 h-3 text-green-600 inline" />{' '}
-                  a <span className="font-medium">{activity.type}</span> in{' '}
-                  <span className="font-medium">{activity.courseTitle}</span>{' '}
-                  <span className="text-xs text-slate-500 mt-0.5">{getRelativeTime(activity.timestamp)}</span>
-                </p>
+          {activities.map((activity, index) => {
+            const isCreation = activity.type === 'task_created' || activity.type === 'hub_created';
+            const itemType = activity.type.replace('_created', '');
+            
+            return (
+              <div 
+                key={index} 
+                className="flex items-start gap-2 p-0.5 rounded bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-200"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-slate-700 leading-snug">
+                    <span className="font-semibold">{activity.userName}</span>{' '}
+                    {isCreation ? (
+                      <>
+                        <PlusCircleIcon className="w-3 h-3 text-blue-600 inline" />{' '}
+                        created a <span className="font-medium">{itemType}</span> in{' '}
+                      </>
+                    ) : (
+                      <>
+                        <CheckIcon className="w-3 h-3 text-green-600 inline" />{' '}
+                        a <span className="font-medium">{itemType}</span> in{' '}
+                      </>
+                    )}
+                    <span className="font-medium">{activity.courseTitle}</span>{' '}
+                    <span className="text-xs text-slate-500 mt-0.5">{getRelativeTime(activity.timestamp)}</span>
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
