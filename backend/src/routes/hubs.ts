@@ -421,12 +421,20 @@ router.put('/:hubId/quiz', verifyToken, async (req: AuthenticatedRequest, res) =
       [quizId || null, hubId]
     );
 
-    // Also update quiz.hub_id if attaching
+    // Always clear hub_id from any quiz previously attached to this hub
+    const clearRes = await pool.query(
+      'UPDATE quiz SET hub_id = NULL WHERE hub_id = $1 RETURNING id',
+      [hubId]
+    );
+    console.log('Cleared hub_id from quizzes:', clearRes.rows.map(r => r.id));
+
+    // If attaching, set quiz.hub_id to this hub
     if (quizId) {
-      await pool.query(
-        'UPDATE quiz SET hub_id = $1 WHERE id = $2',
+      const attachRes = await pool.query(
+        'UPDATE quiz SET hub_id = $1 WHERE id = $2 RETURNING id',
         [hubId, quizId]
       );
+      console.log('Attached quiz to hub:', attachRes.rows.map(r => r.id));
     }
 
     res.json({ hub: result.rows[0] });

@@ -12,7 +12,7 @@ import { useAlert } from '../../contexts/useAlert'
 
 // nodeTypes and edgeTypes are defined outside this module in graphTypes to ensure stable identity
 
-export type HubData = { id: number; course_id: number; title: string; x: number; y: number; color?: string; radius?: number; is_start?: boolean }
+export type HubData = { id: number; course_id: number; title: string; x: number; y: number; color?: string; radius?: number; is_start?: boolean; quiz_id?: number | null }
 export type TaskData = { id: number; hub_id: number; title: string; task_kind: 'content'|'quiz'|'assignment'|'reflection'; x: number|null; y: number|null; color?: string }
 export type HubEdgeData = { id: number; course_id: number; from_hub_id: number; to_hub_id: number; color?: string|null }
 
@@ -22,6 +22,7 @@ type Props = {
   initialTasks: TaskData[]
   initialEdges: HubEdgeData[]
   canEdit: boolean
+  availableQuizzes?: Array<{ id: number; title: string; hub_id?: number | null }>
   // Progress
   initialTaskDoneIds?: number[]
   initialHubDoneIds?: number[]
@@ -38,6 +39,7 @@ type Props = {
   onMoveTask: (taskId: number, coords: { x: number; y: number }) => void
   onDeleteEdge: (edgeId: number) => Promise<void> | void
   onUpdateEdgeColor: (edgeId: number, color: string) => Promise<void> | void
+  onHubUpdate?: () => Promise<void> | void
 }
 
 export default function GraphCanvas(props: Props) {
@@ -46,6 +48,7 @@ export default function GraphCanvas(props: Props) {
     initialTasks,
     initialEdges,
     canEdit,
+    availableQuizzes = [],
     initialTaskDoneIds,
     initialHubDoneIds,
     onSetTaskDone,
@@ -59,6 +62,9 @@ export default function GraphCanvas(props: Props) {
     onDeleteTask,
     onMoveHub,
     onMoveTask,
+    onDeleteEdge,
+    onUpdateEdgeColor,
+    onHubUpdate,
   } = props
   const [connectMode, setConnectMode] = useState(false)
   const [connectSourceHubId, setConnectSourceHubId] = useState<number|null>(null)
@@ -730,9 +736,11 @@ export default function GraphCanvas(props: Props) {
           open={!!modal}
           type={modal.type}
           canEdit={canEdit}
-          hub={modal.type === 'hub' ? { id: modal.hub.id, title: modal.hub.title, color: modal.hub.color } : undefined}
+          availableQuizzes={availableQuizzes}
+          hub={modal.type === 'hub' ? { id: modal.hub.id, title: modal.hub.title, color: modal.hub.color, quiz_id: modal.hub.quiz_id } : undefined}
           task={modal.type === 'task' ? { id: modal.task.id, title: modal.task.title, task_kind: modal.task.task_kind, color: modal.task.color } : undefined}
           onClose={handleModalClose}
+          onHubUpdate={onHubUpdate}
           // Edit callbacks
           onUpdateHub={onUpdateHub}
           onDeleteHub={onDeleteHub}

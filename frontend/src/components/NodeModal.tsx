@@ -5,6 +5,7 @@ import SimpleEditor from './editor/SimpleEditor'
 import QuizEditor from './quiz/QuizEditor'
 import type { QuizQuestion } from './quiz/QuizEditor'
 import { useAlert } from '../contexts/useAlert'
+import * as quizApi from '../api/quizzes'
 
 // Convert a variety of YouTube URLs to a strict embed URL on youtube-nocookie domain
 function toYouTubeEmbed(raw: string): string | null {
@@ -50,7 +51,7 @@ function toYouTubeEmbed(raw: string): string | null {
 }
 
 // Minimal shapes to avoid circular imports
-export type HubPreview = { id: number; title: string; color?: string; is_start?: boolean }
+export type HubPreview = { id: number; title: string; color?: string; is_start?: boolean; quiz_id?: number | null }
 export type TaskPreview = { id: number; title: string; task_kind: string; color?: string }
 
 type Props = {
@@ -60,11 +61,13 @@ type Props = {
   task?: TaskPreview
   onClose: () => void
   canEdit: boolean
+  availableQuizzes?: Array<{ id: number; title: string; hub_id?: number | null }>
   // Edit callbacks
   onUpdateHub?: (hubId: number, updates: { title?: string; color?: string; is_start?: boolean }) => Promise<void> | void
   onDeleteHub?: (hubId: number) => Promise<void> | void
   onUpdateTask?: (taskId: number, updates: { title?: string; task_kind?: 'content'|'quiz'|'assignment'|'reflection' }) => Promise<void> | void
   onDeleteTask?: (taskId: number) => Promise<void> | void
+  onHubUpdate?: () => Promise<void> | void
   // Student progress callbacks/state
   taskDone?: boolean
   onToggleTaskDone?: (taskId: number, checked: boolean) => void
@@ -74,7 +77,7 @@ type Props = {
 }
 
 export default function NodeModal(props: Props) {
-  const { open, type, hub, task, onClose, canEdit } = props
+  const { open, type, hub, task, onClose, onHubUpdate, canEdit, availableQuizzes = [] } = props
   const { showAlert } = useAlert()
   const dialogRef = useRef<HTMLDivElement | null>(null)
   const closeBtnRef = useRef<HTMLButtonElement | null>(null)
@@ -88,6 +91,13 @@ export default function NodeModal(props: Props) {
   const [youtubeUrls, setYoutubeUrls] = useState<string[]>([])
   const [imageUrls, setImageUrls] = useState<string[]>([])
   const [quiz, setQuiz] = useState<QuizQuestion[] | null>(null)
+  const [selectedQuizId, setSelectedQuizId] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (hub?.quiz_id !== undefined) {
+      setSelectedQuizId(hub.quiz_id)
+    }
+  }, [hub?.quiz_id])
 
   useEffect(() => {
     if (!open) return
@@ -221,7 +231,21 @@ export default function NodeModal(props: Props) {
                       </div>
                       <div className="space-y-2">
                         <div className="text-xs text-slate-500">Quiz</div>
-                        <QuizEditor value={quiz ?? []} onChange={(q) => setQuiz(q)} readOnly={false} />
+                        <select
+                          className="w-full border rounded px-2 py-1.5 text-sm"
+                          value={selectedQuizId || ''}
+                          onChange={(e) => setSelectedQuizId(e.target.value ? parseInt(e.target.value) : null)}
+                        >
+                          <option value="">No quiz selected</option>
+                          {availableQuizzes
+                            .filter(q => !q.hub_id || q.hub_id === hub?.id)
+                            .map(q => (
+                              <option key={q.id} value={q.id}>{q.title}</option>
+                            ))}
+                        </select>
+                        <div className="text-xs text-slate-400">
+                          Students will get random questions from this quiz when they complete this hub's tasks
+                        </div>
                       </div>
                       <div className="flex justify-end pt-2">
                         <button
@@ -230,7 +254,10 @@ export default function NodeModal(props: Props) {
                           onClick={async () => {
                             try {
                               await axios.patch(`/api/hubs/${hub.id}/content`, { html, youtubeUrls, imageUrls, quiz })
-                              showAlert('success', 'Hub content saved')
+                              await quizApi.attachQuizToHub(hub.id, selectedQuizId)
+                              if (onHubUpdate) await onHubUpdate()
+                              showAlert('success', 'Hub content and quiz saved')
+                              onClose()
                             } catch (err) {
                               console.error('Failed to save hub content', err)
                               showAlert('error', 'Failed to save hub content')

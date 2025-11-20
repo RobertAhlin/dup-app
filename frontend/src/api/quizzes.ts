@@ -44,12 +44,13 @@ export const createQuiz = async (data: {
 }
 
 export const updateQuiz = async (quizId: number, data: {
-  title?: string
-  description?: string
-  questions_per_attempt?: 3 | 5
+  title?: string;
+  description?: string;
+  questions_per_attempt?: 3 | 5;
+  hubId?: number | null;
 }) => {
-  const response = await api.put<Quiz>(`/api/quizzes/${quizId}`, data)
-  return response.data
+  const response = await api.put<Quiz>(`/api/quizzes/${quizId}`, data);
+  return response.data;
 }
 
 export const deleteQuiz = async (quizId: number) => {

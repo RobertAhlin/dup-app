@@ -14,9 +14,10 @@ interface QuizBuilderProps {
   availableQuizzes?: Array<{ id: number; title: string }>
   onSelectQuiz?: (quizId: number) => void
   onDeleteQuiz?: (quizId: number) => void
+  hubs?: Array<{ id: number; title: string; quiz_id?: number | null }>
 }
 
-export default function QuizBuilder({ courseId, quizId, onClose, onSave, availableQuizzes = [], onSelectQuiz, onDeleteQuiz }: QuizBuilderProps) {
+export default function QuizBuilder({ courseId, quizId, onClose, onSave, availableQuizzes = [], onSelectQuiz, onDeleteQuiz, hubs = [] }: QuizBuilderProps) {
   const { showAlert } = useAlert()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -27,6 +28,7 @@ export default function QuizBuilder({ courseId, quizId, onClose, onSave, availab
   const [error, setError] = useState<string | null>(null)
   const [expandedQuestion, setExpandedQuestion] = useState<number | null>(null)
   const [currentQuizId, setCurrentQuizId] = useState(quizId)
+  const [selectedHubId, setSelectedHubId] = useState<number | null>(null)
 
   const loadQuiz = useCallback(async () => {
     if (!currentQuizId) return
@@ -37,6 +39,7 @@ export default function QuizBuilder({ courseId, quizId, onClose, onSave, availab
       setDescription(quiz.description || '')
       setQuestionsPerAttempt(quiz.questions_per_attempt)
       setQuestions(quiz.questions || [])
+      setSelectedHubId(quiz.hub_id || null)
       setError(null)
     } catch (err) {
       setError('Failed to load quiz')
@@ -82,7 +85,8 @@ export default function QuizBuilder({ courseId, quizId, onClose, onSave, availab
         await quizApi.updateQuiz(currentQuizId, {
           title,
           description: description || undefined,
-          questions_per_attempt: questionsPerAttempt
+          questions_per_attempt: questionsPerAttempt,
+          hubId: selectedHubId ?? null
         })
         onSave(currentQuizId)
         showAlert('success', 'Quiz saved successfully!')
@@ -217,6 +221,31 @@ export default function QuizBuilder({ courseId, quizId, onClose, onSave, availab
     }
   }
 
+  const handleAttachToHub = async (hubId: number | null) => {
+    if (!currentQuizId) return
+    try {
+      if (hubId) {
+        // Detach from old hub if switching hubs
+        if (selectedHubId && selectedHubId !== hubId) {
+          await quizApi.attachQuizToHub(selectedHubId, null)
+        }
+        // Attach to new hub
+        await quizApi.attachQuizToHub(hubId, currentQuizId)
+        showAlert('success', 'Quiz attached to hub')
+      } else if (selectedHubId) {
+        // Detaching from current hub
+        await quizApi.attachQuizToHub(selectedHubId, null)
+        showAlert('success', 'Quiz detached from hub')
+      }
+      setSelectedHubId(hubId)
+      onSave(currentQuizId) // Refresh quiz list and hubs
+    } catch (err) {
+      const error = err as { response?: { data?: { error?: string } } }
+      showAlert('error', error.response?.data?.error || 'Failed to attach quiz')
+      console.error(err)
+    }
+  }
+
   if (loading) {
     return <div className="p-4">Loading quiz...</div>
   }
@@ -312,6 +341,30 @@ export default function QuizBuilder({ courseId, quizId, onClose, onSave, availab
               <option value={5}>5 (requires 20+ total questions)</option>
             </select>
           </div>
+
+          {/* Hub Attachment */}
+          {currentQuizId && (
+            <div>
+              <label className="block text-sm font-medium mb-1">Attach to Hub</label>
+              <select
+                value={selectedHubId || ''}
+                onChange={(e) => handleAttachToHub(e.target.value ? parseInt(e.target.value) : null)}
+                className="w-full border rounded px-3 py-2"
+              >
+                <option value="">No hub selected</option>
+                {hubs.filter(h => !h.quiz_id || h.id === selectedHubId).map(hub => (
+                  <option key={hub.id} value={hub.id}>
+                    {hub.title}
+                  </option>
+                ))}
+              </select>
+              {selectedHubId && (
+                <p className="text-xs text-gray-600 mt-1">
+                  Students will get {questionsPerAttempt} random questions from this quiz when they complete this hub's tasks.
+                </p>
+              )}
+            </div>
+          )}
 
           <div className={`text-sm ${questions.length < minQuestions ? 'text-orange-600 font-medium' : 'text-green-600'}`}>
             Questions: {questions.length} / {minQuestions} minimum

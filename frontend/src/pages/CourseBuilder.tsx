@@ -438,6 +438,7 @@ export default function CourseBuilderPage() {
             initialTasks={graph.tasks}
             initialEdges={graph.edges}
             canEdit={canEdit}
+            availableQuizzes={quizzes.map(q => ({ id: q.id, title: q.title, hub_id: q.hub_id }))}
             initialTaskDoneIds={taskDoneIds ?? undefined}
             initialHubDoneIds={hubDoneIds ?? undefined}
             onSetTaskDone={async (taskId, done) => {
@@ -473,6 +474,11 @@ export default function CourseBuilderPage() {
             onMoveTask={handleMoveTask}
             onDeleteEdge={handleDeleteEdge}
             onUpdateEdgeColor={handleUpdateEdgeColor}
+            onHubUpdate={async () => {
+              const graphRes = await axios.get(`/api/courses/${courseId}/graph`)
+              setGraph(graphRes.data.graph)
+              await loadQuizzes()
+            }}
           />
         </div>
 
@@ -549,6 +555,7 @@ export default function CourseBuilderPage() {
                     courseId={courseId}
                     quizId={selectedQuizId === 0 ? undefined : selectedQuizId}
                     availableQuizzes={quizzes.map(q => ({ id: q.id, title: q.title }))}
+                    hubs={graph?.hubs.map(h => ({ id: h.id, title: h.title, quiz_id: h.quiz_id })) || []}
                     onSelectQuiz={(quizId) => setSelectedQuizId(quizId)}
                     onDeleteQuiz={async (quizId) => {
                       try {
@@ -561,8 +568,11 @@ export default function CourseBuilderPage() {
                       }
                     }}
                     onClose={() => setSelectedQuizId(undefined)}
-                    onSave={(newQuizId) => {
-                      loadQuizzes()
+                    onSave={async (newQuizId) => {
+                      await loadQuizzes()
+                      // Reload graph to get updated hub quiz_id values
+                      const graphRes = await axios.get(`/api/courses/${courseId}/graph`)
+                      setGraph(graphRes.data.graph)
                       // Keep the quiz open for adding questions
                       if (newQuizId) {
                         setSelectedQuizId(newQuizId)
