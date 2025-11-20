@@ -254,6 +254,93 @@ async function initDb() {
       FOR EACH ROW EXECUTE FUNCTION set_updated_at();
     `);
 
+    // ─────────────────────────────────────────────────────────────
+    // 📝 Quiz System Schema
+    // ─────────────────────────────────────────────────────────────
+
+    // Quizzes table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS quiz (
+        id                    SERIAL PRIMARY KEY,
+        course_id             INTEGER NOT NULL REFERENCES course(id) ON DELETE CASCADE,
+        hub_id                INTEGER REFERENCES hub(id) ON DELETE SET NULL,
+        title                 TEXT NOT NULL,
+        description           TEXT,
+        questions_per_attempt INTEGER NOT NULL DEFAULT 3 CHECK (questions_per_attempt IN (3, 5)),
+        created_at            TIMESTAMP DEFAULT NOW(),
+        updated_at            TIMESTAMP DEFAULT NOW(),
+        UNIQUE(course_id, title)
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_quiz_course ON quiz(course_id);`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_quiz_hub ON quiz(hub_id);`);
+
+    // Questions table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS quiz_question (
+        id          SERIAL PRIMARY KEY,
+        quiz_id     INTEGER NOT NULL REFERENCES quiz(id) ON DELETE CASCADE,
+        question_text TEXT NOT NULL,
+        order_index INTEGER DEFAULT 0,
+        created_at  TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_quiz_question_quiz ON quiz_question(quiz_id);`);
+
+    // Answers table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS quiz_answer (
+        id          SERIAL PRIMARY KEY,
+        question_id INTEGER NOT NULL REFERENCES quiz_question(id) ON DELETE CASCADE,
+        answer_text TEXT NOT NULL,
+        is_correct  BOOLEAN NOT NULL DEFAULT FALSE,
+        order_index INTEGER DEFAULT 0,
+        created_at  TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_quiz_answer_question ON quiz_answer(question_id);`);
+
+    // Quiz attempts tracking
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS quiz_attempt (
+        id                SERIAL PRIMARY KEY,
+        quiz_id           INTEGER NOT NULL REFERENCES quiz(id) ON DELETE CASCADE,
+        user_id           INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        hub_id            INTEGER REFERENCES hub(id) ON DELETE SET NULL,
+        started_at        TIMESTAMP DEFAULT NOW(),
+        submitted_at      TIMESTAMP,
+        questions_shown   JSONB NOT NULL DEFAULT '[]'::jsonb,
+        answers_submitted JSONB NOT NULL DEFAULT '[]'::jsonb,
+        passed            BOOLEAN,
+        score             INTEGER,
+        created_at        TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_quiz_attempt_quiz ON quiz_attempt(quiz_id);`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_quiz_attempt_user ON quiz_attempt(user_id);`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_quiz_attempt_hub ON quiz_attempt(hub_id);`);
+
+    // Update quiz.updated_at trigger
+    await client.query(`
+      DROP TRIGGER IF EXISTS trg_quiz_updated_at ON quiz;
+      CREATE TRIGGER trg_quiz_updated_at
+      BEFORE UPDATE ON quiz
+      FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+    `);
+
+    // Add foreign key constraint from hub to quiz (if not exists)
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.table_constraints 
+          WHERE constraint_name = 'fk_hub_quiz' AND table_name = 'hub'
+        ) THEN
+          ALTER TABLE hub ADD CONSTRAINT fk_hub_quiz FOREIGN KEY (quiz_id) REFERENCES quiz(id) ON DELETE SET NULL;
+        END IF;
+      END$$;
+    `);
+
     // Helpers
     const userExists = async (id: number) => {
       const { rows } = await client.query<{ c: number }>(

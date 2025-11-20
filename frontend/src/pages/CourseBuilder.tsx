@@ -10,6 +10,9 @@ import type { Course } from '../types/course'
 import { useAlert } from '../contexts/useAlert'
 import ProgressBar from '../components/ProgressBar'
 import LoadingSpinner from '../components/LoadingSpinner'
+import QuizBuilder from '../components/quiz/QuizBuilder'
+import { getQuizzes, deleteQuiz } from '../api/quizzes'
+import type { Quiz } from '../types/quiz'
 
 type GraphResponse = {
   hubs: HubData[]
@@ -48,6 +51,10 @@ export default function CourseBuilderPage() {
   const [loading, setLoading] = useState(true)
   const [, setError] = useState<string | null>(null)
   const initialModeSet = useRef(false)
+  const [showQuizModal, setShowQuizModal] = useState(false)
+  const [quizzes, setQuizzes] = useState<Quiz[]>([])
+  const [selectedQuizId, setSelectedQuizId] = useState<number | undefined>(undefined)
+  const [loadingQuizzes, setLoadingQuizzes] = useState(false)
   const { showAlert } = useAlert()
 
   const isTeacher = useMemo(() => {
@@ -307,6 +314,20 @@ export default function CourseBuilderPage() {
 
   const canEdit = isTeacher && mode === 'edit'
 
+  const loadQuizzes = useCallback(async () => {
+    setLoadingQuizzes(true)
+    try {
+      const data = await getQuizzes({ courseId })
+      setQuizzes(data)
+      console.log('Loaded quizzes:', data)
+    } catch (err) {
+      console.error('Failed to load quizzes', err)
+      setQuizzes([])
+    } finally {
+      setLoadingQuizzes(false)
+    }
+  }, [courseId])
+
   const refetchProgress = useCallback(async () => {
     try {
       const res = await axios.get<{ 
@@ -371,8 +392,20 @@ export default function CourseBuilderPage() {
             )}
           </div>
           {isTeacher && (
-            <div className="ml-auto" aria-label="Switch view mode" role="group">
-              <div className="flex rounded-full border border-slate-300 bg-linear-to-br from-slate-200 via-slate-100 to-white shadow-inner p-0.5">
+            <>
+              <button
+                onClick={() => {
+                  setQuizzes([]) // Reset first
+                  loadQuizzes()
+                  setSelectedQuizId(undefined)
+                  setShowQuizModal(true)
+                }}
+                className="ml-auto px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 text-sm font-medium"
+              >
+                Manage Quizzes
+              </button>
+              <div className="ml-2" aria-label="Switch view mode" role="group">
+                <div className="flex rounded-full border border-slate-300 bg-linear-to-br from-slate-200 via-slate-100 to-white shadow-inner p-0.5">
                 <button
                   type="button"
                   onClick={() => setMode('student')}
@@ -395,6 +428,7 @@ export default function CourseBuilderPage() {
                 </button>
               </div>
             </div>
+            </>
           )}
         </div>
 
@@ -450,6 +484,95 @@ export default function CourseBuilderPage() {
               completedItems={progressSummary.completedItems}
               totalItems={progressSummary.totalItems}
             />
+          </div>
+        )}
+
+        {/* Quiz Management Modal */}
+        {showQuizModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl h-[90vh] flex flex-col">
+              <div className="flex items-center justify-between p-4 border-b">
+                <h2 className="text-xl font-bold">Quiz Management</h2>
+                <button
+                  onClick={() => setShowQuizModal(false)}
+                  className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="flex-1 overflow-hidden">
+                {selectedQuizId === undefined ? (
+                  <div className="p-4 space-y-4 h-full overflow-y-auto">
+                    <div className="flex justify-between items-center">
+                      <h3 className="font-semibold">Course Quizzes</h3>
+                      <button
+                        onClick={() => setSelectedQuizId(0)}
+                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                      >
+                        Create New Quiz
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      {loadingQuizzes ? (
+                        <p className="text-gray-500 text-sm">Loading quizzes...</p>
+                      ) : !quizzes || quizzes.length === 0 ? (
+                        <p className="text-gray-500 text-sm">No quizzes yet. Create one to get started.</p>
+                      ) : (
+                        quizzes.map(quiz => (
+                          <div
+                            key={quiz.id}
+                            className="border rounded p-3 flex justify-between items-center hover:bg-gray-50"
+                          >
+                            <div>
+                              <h4 className="font-medium">{quiz.title}</h4>
+                              {quiz.description && (
+                                <p className="text-sm text-gray-600">{quiz.description}</p>
+                              )}
+                              <p className="text-xs text-gray-500 mt-1">
+                                {quiz.questions_per_attempt} questions per attempt
+                                {quiz.hub_id ? ' • Attached to hub' : ' • Not attached'}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => setSelectedQuizId(quiz.id)}
+                              className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 text-sm"
+                            >
+                              Edit
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <QuizBuilder
+                    key={selectedQuizId}
+                    courseId={courseId}
+                    quizId={selectedQuizId === 0 ? undefined : selectedQuizId}
+                    availableQuizzes={quizzes.map(q => ({ id: q.id, title: q.title }))}
+                    onSelectQuiz={(quizId) => setSelectedQuizId(quizId)}
+                    onDeleteQuiz={async (quizId) => {
+                      try {
+                        await deleteQuiz(quizId)
+                        await loadQuizzes()
+                        setSelectedQuizId(undefined)
+                      } catch (err) {
+                        console.error('Failed to delete quiz', err)
+                        alert('Failed to delete quiz')
+                      }
+                    }}
+                    onClose={() => setSelectedQuizId(undefined)}
+                    onSave={(newQuizId) => {
+                      loadQuizzes()
+                      // Keep the quiz open for adding questions
+                      if (newQuizId) {
+                        setSelectedQuizId(newQuizId)
+                      }
+                    }}
+                  />
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>

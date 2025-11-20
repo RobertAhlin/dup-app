@@ -189,8 +189,6 @@ router.delete('/:id', verifyToken, async (req: AuthenticatedRequest, res) => {
   }
 });
 
-export default router;
-
 // Progress endpoints for hub: mark completed/uncompleted per user
 router.put('/:id/progress', verifyToken, async (req: AuthenticatedRequest, res) => {
   const hubId = Number(req.params.id)
@@ -369,3 +367,73 @@ router.patch('/:id/content', verifyToken, async (req: AuthenticatedRequest, res)
     res.status(500).json({ error: 'Failed to update hub content' })
   }
 })
+
+// Attach/detach quiz from hub
+router.put('/:hubId/quiz', verifyToken, async (req: AuthenticatedRequest, res) => {
+  try {
+    const user = req.user as AuthUser | undefined;
+    if (!user) {
+      res.status(401).json({ error: 'Not authenticated' });
+      return;
+    }
+
+    const { hubId } = req.params;
+    const { quizId } = req.body;
+
+    // Get hub and check access
+    const hubResult = await pool.query(
+      'SELECT course_id FROM hub WHERE id = $1',
+      [hubId]
+    );
+
+    if (hubResult.rows.length === 0) {
+      res.status(404).json({ error: 'Hub not found' });
+      return;
+    }
+
+    const allowed = await canEditCourse(user, hubResult.rows[0].course_id);
+    if (!allowed) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    // If quizId is provided, verify it belongs to the same course
+    if (quizId) {
+      const quizResult = await pool.query(
+        'SELECT course_id FROM quiz WHERE id = $1',
+        [quizId]
+      );
+
+      if (quizResult.rows.length === 0) {
+        res.status(404).json({ error: 'Quiz not found' });
+        return;
+      }
+
+      if (quizResult.rows[0].course_id !== hubResult.rows[0].course_id) {
+        res.status(400).json({ error: 'Quiz must belong to the same course as the hub' });
+        return;
+      }
+    }
+
+    // Update hub
+    const result = await pool.query(
+      'UPDATE hub SET quiz_id = $1 WHERE id = $2 RETURNING *',
+      [quizId || null, hubId]
+    );
+
+    // Also update quiz.hub_id if attaching
+    if (quizId) {
+      await pool.query(
+        'UPDATE quiz SET hub_id = $1 WHERE id = $2',
+        [hubId, quizId]
+      );
+    }
+
+    res.json({ hub: result.rows[0] });
+  } catch (err) {
+    console.error('Attach quiz error:', err);
+    res.status(500).json({ error: 'Failed to attach quiz to hub' });
+  }
+})
+
+export default router;

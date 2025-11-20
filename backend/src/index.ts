@@ -12,6 +12,9 @@ import testRoutes from "./routes/test";
 import hubsRoutes from "./routes/hubs";
 import tasksRoutes from "./routes/tasks";
 import edgesRoutes from "./routes/edges";
+import quizzesRoutes from "./routes/quizzes";
+import questionsRoutes from "./routes/questions";
+import studentQuizRoutes from "./routes/studentQuiz";
 import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
@@ -80,6 +83,9 @@ app.use("/api/course-members", courseMembersRoutes);
 app.use("/api/hubs", hubsRoutes);
 app.use("/api/tasks", tasksRoutes);
 app.use("/api/edges", edgesRoutes);
+app.use("/api/quizzes", quizzesRoutes);
+app.use("/api/questions", questionsRoutes);
+app.use("/api/student-quiz", studentQuizRoutes);
 
 // Statuskontroll
 app.get("/", async (_req, res) => {
