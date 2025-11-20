@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import axios from '../api/axios'
 import SimpleEditor from './editor/SimpleEditor'
 import QuizEditor from './quiz/QuizEditor'
+import QuizRunner from './quiz/QuizRunner'
 import type { QuizQuestion } from './quiz/QuizEditor'
 import { useAlert } from '../contexts/useAlert'
 import * as quizApi from '../api/quizzes'
@@ -77,15 +78,23 @@ type Props = {
 }
 
 export default function NodeModal(props: Props) {
-  const { open, type, hub, task, onClose, onHubUpdate, canEdit, availableQuizzes = [] } = props
-  const { showAlert } = useAlert()
-  const dialogRef = useRef<HTMLDivElement | null>(null)
-  const closeBtnRef = useRef<HTMLButtonElement | null>(null)
-  const onCloseRef = useRef(onClose)
-  useEffect(() => { onCloseRef.current = onClose }, [onClose])
-  // hub metadata editing removed from modal
-  // metadata editing removed from modal; title/kind handled elsewhere
-  // Task content fields
+  // Destructure all props first
+  const { open, type, hub, task, onClose, onHubUpdate, canEdit, availableQuizzes = [], onUpdateHub, onDeleteHub, onUpdateTask, onDeleteTask, taskDone, onToggleTaskDone, hubDone, allHubTasksDone, onToggleHubDone } = props;
+  const { showAlert } = useAlert();
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const closeBtnRef = useRef<HTMLButtonElement | null>(null);
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose }, [onClose]);
+  // Student quiz runner state
+  const [studentQuiz, setStudentQuiz] = useState<any | null>(null);
+  // Fetch quiz for students if hub.quiz_id is set and not editing
+  useEffect(() => {
+    if (!canEdit && type === 'hub' && hub?.quiz_id) {
+      quizApi.getQuiz(hub.quiz_id).then(q => setStudentQuiz(q)).catch(() => setStudentQuiz(null));
+    } else {
+      setStudentQuiz(null);
+    }
+  }, [canEdit, type, hub?.quiz_id]);
   const [contentLoading, setContentLoading] = useState(false)
   const [html, setHtml] = useState<string>('')
   const [youtubeUrls, setYoutubeUrls] = useState<string[]>([])
@@ -291,7 +300,18 @@ export default function NodeModal(props: Props) {
                   {imageUrls.map((u, i) => (
                     <img key={i} src={u} alt="" className="mt-2 max-w-full rounded" />
                   ))}
-                  {quiz && quiz.length > 0 && (
+                  {/* Show quiz for students if hub has quiz attached */}
+                  {studentQuiz && (
+                    <div className="mt-3">
+                      <QuizRunner
+                        questions={Array.isArray(studentQuiz.questions)
+                          ? [...studentQuiz.questions].sort(() => Math.random() - 0.5).slice(0, 3)
+                          : []}
+                      />
+                    </div>
+                  )}
+                  {/* Fallback: show quiz from hub content if present */}
+                  {quiz && quiz.length > 0 && !studentQuiz && (
                     <div className="mt-3">
                       <QuizEditor value={quiz} onChange={() => {}} readOnly={true} />
                     </div>

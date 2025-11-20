@@ -28,7 +28,7 @@ function QuizEditor({ value, onChange, readOnly }: Props) {
           <div key={i} className="border rounded p-3">
             <div className="font-medium">Q{i + 1}. {q.question}</div>
             <ul className="list-disc pl-5 mt-2">
-              {q.options.map((opt, oi) => (
+              {(Array.isArray(q.options) ? q.options : []).map((opt, oi) => (
                 <li key={oi} className={oi === q.correctIndex ? 'text-green-700' : ''}>{opt}</li>
               ))}
             </ul>
