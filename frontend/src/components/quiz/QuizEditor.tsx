@@ -4,6 +4,7 @@ export type QuizQuestion = {
   question: string
   options: string[]
   correctIndex: number
+  correctIndices?: number[]
 }
 
 type Props = {

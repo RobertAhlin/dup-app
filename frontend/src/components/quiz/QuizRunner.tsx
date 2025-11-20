@@ -12,22 +12,35 @@ type Props = {
 }
 
 export default function QuizRunner({ questions, onSubmit }: Props) {
-  const [selected, setSelected] = useState<(number|null)[]>(Array(questions.length).fill(null))
+  const [selected, setSelected] = useState<number[][]>(questions.map(() => []))
   const [submitted, setSubmitted] = useState(false)
   const [score, setScore] = useState<number|null>(null)
 
-  const handleSelect = (qi: number, oi: number) => {
+  const handleToggle = (qi: number, oi: number) => {
     if (submitted) return
     const next = [...selected]
-    next[qi] = oi
+    const qAnswers = [...next[qi]]
+    const idx = qAnswers.indexOf(oi)
+    if (idx >= 0) {
+      qAnswers.splice(idx, 1)
+    } else {
+      qAnswers.push(oi)
+    }
+    next[qi] = qAnswers
     setSelected(next)
   }
 
   const handleSubmit = () => {
     setSubmitted(true)
-    const correct = questions.reduce((acc, q, i) => acc + (selected[i] === q.correctIndex ? 1 : 0), 0)
+    const correct = questions.reduce((acc, q, i) => {
+      const userAnswers = selected[i].sort((a: number, b: number) => a - b)
+      const correctAnswers = (q.correctIndices || []).sort((a: number, b: number) => a - b)
+      const isCorrect = userAnswers.length === correctAnswers.length && 
+                        userAnswers.every((ans, idx) => ans === correctAnswers[idx])
+      return acc + (isCorrect ? 1 : 0)
+    }, 0)
     setScore(correct)
-    if (onSubmit) onSubmit(selected as number[])
+    if (onSubmit) onSubmit(selected.flat())
   }
 
   return (
@@ -40,11 +53,10 @@ export default function QuizRunner({ questions, onSubmit }: Props) {
               <li key={oi}>
                 <label className="flex items-center gap-2">
                   <input
-                    type="radio"
-                    name={`q${i}`}
-                    checked={selected[i] === oi}
+                    type="checkbox"
+                    checked={selected[i].includes(oi)}
                     disabled={submitted}
-                    onChange={() => handleSelect(i, oi)}
+                    onChange={() => handleToggle(i, oi)}
                   />
                   <span>{opt}</span>
                 </label>
@@ -57,7 +69,7 @@ export default function QuizRunner({ questions, onSubmit }: Props) {
         <button
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           onClick={handleSubmit}
-          disabled={selected.some(s => s === null)}
+          disabled={selected.some(s => s.length === 0)}
         >Submit Quiz</button>
       ) : (
         <div className="text-lg font-bold text-green-700">Score: {score} / {questions.length}</div>

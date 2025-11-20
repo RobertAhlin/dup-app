@@ -305,7 +305,21 @@ export default function NodeModal(props: Props) {
                     <div className="mt-3">
                       <QuizRunner
                         questions={Array.isArray(studentQuiz.questions)
-                          ? [...studentQuiz.questions].sort(() => Math.random() - 0.5).slice(0, 3)
+                          ? [...studentQuiz.questions]
+                              .sort(() => Math.random() - 0.5)
+                              .slice(0, 3)
+                              .map(q => {
+                                const options = Array.isArray(q.answers) ? q.answers.map((a: { answer_text: string; is_correct: boolean }) => a.answer_text) : [];
+                                const correctIndices = Array.isArray(q.answers)
+                                  ? q.answers.map((a: { answer_text: string; is_correct: boolean }, idx: number) => a.is_correct ? idx : -1).filter((idx: number) => idx >= 0)
+                                  : [];
+                                return {
+                                  question: q.question_text,
+                                  options,
+                                  correctIndex: correctIndices[0] || -1,
+                                  correctIndices
+                                };
+                              })
                           : []}
                       />
                     </div>
