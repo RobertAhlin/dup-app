@@ -42,7 +42,7 @@ export default function AddCourseMembersPanel({ users, loading, onAdd, onFilterC
 
   return (
     <div className="flex flex-col h-full">
-      <h2 className="text-xl font-bold text-slate-800 mb-1">Add Members</h2>
+      <h2 className="text-xl font-bold text-slate-800 mb-1 text-center">Add Members</h2>
 
       {/* Filters */}
       <div className="mb-2">

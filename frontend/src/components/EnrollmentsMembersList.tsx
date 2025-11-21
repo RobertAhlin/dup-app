@@ -56,7 +56,7 @@ export default function CourseMembersList({ members, loading, onRemove, onFilter
 
   return (
     <div className="flex flex-col h-full">
-      <h2 className="text-xl font-bold text-slate-800 mb-1">Current Members</h2>
+      <h2 className="text-xl font-bold text-slate-800 mb-1 text-center">Enrolled Members</h2>
 
       {/* Filters */}
       <div className="mb-2">
