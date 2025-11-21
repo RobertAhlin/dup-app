@@ -24,10 +24,10 @@ export function AlertProvider({ children }: AlertProviderProps) {
     ) => {
       // Defaults by type: success auto-hides after 2s, error after 5s
       const defaultAutoHide =
-        autoHide ?? (type === "success" || type === "error");
+        autoHide ?? (type === "success" || type === "error" || type === "info");
       const defaultDuration =
         duration ??
-        (type === "success" ? 2000 : type === "error" ? 5000 : undefined);
+        (type === "success" ? 2000 : type === "error" ? 5000 : type === "info" ? 5000 : undefined);
       const id = Math.random().toString(36).substr(2, 9);
       const newAlert: Alert = {
         id,
@@ -37,11 +37,7 @@ export function AlertProvider({ children }: AlertProviderProps) {
         duration: defaultDuration,
       };
 
-      setAlerts((prev) => {
-        // Remove any existing alerts of the same type to avoid duplicates
-        const filtered = prev.filter((alert) => alert.type !== type);
-        return [...filtered, newAlert];
-      });
+      setAlerts(() => [newAlert]);
     },
     []
   );

@@ -75,7 +75,12 @@ export default function AlertBanner({
         {onClose && (
           <button
             className="alert-close"
-            onClick={onClose}
+            onClick={() => {
+              setIsSlidingOut(true);
+              setTimeout(() => {
+                onClose();
+              }, 200); // Match the CSS animation duration
+            }}
             aria-label="Close alert"
           >
             ×
