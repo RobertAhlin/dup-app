@@ -60,11 +60,11 @@ export default function QuizRunner({ questions, onSubmit, onPass }: Props) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-1">
       {questions.map((q, i) => (
-        <div key={i} className="border rounded p-3">
-          <div className="font-medium">Q{i + 1}. {q.question}</div>
-          <ul className="list-none pl-0 mt-2">
+        <div key={i} className="border rounded py-1 px-2">
+          <div className="font-medium">{i + 1}. {q.question}</div>
+          <ul className="list-none pl-0 mt-1">
             {(Array.isArray(q.options) ? q.options : []).map((opt, oi) => (
               <li key={oi}>
                 <label className="flex items-center gap-2">
@@ -82,7 +82,7 @@ export default function QuizRunner({ questions, onSubmit, onPass }: Props) {
         </div>
       ))}
       <button
-        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        className="px-4 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
         onClick={handleSubmit}
         disabled={selected.some(s => s.length === 0) || submitted}
       >{submitted ? 'Submitted...' : 'Submit Quiz'}</button>
