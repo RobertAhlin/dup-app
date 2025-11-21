@@ -14,6 +14,8 @@ export default function UsersManagementPage({ usersPerPage: usersPerPageProp }: 
   
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   const refresh = async () => {
     const list = await listUsers();
@@ -32,6 +34,12 @@ export default function UsersManagementPage({ usersPerPage: usersPerPageProp }: 
     };
     load();
   }, []);
+
+  // Debounce search term
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchTerm.trim().toLowerCase()), 300);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
 
   const onCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,10 +80,15 @@ export default function UsersManagementPage({ usersPerPage: usersPerPageProp }: 
     if (typeof usersPerPageProp === 'number') setCurrentPage(1);
   }, [usersPerPageProp]);
 
+  // Apply search filter before pagination
+  const filteredUsers = debouncedSearch
+    ? users.filter(u => (u.name || '').toLowerCase().includes(debouncedSearch) || (u.email || '').toLowerCase().includes(debouncedSearch))
+    : users;
+
   const indexOfLastUser = currentPage * effectiveUsersPerPage;
   const indexOfFirstUser = indexOfLastUser - effectiveUsersPerPage;
-  const currentUsers = effectiveUsersPerPage === -1 ? users : users.slice(indexOfFirstUser, indexOfLastUser);
-  const totalPages = effectiveUsersPerPage === -1 ? 1 : Math.ceil(users.length / effectiveUsersPerPage);
+  const currentUsers = effectiveUsersPerPage === -1 ? filteredUsers : filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
+  const totalPages = effectiveUsersPerPage === -1 ? 1 : Math.ceil(filteredUsers.length / effectiveUsersPerPage);
 
   if (error) return <p style={{ color: 'red' }}>{error}</p>;
 
@@ -122,6 +135,20 @@ export default function UsersManagementPage({ usersPerPage: usersPerPageProp }: 
           <button className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 transition-colors" type="submit">Create user</button>
         </div>
       </form>
+
+      {/* Search */}
+      <div className="mb-4">
+        <div className="relative max-w-md">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search by name or email..."
+            className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
+      </div>
 
       {/* List */}
       <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 400px)' }}>
