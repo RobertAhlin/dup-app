@@ -63,11 +63,6 @@ type Props = {
   onClose: () => void
   canEdit: boolean
   availableQuizzes?: Array<{ id: number; title: string; hub_id?: number | null }>
-  // Edit callbacks
-  onUpdateHub?: (hubId: number, updates: { title?: string; color?: string; is_start?: boolean }) => Promise<void> | void
-  onDeleteHub?: (hubId: number) => Promise<void> | void
-  onUpdateTask?: (taskId: number, updates: { title?: string; task_kind?: 'content'|'quiz'|'assignment'|'reflection' }) => Promise<void> | void
-  onDeleteTask?: (taskId: number) => Promise<void> | void
   onHubUpdate?: () => Promise<void> | void
   // Student progress callbacks/state
   taskDone?: boolean
@@ -79,7 +74,7 @@ type Props = {
 
 export default function NodeModal(props: Props) {
   // Destructure all props first
-  const { open, type, hub, task, onClose, onHubUpdate, canEdit, availableQuizzes = [], onUpdateHub, onDeleteHub, onUpdateTask, onDeleteTask, taskDone, onToggleTaskDone, hubDone, allHubTasksDone, onToggleHubDone } = props;
+  const { open, type, hub, task, onClose, onHubUpdate, canEdit, availableQuizzes = [] } = props;
   const { showAlert } = useAlert();
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
