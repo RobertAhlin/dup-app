@@ -531,7 +531,8 @@ export default function CourseBuilderPage() {
                         quizzes.map(quiz => (
                           <div
                             key={quiz.id}
-                            className="border rounded px-2 py-1 bg-white flex justify-between items-center hover:bg-gray-50"
+                            className="border rounded px-2 py-1 bg-white flex justify-between items-center hover:bg-gray-50 cursor-pointer"
+                            onClick={() => setSelectedQuizId(quiz.id)}
                           >
                             <div>
                               <h4 className="font-medium">{quiz.title}</h4>
@@ -543,12 +544,6 @@ export default function CourseBuilderPage() {
                                 {quiz.hub_id ? ' • Attached to hub' : ' • Not attached'}
                               </p>
                             </div>
-                            <button
-                              onClick={() => setSelectedQuizId(quiz.id)}
-                              className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-400 text-sm"
-                            >
-                              Edit
-                            </button>
                           </div>
                         ))
                       )}

@@ -53,9 +53,14 @@ export default function StudentDashboard({ courses }: Props) {
         </div>
       ) : (
         <div className="flex flex-col gap-6">
-          <div className="flex gap-8 items-start">
-            {/* Course list on the left */}
-            <div className="w-60 shrink-0">
+          <div className="flex items-start">
+            {/* Circular progress visualization on the left */}
+            <div className="flex-none">
+              <CircularProgressBar courses={coursesWithColors} />
+            </div>
+
+            {/* Course list on the right */}
+            <div className="w-60 shrink-0 ml-2">
               <div className="flex flex-col gap-2">
                 {sortedCourses.map((course, index) => (
                   <div
@@ -72,17 +77,10 @@ export default function StudentDashboard({ courses }: Props) {
                         {course.progress.completedItems} / {course.progress.totalItems} completed
                       </p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-base font-bold text-slate-800">{course.progress.percentage}%</p>
-                    </div>
+                    {/* Removed percentage value */}
                   </div>
                 ))}
               </div>
-            </div>
-
-            {/* Circular progress visualization on the right */}
-            <div className="flex-1 flex">
-              <CircularProgressBar courses={coursesWithColors} />
             </div>
           </div>
 
