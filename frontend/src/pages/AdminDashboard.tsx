@@ -200,12 +200,12 @@ export default function AdminDashboard() {
     }
   }, [tab, loadAvailableUsers]);
 
-  const handleAddMember = async (userId: number, roleInCourse: 'teacher' | 'student', userName: string) => {
+  // Removed old handleAddMember definition
+  const handleAddMember = async (userId: number, globalRole: string, userName: string) => {
     if (!selectedCourseId) return;
-    
     try {
-      await addCourseMember(selectedCourseId, userId, roleInCourse);
-      showAlert('success', `${userName} added as ${roleInCourse}`);
+      await addCourseMember(selectedCourseId, userId, globalRole as 'teacher' | 'student');
+      showAlert('success', `${userName} added as ${globalRole}`);
       await Promise.all([loadMembers(), loadAvailableUsers()]);
     } catch (error) {
       showAlert('error', 'Failed to add member');
@@ -246,7 +246,7 @@ export default function AdminDashboard() {
       hideSidebar={false}
       sidebar={<AdminSidebar active={tab} onChange={setTab} />}
     >
-      <div className="p-4 md:p-6 overflow-x-auto max-w-[full] mx-auto">
+      <div className="p-4 md:p-6 overflow-hidden w-full max-w-full mx-auto">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-gray-800">
             Admin • {tab === 'users' ? 'Users' : tab === 'courses' ? 'Courses' : 'Enrollments'}
@@ -619,9 +619,9 @@ export default function AdminDashboard() {
             />
 
             {selectedCourseId ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 w-full max-w-full">
                 {/* Left: Current Members */}
-                <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col" style={{ minHeight: '500px' }}>
+                <div className="bg-gray-100 rounded-lg shadow-md p-4 flex flex-col overflow-auto w-full max-w-full" style={{ maxHeight: '60vh' }}>
                   <CourseMembersList
                     members={members}
                     loading={membersLoading}
@@ -631,7 +631,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Right: Add Members */}
-                <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col" style={{ minHeight: '500px' }}>
+                <div className="bg-gray-100 rounded-lg shadow-md p-4 flex flex-col overflow-auto w-full max-w-full" style={{ maxHeight: '60vh' }}>
                   <AddCourseMembersPanel
                     users={availableUsers}
                     loading={usersLoading}

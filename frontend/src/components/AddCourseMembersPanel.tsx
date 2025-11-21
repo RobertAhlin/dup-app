@@ -6,7 +6,7 @@ import { MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline';
 type Props = {
   users: AvailableUser[];
   loading: boolean;
-  onAdd: (userId: number, roleInCourse: 'teacher' | 'student', userName: string) => void;
+  onAdd: (userId: number, roleInCourse: string, userName: string) => void;
   onFilterChange: (filters: { role: string[]; search: string }) => void;
 };
 
@@ -28,8 +28,8 @@ export default function AddCourseMembersPanel({ users, loading, onAdd, onFilterC
     );
   };
 
-  const handleAdd = (user: AvailableUser, roleInCourse: 'teacher' | 'student') => {
-    onAdd(user.id, roleInCourse, user.name);
+  const handleAdd = (user: AvailableUser) => {
+    onAdd(user.id, user.global_role, user.name);
   };
 
   return (
@@ -37,7 +37,7 @@ export default function AddCourseMembersPanel({ users, loading, onAdd, onFilterC
       <h2 className="text-xl font-bold text-slate-800 mb-4">Add Members</h2>
 
       {/* Filters */}
-      <div className="mb-4 space-y-3">
+      <div className="mb-2">
         {/* Role Filter */}
         <div className="flex gap-3">
           <label className="flex items-center gap-2 cursor-pointer">
@@ -91,45 +91,35 @@ export default function AddCourseMembersPanel({ users, loading, onAdd, onFilterC
           <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-200 sticky top-0">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                   Name
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                   Email
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                  Global Role
+                <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                  Role
                 </th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                  Add As
+                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                  Add
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
               {users.map((user) => (
-                <tr key={user.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 text-sm font-medium text-slate-900">{user.name}</td>
-                  <td className="px-4 py-3 text-sm text-slate-600">{user.email}</td>
-                  <td className="px-4 py-3 text-sm text-slate-600 capitalize">{user.global_role}</td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex gap-2 justify-end">
-                      <button
-                        onClick={() => handleAdd(user, 'teacher')}
-                        className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-md transition-colors"
-                        title="Add as teacher"
-                      >
-                        <PlusIcon className="h-4 w-4" />
-                        Teacher
-                      </button>
-                      <button
-                        onClick={() => handleAdd(user, 'student')}
-                        className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors"
-                        title="Add as student"
-                      >
-                        <PlusIcon className="h-4 w-4" />
-                        Student
-                      </button>
-                    </div>
+                <tr key={user.id} className="bg-white hover:bg-slate-50">
+                  <td className="px-4 py-1 text-sm font-medium text-slate-900">{user.name}</td>
+                  <td className="px-4 py-1 text-sm text-slate-600">{user.email}</td>
+                  <td className="px-4 py-1 text-sm text-slate-600 capitalize">{user.global_role}</td>
+                  <td className="px-4 py-1 text-right">
+                    <button
+                      onClick={() => handleAdd(user)}
+                      className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-blue-700 hover:text-white bg-blue-50 hover:bg-blue-600 rounded-md transition-colors"
+                      title={`Add as ${user.global_role}`}
+                    >
+                      <PlusIcon className="h-4 w-4" />
+                      Add
+                    </button>
                   </td>
                 </tr>
               ))}

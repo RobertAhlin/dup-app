@@ -50,7 +50,7 @@ export default function CourseMembersList({ members, loading, onRemove, onFilter
       <h2 className="text-xl font-bold text-slate-800 mb-4">Current Members</h2>
 
       {/* Filters */}
-      <div className="mb-4 space-y-3">
+      <div className="mb-2">
         {/* Role Filter */}
         <div className="flex gap-3">
           <label className="flex items-center gap-2 cursor-pointer">
@@ -89,59 +89,45 @@ export default function CourseMembersList({ members, loading, onRemove, onFilter
       {/* Members Table */}
       <div className="flex-1 overflow-auto border border-slate-200 rounded-lg">
         {loading ? (
-          <div className="flex items-center justify-center h-64">
+          <div className="flex items-center justify-center">
             <LoadingSpinner size="small" text="Loading members..." />
           </div>
         ) : members.length === 0 ? (
-          <div className="flex items-center justify-center h-64">
+          <div className="flex items-center justify-center">
             <p className="text-slate-500">No members found</p>
           </div>
         ) : (
           <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-200 sticky top-0">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                   Name
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                   Email
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                  Global Role
+                <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                  Role
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                  Role in Course
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                   Joined
                 </th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
               {members.map((member) => (
-                <tr key={member.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 text-sm font-medium text-slate-900">{member.name}</td>
-                  <td className="px-4 py-3 text-sm text-slate-600">{member.email}</td>
-                  <td className="px-4 py-3 text-sm text-slate-600 capitalize">{member.global_role}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        member.role_in_course === 'teacher'
-                          ? 'bg-purple-100 text-purple-800'
-                          : 'bg-blue-100 text-blue-800'
-                      }`}
-                    >
-                      {member.role_in_course}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-slate-600">{formatDate(member.joined_at)}</td>
-                  <td className="px-4 py-3 text-right">
+                <tr key={member.id} className="bg-white hover:bg-slate-50">
+                  <td className="px-4 py-1 text-sm font-medium text-slate-900">{member.name}</td>
+                  <td className="px-4 py-1 text-sm text-slate-600">{member.email}</td>
+                  <td className="px-4 py-1 text-sm text-slate-600 capitalize">{member.global_role}</td>
+                  <td className="px-4 py-1 text-sm text-slate-600">{formatDate(member.joined_at)}</td>
+                  <td className="px-4 py-1 text-right">
                     <button
                       onClick={() => handleRemoveClick(member.id, member.name)}
-                      className="px-3 py-1 text-sm font-medium text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors"
+                      className="px-3 py-1 text-sm font-medium text-red-600 hover:text-white hover:bg-red-500 rounded-md transition-colors"
                     >
                       Remove
                     </button>
@@ -155,7 +141,7 @@ export default function CourseMembersList({ members, loading, onRemove, onFilter
 
       {/* Confirmation Modal */}
       {confirmDelete && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
             <div className="flex items-start gap-4">
               <div className="shrink-0">
