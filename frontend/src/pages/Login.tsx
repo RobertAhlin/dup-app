@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axios";
 import { useAlert } from "../contexts/useAlert";
+import FloatingInput from "../components/FloatingInput";
 import "./Login.css";
 import { isAxiosError } from "axios";
 
@@ -74,26 +75,18 @@ export default function Login() {
       </div>
 
       <form className="login-form" onSubmit={handleSubmit}>
-        <label>
-          Email:
-          <br />
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </label>
-        <label>
-          Password:
-          <br />
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </label>
+        <FloatingInput
+          id="email"
+          label="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <FloatingInput
+          id="password"
+          label="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
         <button type="submit">Log In</button>
       </form>
     </div>

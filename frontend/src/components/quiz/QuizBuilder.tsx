@@ -1,7 +1,7 @@
 // frontend/src/components/quiz/QuizBuilder.tsx
 
 import { useState, useEffect, useCallback } from 'react'
-import { PlusIcon, TrashIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, TrashIcon, CheckIcon, XMarkIcon, ChevronDownIcon } from '@heroicons/react/24/outline'
 import type { QuizQuestion } from '../../types/quiz'
 import * as quizApi from '../../api/quizzes'
 import { useAlert } from '../../contexts/useAlert'
@@ -356,7 +356,7 @@ export default function QuizBuilder({ courseId, quizId, onClose, onSave, availab
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="flex-1 border rounded px-3 py-2"
+                className="flex-1 border rounded px-2 py-1 bg-white"
               />
               {currentQuizId && onDeleteQuiz && (
                 <button
@@ -365,7 +365,7 @@ export default function QuizBuilder({ courseId, quizId, onClose, onSave, availab
                       onDeleteQuiz(currentQuizId)
                     }
                   }}
-                  className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm whitespace-nowrap"
+                  className="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm whitespace-nowrap"
                 >
                   Delete Quiz
                 </button>
@@ -378,7 +378,7 @@ export default function QuizBuilder({ courseId, quizId, onClose, onSave, availab
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full border rounded px-3 py-2"
+              className="w-full border rounded px-2 py-1 bg-white"
               rows={2}
             />
           </div>
@@ -388,7 +388,7 @@ export default function QuizBuilder({ courseId, quizId, onClose, onSave, availab
             <select
               value={questionsPerAttempt}
               onChange={(e) => setQuestionsPerAttempt(parseInt(e.target.value) as 3 | 5)}
-              className="border rounded px-3 py-2"
+              className="border rounded px-2 py-1 bg-white"
             >
               <option value={3}>3 (requires 10+ total questions)</option>
               <option value={5}>5 (requires 20+ total questions)</option>
@@ -402,7 +402,7 @@ export default function QuizBuilder({ courseId, quizId, onClose, onSave, availab
               <select
                 value={selectedHubId || ''}
                 onChange={(e) => handleAttachToHub(e.target.value ? parseInt(e.target.value) : null)}
-                className="w-full border rounded px-3 py-2"
+                className="w-full border rounded px-3 py-1 bg-white"
               >
                 <option value="">No hub selected</option>
                 {hubs.filter(h => !h.quiz_id || h.id === selectedHubId).map(hub => (
@@ -428,17 +428,18 @@ export default function QuizBuilder({ courseId, quizId, onClose, onSave, availab
         </div>
 
         {/* Questions */}
-        <div className="space-y-2">
+        <div className="space-y-1">
           <div className="flex items-center justify-between">
             <h3 className="font-medium">Questions</h3>
-            <button
-              onClick={handleAddQuestion}
-              disabled={!currentQuizId}
-              className="flex items-center gap-1 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300"
-            >
-              <PlusIcon className="w-4 h-4" />
-              Add Question
-            </button>
+            {currentQuizId && (
+              <button
+                onClick={handleAddQuestion}
+                className="flex items-center gap-1 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                <PlusIcon className="w-4 h-4" />
+                Add Question
+              </button>
+            )}
           </div>
 
           {!currentQuizId && (
@@ -461,7 +462,7 @@ export default function QuizBuilder({ courseId, quizId, onClose, onSave, availab
           )}
 
           {questions.map((question, index) => (
-            <div key={question.id} className="border rounded p-3 space-y-2">
+            <div key={question.id} className="border rounded p-3 space-y-2 bg-white">
               <div className="flex items-start gap-1">
                 <span className="font-medium text-gray-600 mt-1">{index + 1}.</span>
                 <input
@@ -474,8 +475,9 @@ export default function QuizBuilder({ courseId, quizId, onClose, onSave, availab
                 />
                 <button
                   onClick={() => setExpandedQuestion(expandedQuestion === question.id ? null : question.id)}
-                  className="px-1 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200"
+                  className="px-1 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200 flex items-center gap-1 transition-transform duration-300"
                 >
+                  <ChevronDownIcon className={`w-4 h-4 transition-transform duration-300 ${expandedQuestion === question.id ? 'rotate-180' : ''}`} />
                   {expandedQuestion === question.id ? 'Collapse' : 'Answers'}
                 </button>
                 <button
@@ -546,7 +548,7 @@ export default function QuizBuilder({ courseId, quizId, onClose, onSave, availab
           {currentQuizId && (
             <button
               onClick={handleAddQuestion}
-              className="w-full mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700 flex items-center justify-center gap-2"
+              className="w-1/4 mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700 flex items-center justify-center gap-2"
             >
               <PlusIcon className="w-4 h-4" />
               Add Question
@@ -559,7 +561,7 @@ export default function QuizBuilder({ courseId, quizId, onClose, onSave, availab
       <div className="p-4 border-t flex justify-end gap-2">
         <button
           onClick={onClose}
-          className="px-4 py-2 border rounded hover:bg-gray-50"
+          className="px-4 py-2 border rounded bg-gray-300 hover:bg-gray-100"
         >
           Cancel
         </button>
