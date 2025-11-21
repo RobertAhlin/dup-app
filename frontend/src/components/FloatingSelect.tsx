@@ -116,7 +116,6 @@ export default function FloatingSelect({
           className="w-full bg-transparent border-0 outline-none px-3 py-3.5 text-base"
           style={{ paddingTop: '10px', paddingBottom: '6px', boxShadow: '0 0 0 1000px transparent inset', WebkitBoxShadow: '0 0 0 1000px transparent inset', WebkitTextFillColor: 'inherit' }}
         >
-          <option value="">(select)</option>
           {options.map(o => (
             <option key={o.value} value={o.value}>{o.label}</option>
           ))}

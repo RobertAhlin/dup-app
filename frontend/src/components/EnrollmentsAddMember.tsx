@@ -34,15 +34,15 @@ export default function AddCourseMembersPanel({ users, loading, onAdd, onFilterC
 
   // DRY column definitions
   const columns = [
-    { key: 'name', label: 'Name', className: 'px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider', cellClass: 'px-4 py-1 text-sm font-medium text-slate-900' },
-    { key: 'email', label: 'Email', className: 'px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider', cellClass: 'px-4 py-1 text-sm text-slate-600' },
-    { key: 'global_role', label: 'Role', className: 'px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider', cellClass: 'px-4 py-1 text-sm text-slate-600 capitalize' },
-    { key: 'add', label: 'Add', className: 'px-4 py-2 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider', cellClass: 'px-4 py-1 text-right' }
+    { key: 'name', label: 'Name', className: 'px-2 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider', cellClass: 'px-2 py-1 text-sm font-medium text-slate-900' },
+    { key: 'email', label: 'Email', className: 'px-2 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider', cellClass: 'px-2 py-1 text-sm text-slate-600' },
+    { key: 'global_role', label: 'Role', className: 'px-2 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider', cellClass: 'px-2 py-1 text-xs text-slate-600 capitalize' },
+    { key: 'add', label: 'Add', className: 'px-6 py-2 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider', cellClass: 'px-2 py-1 text-right' }
   ];
 
   return (
     <div className="flex flex-col h-full">
-      <h2 className="text-xl font-bold text-slate-800 mb-4">Add Members</h2>
+      <h2 className="text-xl font-bold text-slate-800 mb-1">Add Members</h2>
 
       {/* Filters */}
       <div className="mb-2">

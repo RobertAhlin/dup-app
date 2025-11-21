@@ -13,11 +13,12 @@ type Props = {
 export default function CourseMembersList({ members, loading, onRemove, onFilterChange }: Props) {
     // DRY column definitions
     const columns = [
-      { key: 'name', label: 'Name', className: 'px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider', cellClass: 'px-4 py-1 text-sm font-medium text-slate-900' },
-      { key: 'email', label: 'Email', className: 'px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider', cellClass: 'px-4 py-1 text-sm text-slate-600' },
-      { key: 'global_role', label: 'Role', className: 'px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider', cellClass: 'px-4 py-1 text-sm text-slate-600 capitalize' },
-      { key: 'joined_at', label: 'Joined', className: 'px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider', cellClass: 'px-4 py-1 text-sm text-slate-600' },
-      { key: 'actions', label: 'Actions', className: 'px-4 py-2 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider', cellClass: 'px-4 py-1 text-right' }
+      { key: 'name', label: 'Name', className: 'px-2 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider', cellClass: 'px-2 py-1 text-sm font-medium text-slate-900' },
+      { key: 'email', label: 'Email', className: 'px-2 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider', cellClass: 'px-2 py-1 text-sm text-slate-600' },
+      { key: 'global_role', label: 'Role', className: 'px-2 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider', cellClass: 'px-2 py-1 text-xs text-slate-600 capitalize' },
+      { key: 'joined_at', label: 'Joined', className: 'px-2 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider', cellClass: 'px-2 py-1 text-xs text-slate-600' },
+      { key: 'last_login', label: 'Last Login', className: 'px-2 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider', cellClass: 'px-2 py-1 text-xs text-slate-600' },
+      { key: 'actions', label: 'Actions', className: 'px-2 py-2 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider', cellClass: 'px-2 py-1 text-right' }
     ];
   const [selectedRoles, setSelectedRoles] = useState<string[]>(['teacher', 'student']);
   const [searchTerm, setSearchTerm] = useState('');
@@ -55,7 +56,7 @@ export default function CourseMembersList({ members, loading, onRemove, onFilter
 
   return (
     <div className="flex flex-col h-full">
-      <h2 className="text-xl font-bold text-slate-800 mb-4">Current Members</h2>
+      <h2 className="text-xl font-bold text-slate-800 mb-1">Current Members</h2>
 
       {/* Filters */}
       <div className="mb-2">
@@ -121,7 +122,7 @@ export default function CourseMembersList({ members, loading, onRemove, onFilter
                       <td key={col.key} className={col.cellClass}>
                         <button
                           onClick={() => handleRemoveClick(member.id, member.name)}
-                          className="px-3 py-1 text-sm font-medium text-red-600 hover:text-white hover:bg-red-500 rounded-md transition-colors"
+                          className="px-1 py-1 text-sm font-medium text-red-600 hover:text-white hover:bg-red-500 rounded-md transition-colors"
                         >
                           Remove
                         </button>
@@ -132,6 +133,7 @@ export default function CourseMembersList({ members, loading, onRemove, onFilter
                         {col.key === 'email' && member.email}
                         {col.key === 'global_role' && member.global_role}
                         {col.key === 'joined_at' && formatDate(member.joined_at)}
+                        {col.key === 'last_login' && (member.last_login_at ? formatDate(member.last_login_at) : 'Never')}
                       </td>
                     )
                   ))}
@@ -145,7 +147,7 @@ export default function CourseMembersList({ members, loading, onRemove, onFilter
       {/* Confirmation Modal */}
       {confirmDelete && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+          <div className="bg-white rounded-lg shadow-xl p-2 max-w-md w-full mx-4">
             <div className="flex items-start gap-4">
               <div className="shrink-0">
                 <XMarkIcon className="h-6 w-6 text-red-600" />

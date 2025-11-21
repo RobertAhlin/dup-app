@@ -161,9 +161,9 @@ export default function CourseMembersPage() {
           />
 
           {selectedCourseId ? (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-300px)]">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 h-[calc(100vh-300px)]">
               {/* Left: Current Members */}
-              <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col">
+              <div className="bg-white rounded-lg shadow-sm flex flex-col lg:col-span-2">
                 <CourseMembersList
                   members={members}
                   loading={membersLoading}
@@ -173,7 +173,7 @@ export default function CourseMembersPage() {
               </div>
 
               {/* Right: Add Members */}
-              <div className="bg-white rounded-lg shadow-sm p-6 flex flex-col">
+              <div className="bg-white rounded-lg shadow-sm flex flex-col">
                 <AddCourseMembersPanel
                   users={availableUsers}
                   loading={usersLoading}
