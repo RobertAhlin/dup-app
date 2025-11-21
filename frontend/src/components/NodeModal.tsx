@@ -87,6 +87,7 @@ export default function NodeModal(props: Props) {
   useEffect(() => { onCloseRef.current = onClose }, [onClose]);
   // Student quiz runner state
   const [studentQuiz, setStudentQuiz] = useState<any | null>(null);
+  const [quizPassed, setQuizPassed] = useState(false);
   // Fetch quiz for students if hub.quiz_id is set and not editing
   useEffect(() => {
     if (!canEdit && type === 'hub' && hub?.quiz_id) {
@@ -177,6 +178,26 @@ export default function NodeModal(props: Props) {
   }, [open, type, task?.id, hub?.id])
 
   const canShowHubCheckbox = useMemo(() => !canEdit && type === 'hub' && !!props.allHubTasksDone, [canEdit, type, props.allHubTasksDone])
+
+  const getRandomQuizQuestions = () => {
+    if (!studentQuiz || !Array.isArray(studentQuiz.questions)) return [];
+    const questionsPerAttempt = studentQuiz.questions_per_attempt || 3;
+    return [...studentQuiz.questions]
+      .sort(() => Math.random() - 0.5)
+      .slice(0, questionsPerAttempt)
+      .map(q => {
+        const options = Array.isArray(q.answers) ? q.answers.map((a: { answer_text: string; is_correct: boolean }) => a.answer_text) : [];
+        const correctIndices = Array.isArray(q.answers)
+          ? q.answers.map((a: { answer_text: string; is_correct: boolean }, idx: number) => a.is_correct ? idx : -1).filter((idx: number) => idx >= 0)
+          : [];
+        return {
+          question: q.question_text,
+          options,
+          correctIndex: correctIndices[0] || -1,
+          correctIndices
+        };
+      });
+  };
 
   if (!open) return null
 
@@ -301,27 +322,25 @@ export default function NodeModal(props: Props) {
                     <img key={i} src={u} alt="" className="mt-2 max-w-full rounded" />
                   ))}
                   {/* Show quiz for students if hub has quiz attached */}
-                  {studentQuiz && (
+                  {studentQuiz && canShowHubCheckbox && !(quizPassed || props.hubDone) && (
                     <div className="mt-3">
                       <QuizRunner
-                        questions={Array.isArray(studentQuiz.questions)
-                          ? [...studentQuiz.questions]
-                              .sort(() => Math.random() - 0.5)
-                              .slice(0, 3)
-                              .map(q => {
-                                const options = Array.isArray(q.answers) ? q.answers.map((a: { answer_text: string; is_correct: boolean }) => a.answer_text) : [];
-                                const correctIndices = Array.isArray(q.answers)
-                                  ? q.answers.map((a: { answer_text: string; is_correct: boolean }, idx: number) => a.is_correct ? idx : -1).filter((idx: number) => idx >= 0)
-                                  : [];
-                                return {
-                                  question: q.question_text,
-                                  options,
-                                  correctIndex: correctIndices[0] || -1,
-                                  correctIndices
-                                };
-                              })
-                          : []}
+                        questions={getRandomQuizQuestions()}
+                        onPass={() => {
+                          showAlert('success', 'Quiz completed successfully!');
+                          setQuizPassed(true);
+                          // Automatically mark hub as done when quiz is passed
+                          if (props.onToggleHubDone && hub) {
+                            props.onToggleHubDone(hub.id, true);
+                          }
+                        }}
                       />
+                    </div>
+                  )}
+                  {/* Show message if quiz exists but tasks aren't complete */}
+                  {studentQuiz && !canShowHubCheckbox && (
+                    <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+                      🎯 Hold your horses! First, you must conquer all the tasks in this hub. Only then will the legendary quiz reveal itself. Complete both to claim victory! 🏆
                     </div>
                   )}
                   {/* Fallback: show quiz from hub content if present */}
@@ -331,12 +350,42 @@ export default function NodeModal(props: Props) {
                     </div>
                   )}
                   {canShowHubCheckbox ? (
-                    <label className="flex items-center gap-2 text-xs text-slate-600 mt-3">
-                      <input type="checkbox" checked={!!props.hubDone} onChange={(e) => props.onToggleHubDone?.(hub.id, e.target.checked)} />
-                      Mark hub as done
-                    </label>
+                    studentQuiz ? (
+                      // Hub has quiz - show completion status with undo option
+                      quizPassed || props.hubDone ? (
+                        <div className="mt-3 space-y-2">
+                          <div className="text-sm font-medium text-green-700">✓ Completed</div>
+                          <button
+                            onClick={() => {
+                              setQuizPassed(false);
+                              if (props.onToggleHubDone && hub) {
+                                props.onToggleHubDone(hub.id, false);
+                              }
+                              showAlert('info', 'Quiz completion reset. You can retake the quiz.');
+                            }}
+                            className="text-xs text-blue-600 hover:text-blue-800 underline"
+                          >
+                            Undo completion
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="text-xs text-slate-400 mt-2">Complete the quiz to mark this hub as done.</div>
+                      )
+                    ) : (
+                      // No quiz - allow manual completion
+                      <label className="flex items-center gap-2 text-xs text-slate-600 mt-3">
+                        <input type="checkbox" checked={!!props.hubDone} onChange={(e) => props.onToggleHubDone?.(hub.id, e.target.checked)} />
+                        Mark hub as done
+                      </label>
+                    )
                   ) : (
-                    <div className="text-xs text-slate-400 mt-2">Complete all tasks to mark this hub as done.</div>
+                    studentQuiz ? (
+                      // Hub has quiz but tasks not complete - already shown message above
+                      null
+                    ) : (
+                      // No quiz, tasks not complete
+                      <div className="text-xs text-slate-400 mt-2">Complete all tasks to mark this hub as done.</div>
+                    )
                   )}
                 </>
               )}

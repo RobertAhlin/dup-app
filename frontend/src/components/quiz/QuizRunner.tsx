@@ -1,20 +1,24 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { QuizQuestion } from './QuizEditor'
-
-function getRandomQuestions(questions: QuizQuestion[], count: number) {
-  const shuffled = [...questions].sort(() => Math.random() - 0.5)
-  return shuffled.slice(0, count)
-}
+import { useAlert } from '../../contexts/useAlert'
 
 type Props = {
   questions: QuizQuestion[]
   onSubmit?: (answers: number[]) => void
+  onPass?: () => void
 }
 
-export default function QuizRunner({ questions, onSubmit }: Props) {
+export default function QuizRunner({ questions, onSubmit, onPass }: Props) {
+  const { showAlert } = useAlert()
   const [selected, setSelected] = useState<number[][]>(questions.map(() => []))
   const [submitted, setSubmitted] = useState(false)
-  const [score, setScore] = useState<number|null>(null)
+  const [key, setKey] = useState(0)
+
+  // Reset selections when questions change
+  useEffect(() => {
+    setSelected(questions.map(() => []))
+    setSubmitted(false)
+  }, [key, questions])
 
   const handleToggle = (qi: number, oi: number) => {
     if (submitted) return
@@ -39,8 +43,20 @@ export default function QuizRunner({ questions, onSubmit }: Props) {
                         userAnswers.every((ans, idx) => ans === correctAnswers[idx])
       return acc + (isCorrect ? 1 : 0)
     }, 0)
-    setScore(correct)
     if (onSubmit) onSubmit(selected.flat())
+
+    // Show result and reload if failed
+    const passed = correct === questions.length
+    if (passed) {
+      showAlert('success', `Quiz passed! Score: ${correct}/${questions.length}`)
+      if (onPass) onPass()
+    } else {
+      showAlert('error', `Quiz failed. Score: ${correct}/${questions.length}. Loading new questions...`)
+      // Auto-reload with new questions after a brief delay
+      setTimeout(() => {
+        setKey(prev => prev + 1)
+      }, 2500)
+    }
   }
 
   return (
@@ -65,15 +81,11 @@ export default function QuizRunner({ questions, onSubmit }: Props) {
           </ul>
         </div>
       ))}
-      {!submitted ? (
-        <button
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          onClick={handleSubmit}
-          disabled={selected.some(s => s.length === 0)}
-        >Submit Quiz</button>
-      ) : (
-        <div className="text-lg font-bold text-green-700">Score: {score} / {questions.length}</div>
-      )}
+      <button
+        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        onClick={handleSubmit}
+        disabled={selected.some(s => s.length === 0) || submitted}
+      >{submitted ? 'Submitted...' : 'Submit Quiz'}</button>
     </div>
   )
 }
