@@ -61,8 +61,7 @@ export default function StudentDashboard({ courses }: Props) {
                 {sortedCourses.map((course, index) => (
                   <div
                     key={course.id}
-                    className="flex items-center gap-3 px-3 py-2 rounded-lg border border-slate-200 hover:border-slate-300 cursor-pointer hover:shadow-md transition-all"
-                    onClick={() => navigate(`/course/${course.id}`)}
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg border border-slate-200 transition-all"
                   >
                     <div 
                       className="w-3 h-3 rounded-full shrink-0"
