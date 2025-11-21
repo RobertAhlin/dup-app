@@ -128,7 +128,7 @@ export default function FloatingInput({
     ].join(' ')
   }, [box, shouldFloat, gap, gapPadding, radius, buildBaseSegments])
 
-  const strokeColor = focused ? '#000000' : disabled ? '#d1d5db' : '#797979'
+  const strokeColor = focused ? '#2e6169' : disabled ? '#d1d5db' : '#797979'
 
   return (
     <div
@@ -178,9 +178,9 @@ export default function FloatingInput({
               transition-all duration-200 ease-out origin-top-left
               ${shouldFloat
                 ? 'top-3 -translate-y-1/2 text-xs'
-                : 'top-8 -translate-y-1/2 text-base text-gray-800'
+                : 'top-8 -translate-y-1/2 text-base text-gray-500'
               }
-              ${focused && shouldFloat ? 'text-black' : shouldFloat ? 'text-gray-600' : ''}
+              ${focused && shouldFloat ? 'text-[#2e6169]' : shouldFloat ? 'text-gray-600' : ''}
             `}
             style={{
               transform: shouldFloat
