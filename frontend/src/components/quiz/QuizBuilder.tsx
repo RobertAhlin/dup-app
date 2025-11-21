@@ -30,11 +30,11 @@ export default function QuizBuilder({ courseId, quizId, onClose, onSave, availab
   const [currentQuizId, setCurrentQuizId] = useState(quizId)
   const [selectedHubId, setSelectedHubId] = useState<number | null>(null)
 
-  const loadQuiz = useCallback(async () => {
-    if (!currentQuizId) return
+  const loadQuiz = useCallback(async (quizIdToLoad: number) => {
+    if (!quizIdToLoad) return
     setLoading(true)
     try {
-      const quiz = await quizApi.getQuiz(currentQuizId)
+      const quiz = await quizApi.getQuiz(quizIdToLoad)
       setTitle(quiz.title)
       setDescription(quiz.description || '')
       setQuestionsPerAttempt(quiz.questions_per_attempt)
@@ -47,11 +47,11 @@ export default function QuizBuilder({ courseId, quizId, onClose, onSave, availab
     } finally {
       setLoading(false)
     }
-  }, [currentQuizId])
+  }, [])
 
   useEffect(() => {
     if (currentQuizId) {
-      loadQuiz()
+      loadQuiz(currentQuizId)
     }
   }, [currentQuizId, loadQuiz])
 
@@ -97,11 +97,43 @@ export default function QuizBuilder({ courseId, quizId, onClose, onSave, availab
           description: description || undefined,
           questions_per_attempt: questionsPerAttempt
         })
-        // Update to the new quiz ID so we can add questions
-        setCurrentQuizId(newQuiz.id)
-        onSave(newQuiz.id)
+        
         showAlert('success', 'Quiz created successfully!')
-        // Don't close - let user add questions
+        
+        // Auto-add one question with two answers
+        try {
+          const newQuestion = await quizApi.createQuestion(newQuiz.id, {
+            question_text: ' ',
+            order_index: 0
+          })
+          
+          // Add 2 empty answer fields
+          const answers = []
+          for (let j = 0; j < 2; j++) {
+            const newAnswer = await quizApi.createAnswer(newQuestion.id, {
+              answer_text: ' ',
+              is_correct: false,
+              order_index: j
+            })
+            answers.push(newAnswer)
+          }
+          
+          // Set state with the created question and answers
+          setTitle(newQuiz.title)
+          setDescription(newQuiz.description || '')
+          setQuestionsPerAttempt(newQuiz.questions_per_attempt)
+          setQuestions([{ ...newQuestion, answers }])
+          setSelectedHubId(newQuiz.hub_id || null)
+          setCurrentQuizId(newQuiz.id)
+          showAlert('info', 'Created 1 question with 2 answer fields')
+          onSave(newQuiz.id)
+        } catch (err) {
+          console.error('Failed to create initial question:', err)
+          setCurrentQuizId(newQuiz.id)
+          onSave(newQuiz.id)
+          showAlert('error', 'Quiz created but failed to add initial question')
+        }
+        // Don't close - let user edit questions
       }
     } catch (err) {
       const error = err as { response?: { data?: { error?: string } } }
@@ -123,7 +155,19 @@ export default function QuizBuilder({ courseId, quizId, onClose, onSave, availab
         question_text: ' ',
         order_index: questions.length
       })
-      setQuestions([...questions, { ...newQuestion, answers: [] }])
+      
+      // Auto-add 2 answer fields for the new question
+      const answers = []
+      for (let i = 0; i < 2; i++) {
+        const newAnswer = await quizApi.createAnswer(newQuestion.id, {
+          answer_text: ' ',
+          is_correct: false,
+          order_index: i
+        })
+        answers.push(newAnswer)
+      }
+      
+      setQuestions([...questions, { ...newQuestion, answers }])
       setExpandedQuestion(newQuestion.id)
       setError(null)
     } catch (err) {
@@ -254,43 +298,38 @@ export default function QuizBuilder({ courseId, quizId, onClose, onSave, availab
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 border-b space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold">{currentQuizId ? 'Edit Quiz' : 'Create Quiz'}</h2>
-          {currentQuizId && onDeleteQuiz && (
-            <button
-              onClick={() => {
-                if (confirm('Delete this quiz? This cannot be undone.')) {
-                  onDeleteQuiz(currentQuizId)
-                }
-              }}
-              className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
-            >
-              Delete Quiz
-            </button>
-          )}
-        </div>
+      <div className="px-2 py-2 border-b space-y-2 bg-gray-200">
         {availableQuizzes.length > 0 && onSelectQuiz && (
           <div>
-            <label className="block text-sm font-medium mb-1">Select Quiz to Edit</label>
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <label className="block text-sm font-medium">Select Quiz to Edit</label>
+              <button
+                onClick={async () => {
+                  // Create new quiz
+                  setCurrentQuizId(undefined)
+                  setTitle('New Quiz')
+                  setDescription('')
+                  setQuestionsPerAttempt(3)
+                  setQuestions([])
+                  // Trigger save
+                  await handleSaveQuiz()
+                }}
+                className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm whitespace-nowrap"
+              >
+                Create Quiz
+              </button>
+            </div>
             <select
               value={currentQuizId || ''}
               onChange={(e) => {
                 const id = e.target.value ? Number(e.target.value) : undefined
                 if (id) {
                   onSelectQuiz(id)
-                } else {
-                  // Create new quiz
-                  setCurrentQuizId(undefined)
-                  setTitle('')
-                  setDescription('')
-                  setQuestionsPerAttempt(3)
-                  setQuestions([])
                 }
               }}
-              className="w-full border rounded px-3 py-2"
+              className="w-full border rounded px-3 py-2 bg-white"
             >
-              <option value="">-- Create New Quiz --</option>
+              <option value="">- Select -</option>
               {availableQuizzes.map(quiz => (
                 <option key={quiz.id} value={quiz.id}>
                   {quiz.title}
@@ -301,7 +340,7 @@ export default function QuizBuilder({ courseId, quizId, onClose, onSave, availab
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-2 space-y-2">
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
             {error}
@@ -309,15 +348,29 @@ export default function QuizBuilder({ courseId, quizId, onClose, onSave, availab
         )}
 
         {/* Quiz Metadata */}
-        <div className="space-y-3">
+        <div className="flex-1 space-y-3">
           <div>
             <label className="block text-sm font-medium mb-1">Title *</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full border rounded px-3 py-2"
-            />
+            <div className="flex gap-2 items-end">
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="flex-1 border rounded px-3 py-2"
+              />
+              {currentQuizId && onDeleteQuiz && (
+                <button
+                  onClick={() => {
+                    if (confirm('Delete this quiz? This cannot be undone.')) {
+                      onDeleteQuiz(currentQuizId)
+                    }
+                  }}
+                  className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm whitespace-nowrap"
+                >
+                  Delete Quiz
+                </button>
+              )}
+            </div>
           </div>
 
           <div>
@@ -409,8 +462,8 @@ export default function QuizBuilder({ courseId, quizId, onClose, onSave, availab
 
           {questions.map((question, index) => (
             <div key={question.id} className="border rounded p-3 space-y-2">
-              <div className="flex items-start gap-2">
-                <span className="font-medium text-gray-600 mt-2">Q{index + 1}.</span>
+              <div className="flex items-start gap-1">
+                <span className="font-medium text-gray-600 mt-1">{index + 1}.</span>
                 <input
                   type="text"
                   value={question.question_text}
@@ -421,7 +474,7 @@ export default function QuizBuilder({ courseId, quizId, onClose, onSave, availab
                 />
                 <button
                   onClick={() => setExpandedQuestion(expandedQuestion === question.id ? null : question.id)}
-                  className="px-2 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200"
+                  className="px-1 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200"
                 >
                   {expandedQuestion === question.id ? 'Collapse' : 'Answers'}
                 </button>
@@ -469,14 +522,14 @@ export default function QuizBuilder({ courseId, quizId, onClose, onSave, availab
                         value={answer.answer_text || ''}
                         onChange={(e) => handleUpdateAnswer(answer.id, { answer_text: e.target.value })}
                         onBlur={(e) => handleSaveAnswer(answer.id, { answer_text: e.target.value })}
-                        className="flex-1 border rounded px-2 py-1 text-sm"
+                        className="flex-1 border border-gray-400 rounded px-2 py-1 text-sm"
                         placeholder="Enter answer here"
                       />
                       <button
                         onClick={() => handleDeleteAnswer(question.id, answer.id)}
                         className="p-1 text-red-500 hover:bg-red-50 rounded"
                       >
-                        <TrashIcon className="w-3 h-3" />
+                        <TrashIcon className="w-4 h-4" />
                       </button>
                     </div>
                   ))}
@@ -493,7 +546,7 @@ export default function QuizBuilder({ courseId, quizId, onClose, onSave, availab
           {currentQuizId && (
             <button
               onClick={handleAddQuestion}
-              className="w-full mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center justify-center gap-2"
+              className="w-full mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700 flex items-center justify-center gap-2"
             >
               <PlusIcon className="w-4 h-4" />
               Add Question
@@ -513,7 +566,7 @@ export default function QuizBuilder({ courseId, quizId, onClose, onSave, availab
         <button
           onClick={handleSaveQuiz}
           disabled={saving}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300"
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700 disabled:bg-gray-300"
         >
           {saving ? 'Saving...' : 'Save Quiz'}
         </button>

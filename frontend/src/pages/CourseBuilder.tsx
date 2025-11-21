@@ -494,8 +494,8 @@ export default function CourseBuilderPage() {
 
         {/* Quiz Management Modal */}
         {showQuizModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl h-[90vh] flex flex-col">
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+            <div className="bg-dup-light-green rounded-lg shadow-xl w-full max-w-4xl h-[90vh] flex flex-col">
               <div className="flex items-center justify-between p-4 border-b">
                 <h2 className="text-xl font-bold">Quiz Management</h2>
                 <button
@@ -512,21 +512,21 @@ export default function CourseBuilderPage() {
                       <h3 className="font-semibold">Course Quizzes</h3>
                       <button
                         onClick={() => setSelectedQuizId(0)}
-                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700"
                       >
                         Create New Quiz
                       </button>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       {loadingQuizzes ? (
                         <p className="text-gray-500 text-sm">Loading quizzes...</p>
                       ) : !quizzes || quizzes.length === 0 ? (
-                        <p className="text-gray-500 text-sm">No quizzes yet. Create one to get started.</p>
+                        <p className="text-gray-500 text-sm bg-white">No quizzes yet. Create one to get started.</p>
                       ) : (
                         quizzes.map(quiz => (
                           <div
                             key={quiz.id}
-                            className="border rounded p-3 flex justify-between items-center hover:bg-gray-50"
+                            className="border rounded px-2 py-1 bg-white flex justify-between items-center hover:bg-gray-50"
                           >
                             <div>
                               <h4 className="font-medium">{quiz.title}</h4>
@@ -540,7 +540,7 @@ export default function CourseBuilderPage() {
                             </div>
                             <button
                               onClick={() => setSelectedQuizId(quiz.id)}
-                              className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 text-sm"
+                              className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-400 text-sm"
                             >
                               Edit
                             </button>

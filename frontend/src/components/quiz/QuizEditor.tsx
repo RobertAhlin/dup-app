@@ -40,10 +40,10 @@ function QuizEditor({ value, onChange, readOnly }: Props) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       <button type="button" className="px-2 py-1 border rounded" onClick={() => pushChange([...local, { question: '', options: ['',''], correctIndex: 0 }])}>+ Add question</button>
       {local.map((q, qi) => (
-        <div key={qi} className="border rounded p-3 space-y-2">
+        <div key={qi} className="border rounded p-1 space-y-2">
           <input className="w-full border rounded px-2 py-1" placeholder="Question" value={q.question} onChange={(e) => {
             const next = [...local]; next[qi] = { ...q, question: e.target.value }; pushChange(next)
           }} />

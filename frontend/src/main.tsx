@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import CourseBuilder from "./pages/CourseBuilder";
 import "./main.css";
+import './tailwind.css';
 import 'reactflow/dist/style.css';
 
 ReactDOM.createRoot(document.getElementById("root")!).render(

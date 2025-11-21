@@ -5,6 +5,7 @@ import SimpleEditor from './editor/SimpleEditor'
 import QuizEditor from './quiz/QuizEditor'
 import QuizRunner from './quiz/QuizRunner'
 import type { QuizQuestion } from './quiz/QuizEditor'
+import type { QuizWithQuestions } from '../types/quiz'
 import { useAlert } from '../contexts/useAlert'
 import * as quizApi from '../api/quizzes'
 
@@ -81,7 +82,7 @@ export default function NodeModal(props: Props) {
   const onCloseRef = useRef(onClose);
   useEffect(() => { onCloseRef.current = onClose }, [onClose]);
   // Student quiz runner state
-  const [studentQuiz, setStudentQuiz] = useState<any | null>(null);
+  const [studentQuiz, setStudentQuiz] = useState<QuizWithQuestions | null>(null);
   const [quizPassed, setQuizPassed] = useState(false);
   // Fetch quiz for students if hub.quiz_id is set and not editing
   useEffect(() => {
@@ -202,7 +203,7 @@ export default function NodeModal(props: Props) {
 
   return createPortal(
     <div
-      className="fixed inset-0 flex items-center justify-center bg-black/30"
+      className="fixed inset-0 flex items-center justify-center bg-black/50"
       style={{ zIndex: 9999, willChange: 'opacity, transform', transform: 'translateZ(0)' }}
       role="dialog"
       aria-modal="true"
