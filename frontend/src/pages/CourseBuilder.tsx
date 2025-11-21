@@ -313,6 +313,7 @@ export default function CourseBuilderPage() {
   }, [])
 
   const canEdit = isTeacher && mode === 'edit'
+  const [managePressed, setManagePressed] = useState(false)
 
   const loadQuizzes = useCallback(async () => {
     setLoadingQuizzes(true)
@@ -399,7 +400,11 @@ export default function CourseBuilderPage() {
                   setSelectedQuizId(undefined)
                   setShowQuizModal(true)
                 }}
-                className="ml-auto px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 text-sm font-medium"
+                onMouseDown={() => setManagePressed(true)}
+                onMouseUp={() => setManagePressed(false)}
+                onMouseLeave={() => setManagePressed(false)}
+                className={`ml-auto px-4 py-3.5 text-xs border-3 border-gray-300 font-semibold uppercase tracking-wide rounded-full transition-all ${managePressed ? 'bg-gray-200' : 'bg-white hover:bg-gray-100'} text-slate-900`}
+                  style={managePressed ? { boxShadow: 'inset 3px 3px 0 rgba(0,0,0,0.1), inset 1px 1px 0 rgba(0,0,0,0.2)' } : undefined}
               >
                 Manage Quizzes
               </button>
