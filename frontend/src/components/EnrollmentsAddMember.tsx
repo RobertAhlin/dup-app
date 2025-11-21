@@ -32,6 +32,14 @@ export default function AddCourseMembersPanel({ users, loading, onAdd, onFilterC
     onAdd(user.id, user.global_role, user.name);
   };
 
+  // DRY column definitions
+  const columns = [
+    { key: 'name', label: 'Name', className: 'px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider', cellClass: 'px-4 py-1 text-sm font-medium text-slate-900' },
+    { key: 'email', label: 'Email', className: 'px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider', cellClass: 'px-4 py-1 text-sm text-slate-600' },
+    { key: 'global_role', label: 'Role', className: 'px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider', cellClass: 'px-4 py-1 text-sm text-slate-600 capitalize' },
+    { key: 'add', label: 'Add', className: 'px-4 py-2 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider', cellClass: 'px-4 py-1 text-right' }
+  ];
+
   return (
     <div className="flex flex-col h-full">
       <h2 className="text-xl font-bold text-slate-800 mb-4">Add Members</h2>
@@ -91,36 +99,34 @@ export default function AddCourseMembersPanel({ users, loading, onAdd, onFilterC
           <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-200 sticky top-0">
               <tr>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                  Role
-                </th>
-                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                  Add
-                </th>
+                {columns.map(col => (
+                  <th key={col.key} className={col.className}>{col.label}</th>
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
               {users.map((user) => (
                 <tr key={user.id} className="bg-white hover:bg-slate-50">
-                  <td className="px-4 py-1 text-sm font-medium text-slate-900">{user.name}</td>
-                  <td className="px-4 py-1 text-sm text-slate-600">{user.email}</td>
-                  <td className="px-4 py-1 text-sm text-slate-600 capitalize">{user.global_role}</td>
-                  <td className="px-4 py-1 text-right">
-                    <button
-                      onClick={() => handleAdd(user)}
-                      className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-blue-700 hover:text-white bg-blue-50 hover:bg-blue-600 rounded-md transition-colors"
-                      title={`Add as ${user.global_role}`}
-                    >
-                      <PlusIcon className="h-4 w-4" />
-                      Add
-                    </button>
-                  </td>
+                  {columns.map(col => (
+                    col.key !== 'add' ? (
+                      <td key={col.key} className={col.cellClass}>
+                        {col.key === 'name' && user.name}
+                        {col.key === 'email' && user.email}
+                        {col.key === 'global_role' && user.global_role}
+                      </td>
+                    ) : (
+                      <td key={col.key} className={col.cellClass}>
+                        <button
+                          onClick={() => handleAdd(user)}
+                          className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-blue-700 hover:text-white bg-blue-50 hover:bg-blue-600 rounded-md transition-colors"
+                          title={`Add as ${user.global_role}`}
+                        >
+                          <PlusIcon className="h-4 w-4" />
+                          Add
+                        </button>
+                      </td>
+                    )
+                  ))}
                 </tr>
               ))}
             </tbody>

@@ -11,6 +11,14 @@ type Props = {
 };
 
 export default function CourseMembersList({ members, loading, onRemove, onFilterChange }: Props) {
+    // DRY column definitions
+    const columns = [
+      { key: 'name', label: 'Name', className: 'px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider', cellClass: 'px-4 py-1 text-sm font-medium text-slate-900' },
+      { key: 'email', label: 'Email', className: 'px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider', cellClass: 'px-4 py-1 text-sm text-slate-600' },
+      { key: 'global_role', label: 'Role', className: 'px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider', cellClass: 'px-4 py-1 text-sm text-slate-600 capitalize' },
+      { key: 'joined_at', label: 'Joined', className: 'px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider', cellClass: 'px-4 py-1 text-sm text-slate-600' },
+      { key: 'actions', label: 'Actions', className: 'px-4 py-2 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider', cellClass: 'px-4 py-1 text-right' }
+    ];
   const [selectedRoles, setSelectedRoles] = useState<string[]>(['teacher', 'student']);
   const [searchTerm, setSearchTerm] = useState('');
   const [confirmDelete, setConfirmDelete] = useState<{ userId: number; userName: string } | null>(null);
@@ -100,38 +108,33 @@ export default function CourseMembersList({ members, loading, onRemove, onFilter
           <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-200 sticky top-0">
               <tr>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                  Role
-                </th>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                  Joined
-                </th>
-                <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                  Actions
-                </th>
+                {columns.map(col => (
+                  <th key={col.key} className={col.className}>{col.label}</th>
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
               {members.map((member) => (
                 <tr key={member.id} className="bg-white hover:bg-slate-50">
-                  <td className="px-4 py-1 text-sm font-medium text-slate-900">{member.name}</td>
-                  <td className="px-4 py-1 text-sm text-slate-600">{member.email}</td>
-                  <td className="px-4 py-1 text-sm text-slate-600 capitalize">{member.global_role}</td>
-                  <td className="px-4 py-1 text-sm text-slate-600">{formatDate(member.joined_at)}</td>
-                  <td className="px-4 py-1 text-right">
-                    <button
-                      onClick={() => handleRemoveClick(member.id, member.name)}
-                      className="px-3 py-1 text-sm font-medium text-red-600 hover:text-white hover:bg-red-500 rounded-md transition-colors"
-                    >
-                      Remove
-                    </button>
-                  </td>
+                  {columns.map(col => (
+                    col.key === 'actions' ? (
+                      <td key={col.key} className={col.cellClass}>
+                        <button
+                          onClick={() => handleRemoveClick(member.id, member.name)}
+                          className="px-3 py-1 text-sm font-medium text-red-600 hover:text-white hover:bg-red-500 rounded-md transition-colors"
+                        >
+                          Remove
+                        </button>
+                      </td>
+                    ) : (
+                      <td key={col.key} className={col.cellClass}>
+                        {col.key === 'name' && member.name}
+                        {col.key === 'email' && member.email}
+                        {col.key === 'global_role' && member.global_role}
+                        {col.key === 'joined_at' && formatDate(member.joined_at)}
+                      </td>
+                    )
+                  ))}
                 </tr>
               ))}
             </tbody>

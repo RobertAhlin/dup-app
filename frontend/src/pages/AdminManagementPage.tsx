@@ -15,8 +15,8 @@ import { listCourses, createCourse, updateCourse, deleteCourse } from '../api/co
 import { getCourseMembers, addCourseMember, removeCourseMember, getUsersForCourse } from '../api/courseMembers';
 import type { CourseMember, AvailableUser } from '../types/courseMember';
 import CourseSelector from '../components/CourseSelector';
-import CourseMembersList from '../components/CourseMembersList';
-import AddCourseMembersPanel from '../components/AddCourseMembersPanel';
+import CourseMembersList from '../components/EnrollmentsMembersList';
+import AddCourseMembersPanel from '../components/EnrollmentsAddMember';
 import { useAlert } from '../contexts/useAlert';
 import * as OutlineIcons from '@heroicons/react/24/outline';
 const IconPicker = lazy(() => import('../components/IconPicker'));

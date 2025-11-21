@@ -8,8 +8,8 @@ import type { CourseMember, AvailableUser } from '../../types/courseMember';
 import type { User } from '../../types/user';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import CourseSelector from '../../components/CourseSelector';
-import CourseMembersList from '../../components/CourseMembersList';
-import AddCourseMembersPanel from '../../components/AddCourseMembersPanel';
+import CourseMembersList from '../../components/EnrollmentsMembersList';
+import AddCourseMembersPanel from '../../components/EnrollmentsAddMember';
 import AdminSidebar from '../../components/AdminSidebar';
 import { useAlert } from '../../contexts/useAlert';
 
@@ -107,13 +107,11 @@ export default function CourseMembersPage() {
     setSelectedCourseId(courseId);
   };
 
-  const handleAddMember = async (userId: number, roleInCourse: 'teacher' | 'student', userName: string) => {
+  const handleAddMember = async (userId: number, globalRole: string, userName: string) => {
     if (!selectedCourseId) return;
-    
     try {
-      await addCourseMember(selectedCourseId, userId, roleInCourse);
-      showAlert('success', `${userName} added as ${roleInCourse}`);
-      
+      await addCourseMember(selectedCourseId, userId, globalRole as 'teacher' | 'student');
+      showAlert('success', `${userName} added as ${globalRole}`);
       // Refresh both lists
       await Promise.all([loadMembers(), loadAvailableUsers()]);
     } catch (error) {

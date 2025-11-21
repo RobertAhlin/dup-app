@@ -5,7 +5,7 @@ import { AlertProvider } from "./contexts/AlertContext";
 import App from "./App";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-import AdminDashboard from "./pages/AdminDashboard";
+import AdminDashboard from "./pages/AdminManagementPage";
 import CourseBuilder from "./pages/CourseBuilder";
 import "./main.css";
 import './tailwind.css';
