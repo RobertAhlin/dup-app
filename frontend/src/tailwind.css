@@ -1,5 +1,11 @@
 @layer utilities {
+  :root {
+    --spinner-blue: #5dc1d0;
+  }
   .bg-dup-light-green {
     background-color: #b7c89d;
+  }
+  .spinner-blue {
+    background-color: #5dc1d0;
   }
 }

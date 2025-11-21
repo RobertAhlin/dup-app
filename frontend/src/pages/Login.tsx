@@ -74,20 +74,22 @@ export default function Login() {
         ))}
       </div>
 
-      <form className="login-form" onSubmit={handleSubmit}>
+      <form className="login-form gap-8" onSubmit={handleSubmit}>
         <FloatingInput
           id="email"
           label="Email"
+          type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
         <FloatingInput
           id="password"
           label="Password"
+          type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        <button type="submit">Log In</button>
+        <button className="bg-gray-200! px-1! py-0.5! border! border-gray-600! rounded! cursor-pointer" type="submit">Log In</button>
       </form>
     </div>
   );

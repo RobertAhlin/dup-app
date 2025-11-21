@@ -1,3 +1,5 @@
+@import '../tailwind.css';
+
 body {
   background-color: #b7c89d;
   margin: 0;
@@ -37,7 +39,7 @@ body::before {
   --angle: calc(360deg / var(--count));
   width: 15px;
   height: 70px;
-  background: #5dc1d0;
+  background: var(--spinner-blue);
   position: absolute;
   top: 80px;
   left: 50%;
@@ -76,12 +78,12 @@ body::before {
 .login-form {
   position: absolute;
   top: 50%;
-  left: 50%;
+  left: calc(50% + 10px);
   width: 160px;
   transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 8px;
   z-index: 2; /* above spinner and background */
 }
 
@@ -94,13 +96,4 @@ body::before {
   padding: 6px;
   border: 1px solid #333;
   border-radius: 4px;
-}
-
-.login-form button {
-  padding: 6px;
-  margin-left: 18px;
-  border: 1px solid #333;
-  border-radius: 6px;
-  background-color: white;
-  cursor: pointer;
 }
