@@ -1,4 +1,6 @@
 import { useEffect, useState, lazy, Suspense, useCallback, Fragment } from 'react';
+import FloatingInput from '../components/FloatingInput';
+import FloatingSelect from '../components/FloatingSelect';
 import { useNavigate } from 'react-router-dom';
 import LoadingSpinner from '../components/LoadingSpinner';
 import axios from '../api/axios';
@@ -276,32 +278,39 @@ export default function AdminDashboard() {
         {/* Create */}
         <form onSubmit={onCreate} className="grid grid-cols-1 md:grid-cols-6 gap-3 items-end mb-6">
           <div className="md:col-span-2">
-            <label className="block text-sm text-gray-600 mb-1">Email</label>
-            <input className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/40" value={form.email} onChange={e => setForm(f => ({...f, email: e.target.value}))} required />
+            <FloatingInput
+              id="admin-email"
+              label="Email"
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))}
+            />
           </div>
           <div>
-            <label className="block text-sm text-gray-600 mb-1">Name</label>
-            <input className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/40" value={form.name} onChange={e => setForm(f => ({...f, name: e.target.value}))} />
+            <FloatingInput
+              id="admin-name"
+              label="Name"
+              value={form.name}
+              onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
+            />
           </div>
           <div>
-            <label className="block text-sm text-gray-600 mb-1">Password</label>
-            <input type="password" className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/40" value={form.password} onChange={e => setForm(f => ({...f, password: e.target.value}))} required />
+            <FloatingInput
+              id="admin-password"
+              label="Password"
+              type="password"
+              value={form.password}
+              onChange={(e) => setForm(f => ({ ...f, password: e.target.value }))}
+            />
           </div>
           <div>
-            <label className="block text-sm text-gray-600 mb-1">Role</label>
-            <select className="w-full border rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40" value={form.role} onChange={e => setForm(f => ({...f, role: e.target.value}))}>
-              {roles
-                .sort((a, b) => a.id - b.id)
-                .map(r => (
-                  <option 
-                    key={r.id} 
-                    value={r.name}
-                    style={r.name.toLowerCase() === 'admin' ? { color: '#9ca3af' } : undefined}
-                  >
-                    {r.name}
-                  </option>
-                ))}
-            </select>
+            <FloatingSelect
+              id="admin-role"
+              label="Role"
+              value={form.role}
+              onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
+              options={roles.slice().sort((a, b) => a.id - b.id).map(r => ({ value: r.name, label: r.name }))}
+            />
           </div>
           <div className="md:col-span-1 md:justify-self-end">
             <button className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 transition-colors" type="submit">Create user</button>
@@ -428,7 +437,7 @@ export default function AdminDashboard() {
                 }
               }} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
               <div className="md:col-span-1">
-                <label className="block text-sm text-gray-600 mb-1">Icon</label>
+                
                 <button
                   type="button"
                   onClick={() => setIconPickerTarget({ type: 'create' })}
@@ -437,17 +446,25 @@ export default function AdminDashboard() {
                   {courseForm.icon ? (
                     <>{iconFromString(courseForm.icon)}</>
                   ) : (
-                    <>Choose</>
+                    <>Choose Icon</>
                   )}
                 </button>
               </div>
               <div className="md:col-span-3">
-                <label className="block text-sm text-gray-600 mb-1">Title</label>
-                <input className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/40" value={courseForm.title} onChange={e => setCourseForm(f => ({...f, title: e.target.value}))} required />
+                <FloatingInput
+                  id="course-title"
+                  label="Title"
+                  value={courseForm.title}
+                  onChange={(e) => setCourseForm(f => ({ ...f, title: e.target.value }))}
+                />
               </div>
               <div className="md:col-span-5">
-                <label className="block text-sm text-gray-600 mb-1">Description</label>
-                <input className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/40" value={courseForm.description} onChange={e => setCourseForm(f => ({...f, description: e.target.value}))} />
+                <FloatingInput
+                  id="course-description"
+                  label="Description"
+                  value={courseForm.description}
+                  onChange={(e) => setCourseForm(f => ({ ...f, description: e.target.value }))}
+                />
               </div>
               <div className="md:col-span-2">
                 <button className="w-full md:w-auto bg-blue-600 hover:bg-blue-800 text-white rounded-lg px-4 py-2 transition-colors" type="submit">Create course</button>

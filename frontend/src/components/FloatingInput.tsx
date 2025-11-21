@@ -177,7 +177,7 @@ export default function FloatingInput({
               absolute left-3 px-1 pointer-events-none
               transition-all duration-200 ease-out origin-top-left
               ${shouldFloat
-                ? 'top-3 -translate-y-1/2 text-xs'
+                ? 'top-3 -translate-y-1/2 text-md'
                 : 'top-8 -translate-y-1/2 text-base text-gray-500'
               }
               ${focused && shouldFloat ? 'text-[#2e6169]' : shouldFloat ? 'text-gray-600' : ''}
