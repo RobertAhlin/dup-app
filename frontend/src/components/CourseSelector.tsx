@@ -9,7 +9,7 @@ type Props = {
 
 export default function CourseSelector({ courses, selectedCourseId, onChange }: Props) {
   return (
-    <div className="mb-6">
+    <div className="mb-2 w-1/3">
       <FloatingSelect
         id="course-select"
         label="Select Course"

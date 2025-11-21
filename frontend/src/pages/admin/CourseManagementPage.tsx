@@ -1,51 +1,54 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useState, useEffect, lazy } from 'react';
 import FloatingInput from '../../components/FloatingInput';
 import { listCourses, createCourse, updateCourse, deleteCourse } from '../../api/courses';
 import type { Course } from '../../types/course';
+import * as OutlineIcons from '@heroicons/react/24/outline';
 
-// IconPicker and iconFromString must be passed in as props for lazy loading and icon mapping
+const IconPicker = lazy(() => import('../../components/IconPicker'));
 
 type IconPickerTarget = { type: 'create' } | { type: 'edit'; courseId: number };
 
-interface IconPickerProps {
-  value: string;
-  onChange: (key: string) => void;
-  onClose: () => void;
+interface CourseManagementPageProps {
+  onCourseClick?: (courseId: number) => void;
 }
 
-export default function CourseManagement({
-  courses,
-  setCourses,
-  courseForm,
-  setCourseForm,
-  courseEditing,
-  setCourseEditing,
-  iconPickerTarget,
-  setIconPickerTarget,
-  iconFromString,
-  IconPicker,
-  setSelectedCourseId,
-  setTab,
-  setError
-}: {
-  courses: Course[];
-  setCourses: React.Dispatch<React.SetStateAction<Course[]>>;
-  courseForm: { title: string; description: string; icon: string };
-  setCourseForm: React.Dispatch<React.SetStateAction<{ title: string; description: string; icon: string }>>;
-  courseEditing: number | null;
-  setCourseEditing: React.Dispatch<React.SetStateAction<number | null>>;
-  iconPickerTarget: IconPickerTarget | null;
-  setIconPickerTarget: React.Dispatch<React.SetStateAction<IconPickerTarget | null>>;
-  iconFromString: (key?: string | null) => React.ReactNode;
-  IconPicker: React.LazyExoticComponent<React.ComponentType<IconPickerProps>>;
-  setSelectedCourseId: (id: number) => void;
-  setTab: (tab: 'users' | 'courses' | 'enrollments') => void;
-  setError: (err: string) => void;
-}) {
+export default function CourseManagementPage({ onCourseClick }: CourseManagementPageProps) {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [courseForm, setCourseForm] = useState<{ title: string; description: string; icon: string }>({ title: '', description: '', icon: '' });
+  const [courseEditing, setCourseEditing] = useState<null | number>(null);
+  const [iconPickerTarget, setIconPickerTarget] = useState<IconPickerTarget | null>(null);
+  const [error, setError] = useState('');
+
+  const iconClass = 'h-5 w-5';
+  const IconsMap = OutlineIcons as unknown as Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>>;
+  const iconFromString = (key?: string | null) => {
+    const kebab = (key || '').toLowerCase();
+    const pascal = kebab
+      .split('-')
+      .map(s => s.charAt(0).toUpperCase() + s.slice(1))
+      .join('') + 'Icon';
+    const Fallback = IconsMap['ExclamationTriangleIcon'];
+    const Comp = IconsMap[pascal] || Fallback;
+    return <Comp className={iconClass} />;
+  };
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const list = await listCourses();
+        setCourses(list);
+      } catch {
+        setError('Failed to load courses');
+      }
+    };
+    load();
+  }, []);
   return (
     <>
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+      
       {/* Create course */}
-      <div className="bg-gray-100 rounded-lg p-2 mb-6">
+      <div className="bg-gray-100 rounded-lg p-2 mb-2">
         <form onSubmit={async (e) => {
           e.preventDefault();
           if (!courseForm.title.trim()) return;
@@ -57,12 +60,12 @@ export default function CourseManagement({
           } catch {
             setError('Failed to create course');
           }
-        }} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+        }} className="grid grid-cols-1 md:grid-cols-12 gap-2 items-end">
           <div className="md:col-span-1">
             <button
               type="button"
               onClick={() => setIconPickerTarget({ type: 'create' })}
-              className="w-full border rounded-lg px-3 py-2 bg-white hover:bg-gray-50 flex items-center justify-center gap-2"
+              className="w-full border-2 border-gray-300 rounded-lg px-3 py-1.5 bg-gray-100 hover:bg-gray-200 flex items-center justify-center gap-2"
             >
               {courseForm.icon ? (
                 <>{iconFromString(courseForm.icon)}</>
@@ -131,9 +134,8 @@ export default function CourseManagement({
                 key={c.id} 
                 className="border-b border-black/5 hover:bg-black/5 cursor-pointer"
                 onClick={() => {
-                  if (courseEditing !== c.id) {
-                    setSelectedCourseId(c.id);
-                    setTab('enrollments');
+                  if (courseEditing !== c.id && onCourseClick) {
+                    onCourseClick(c.id);
                   }
                 }}
               >

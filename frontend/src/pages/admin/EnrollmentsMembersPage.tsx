@@ -10,10 +10,9 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 import CourseSelector from '../../components/CourseSelector';
 import CourseMembersList from '../../components/EnrollmentsMembersList';
 import AddCourseMembersPanel from '../../components/EnrollmentsAddMember';
-import AdminSidebar from '../../components/AdminSidebar';
 import { useAlert } from '../../contexts/useAlert';
 
-export default function CourseMembersPage() {
+export default function CourseMembersPage({ initialCourseId }: { initialCourseId?: number } = {}) {
   const navigate = useNavigate();
   const { showAlert } = useAlert();
   
@@ -50,9 +49,13 @@ export default function CourseMembersPage() {
         const courseList = await listCourses();
         setCourses(courseList);
         
-        // Select first course if available
+        // Select initial course if provided, otherwise pick the first
         if (courseList.length > 0) {
-          setSelectedCourseId(courseList[0].id);
+          if (typeof initialCourseId === 'number' && courseList.some(c => c.id === initialCourseId)) {
+            setSelectedCourseId(initialCourseId);
+          } else {
+            setSelectedCourseId(courseList[0].id);
+          }
         }
       } catch {
         navigate('/login');
@@ -61,7 +64,7 @@ export default function CourseMembersPage() {
       }
     };
     checkAuth();
-  }, [navigate]);
+  }, [navigate, initialCourseId]);
 
   // Load members when course or filters change
   const loadMembers = useCallback(async () => {
@@ -137,58 +140,47 @@ export default function CourseMembersPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center py-12">
         <LoadingSpinner size="medium" />
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-slate-50">
-      <AdminSidebar />
-      
-      <div className="flex-1 overflow-auto">
-        <div className="max-w-[1600px] mx-auto p-6">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-slate-900">Course Enrollment Management</h1>
-            <p className="text-slate-600 mt-2">Manage which users belong to each course</p>
+    <>
+      <CourseSelector
+        courses={courses}
+        selectedCourseId={selectedCourseId}
+        onChange={handleCourseChange}
+      />
+
+      {selectedCourseId ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 w-full max-w-full">
+          {/* Left: Current Members */}
+          <div className="bg-gray-100 rounded-lg shadow-md p-4 flex flex-col overflow-auto w-full max-w-full" style={{ maxHeight: '60vh' }}>
+            <CourseMembersList
+              members={members}
+              loading={membersLoading}
+              onRemove={handleRemoveMember}
+              onFilterChange={setMemberFilters}
+            />
           </div>
 
-          <CourseSelector
-            courses={courses}
-            selectedCourseId={selectedCourseId}
-            onChange={handleCourseChange}
-          />
-
-          {selectedCourseId ? (
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 h-[calc(100vh-300px)]">
-              {/* Left: Current Members */}
-              <div className="bg-white rounded-lg shadow-sm flex flex-col lg:col-span-2">
-                <CourseMembersList
-                  members={members}
-                  loading={membersLoading}
-                  onRemove={handleRemoveMember}
-                  onFilterChange={setMemberFilters}
-                />
-              </div>
-
-              {/* Right: Add Members */}
-              <div className="bg-white rounded-lg shadow-sm flex flex-col">
-                <AddCourseMembersPanel
-                  users={availableUsers}
-                  loading={usersLoading}
-                  onAdd={handleAddMember}
-                  onFilterChange={setUserFilters}
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="bg-white rounded-lg shadow-sm p-12 text-center">
-              <p className="text-slate-500 text-lg">Please select a course to manage its members</p>
-            </div>
-          )}
+          {/* Right: Add Members */}
+          <div className="bg-gray-100 rounded-lg shadow-md p-4 flex flex-col overflow-auto w-full max-w-full" style={{ maxHeight: '60vh' }}>
+            <AddCourseMembersPanel
+              users={availableUsers}
+              loading={usersLoading}
+              onAdd={handleAddMember}
+              onFilterChange={setUserFilters}
+            />
+          </div>
         </div>
-      </div>
-    </div>
+      ) : (
+        <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+          <p className="text-slate-500 text-lg">Please select a course to manage its members</p>
+        </div>
+      )}
+    </>
   );
 }

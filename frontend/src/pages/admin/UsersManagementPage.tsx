@@ -95,7 +95,7 @@ export default function UsersManagementPage({ usersPerPage: usersPerPageProp }: 
   return (
     <>
       {/* Create */}
-      <form onSubmit={onCreate} className="grid grid-cols-1 md:grid-cols-6 gap-3 items-end mb-6">
+      <form onSubmit={onCreate} className="bg-gray-100 rounded-lg p-2 grid grid-cols-1 md:grid-cols-6 gap-3 items-end mb-2">
         <div className="md:col-span-2">
           <FloatingInput
             id="admin-email"
@@ -131,13 +131,13 @@ export default function UsersManagementPage({ usersPerPage: usersPerPageProp }: 
             options={roles.slice().sort((a, b) => a.id - b.id).map(r => ({ value: r.name, label: r.name }))}
           />
         </div>
-        <div className="md:col-span-1 md:justify-self-end">
+        <div className="md:col-span-1 md:justify-self-start">
           <button className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 transition-colors" type="submit">Create user</button>
         </div>
       </form>
 
       {/* Search */}
-      <div className="mb-4">
+      <div className="mb-2">
         <div className="relative max-w-md">
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
           <input
