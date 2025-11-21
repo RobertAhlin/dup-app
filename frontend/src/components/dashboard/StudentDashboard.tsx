@@ -1,4 +1,3 @@
-import { useNavigate } from "react-router-dom";
 import CircularProgressBar from "../CircularProgressBar";
 import StudentActivityNotification from "./StudentActivityNotification";
 
@@ -33,7 +32,7 @@ const colors = [
 ];
 
 export default function StudentDashboard({ courses }: Props) {
-  const navigate = useNavigate();
+
   const sortedCourses = [...courses].sort((a, b) => b.progress.percentage - a.progress.percentage);
 
   const coursesWithColors = sortedCourses.map((course, index) => ({
