@@ -96,22 +96,23 @@ const loginHandler = async (req: Request, res: Response) => {
       role_id: user.role_id
     };
 
-    const token = jwt.sign(tokenPayload, secret, { expiresIn: '2h' });
+    const token = jwt.sign(tokenPayload, secret, { expiresIn: '12h' });
 
+    // Set cookies with 12 hours expiry
     res
-    .cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production' ? true : false,
-      sameSite: 'lax',
-      maxAge: 2 * 60 * 60 * 1000 // 2 timmar
-    })
-    .cookie('socketToken', token, {
-      httpOnly: false, // Accessible to JavaScript for Socket.IO
-      secure: process.env.NODE_ENV === 'production' ? true : false,
-      sameSite: 'lax',
-      maxAge: 2 * 60 * 60 * 1000 // 2 timmar
-    })
-  .json({ message: 'Login successful' });
+      .cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production' ? true : false,
+        sameSite: 'lax',
+        maxAge: 12 * 60 * 60 * 1000 // 12 hours
+      })
+      .cookie('socketToken', token, {
+        httpOnly: false, // Accessible to JavaScript for Socket.IO
+        secure: process.env.NODE_ENV === 'production' ? true : false,
+        sameSite: 'lax',
+        maxAge: 12 * 60 * 60 * 1000 // 12 hours
+      })
+      .json({ message: 'Login successful' });
   } catch (err) {
     console.error('❌ Login error:', err);
     res.status(500).json({ error: 'Server error during login.' });
