@@ -1,4 +1,5 @@
 import { useEffect, useState, Fragment } from 'react';
+import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import FloatingInput from '../../components/FloatingInput';
 import FloatingSelect from '../../components/FloatingSelect';
 import { listUsers, createUser, updateUser, deleteUser } from '../../api/users';
@@ -16,6 +17,7 @@ export default function UsersManagementPage({ usersPerPage: usersPerPageProp }: 
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [selectedRoles, setSelectedRoles] = useState<string[]>(['admin', 'teacher', 'student']);
 
   const refresh = async () => {
     const list = await listUsers();
@@ -46,6 +48,10 @@ export default function UsersManagementPage({ usersPerPage: usersPerPageProp }: 
     const t = setTimeout(() => setDebouncedSearch(searchTerm.trim().toLowerCase()), 300);
     return () => clearTimeout(t);
   }, [searchTerm]);
+
+  const toggleRole = (role: string) => {
+    setSelectedRoles(prev => prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]);
+  };
 
   const onCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,10 +92,35 @@ export default function UsersManagementPage({ usersPerPage: usersPerPageProp }: 
     if (typeof usersPerPageProp === 'number') setCurrentPage(1);
   }, [usersPerPageProp]);
 
-  // Apply search filter before pagination
-  const filteredUsers = debouncedSearch
-    ? users.filter(u => (u.name || '').toLowerCase().includes(debouncedSearch) || (u.email || '').toLowerCase().includes(debouncedSearch))
-    : users;
+  // Apply role + search filter before pagination
+  const filteredUsers = users
+    .filter(u => selectedRoles.includes((u.role || '').toLowerCase()))
+    .filter(u => {
+      if (!debouncedSearch) return true;
+      return (u.name || '').toLowerCase().includes(debouncedSearch) || (u.email || '').toLowerCase().includes(debouncedSearch);
+    });
+
+  const handleExportExcel = async () => {
+    try {
+      const rows = filteredUsers.map(u => ({
+        ID: u.id,
+        Name: u.name ?? '',
+        Email: u.email ?? '',
+        Role: u.role ?? '',
+        'Last Login': u.last_login_at ? new Date(u.last_login_at).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Never'
+      }));
+
+      const XLSX = await import('xlsx');
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Users');
+      const filename = `users-export-${new Date().toISOString().slice(0,10)}.xlsx`;
+      XLSX.writeFile(wb, filename);
+    } catch (err) {
+      console.error('Export failed', err);
+      setError('Failed to export users');
+    }
+  };
 
   const indexOfLastUser = currentPage * effectiveUsersPerPage;
   const indexOfFirstUser = indexOfLastUser - effectiveUsersPerPage;
@@ -142,17 +173,59 @@ export default function UsersManagementPage({ usersPerPage: usersPerPageProp }: 
         </div>
       </form>
 
-      {/* Search */}
-      <div className="mb-2">
-        <div className="relative max-w-md">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search by name or email..."
-            className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
+      {/* Search + Role filters (same row on md+) */}
+      <div className="mb-2 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div className="flex-1">
+          <div className="relative w-full">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search by name or email..."
+              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={selectedRoles.includes('admin')}
+              onChange={() => toggleRole('admin')}
+              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <span className="text-sm font-medium text-slate-700">Admin</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={selectedRoles.includes('teacher')}
+              onChange={() => toggleRole('teacher')}
+              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <span className="text-sm font-medium text-slate-700">Teachers</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={selectedRoles.includes('student')}
+              onChange={() => toggleRole('student')}
+              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <span className="text-sm font-medium text-slate-700">Students</span>
+          </label>
+          <button
+            type="button"
+            onClick={handleExportExcel}
+            title="Export filtered list to Excel file."
+            aria-label="Export filtered list to Excel file."
+            className="ml-2 inline-flex items-center justify-center p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm transition"
+          >
+            <ArrowDownTrayIcon className="h-5 w-5" />
+            <span className="sr-only">Export to Excel file</span>
+          </button>
         </div>
       </div>
 
