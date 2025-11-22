@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AlertProvider } from "./contexts/AlertContext";
 import App from "./App";
+import DummyLoadingPage from "./pages/DummyPage";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminManagementPage";
@@ -21,6 +22,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/courses/:courseId" element={<CourseBuilder />} />
+          <Route path="/dummypage" element={<DummyLoadingPage />} />
         </Routes>
       </AlertProvider>
     </BrowserRouter>

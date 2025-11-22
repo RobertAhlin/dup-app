@@ -5,9 +5,9 @@ type Props = {
   text?: string;
 };
 
-export default function LoadingSpinner({ size = 'medium', text = 'Loading...' }: Props) {
-  const barCount = size === 'small' ? 12 : size === 'medium' ? 24 : 36;
-  const containerSize = size === 'small' ? 40 : size === 'medium' ? 60 : 100;
+export default function LoadingSpinner({ size = 'medium', text = 'Wait...' }: Props) {
+  const barCount = size === 'small' ? 36 : size === 'medium' ? 36 : 36;
+  const containerSize = size === 'small' ? 40 : size === 'medium' ? 60 : 80;
   
   return (
     <div className="loading-spinner-container">
@@ -19,8 +19,8 @@ export default function LoadingSpinner({ size = 'medium', text = 'Loading...' }:
             style={{ '--i': i, '--count': barCount } as React.CSSProperties}
           />
         ))}
+        {text && <span className="loading-text-inside">{text}</span>}
       </div>
-      {text && <p className="loading-text">{text}</p>}
     </div>
   );
 }

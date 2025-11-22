@@ -11,6 +11,17 @@
   position: relative;
 }
 
+.loading-spinner .loading-text-inside {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #000;
+  font-weight: 600;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
 .loading-bar {
   --count: 24;
   --angle: calc(360deg / var(--count));
@@ -31,17 +42,23 @@
   transform: translate(-50%, -50%) rotate(calc(var(--angle) * var(--i))) translateY(-12px);
 }
 
+.loading-spinner-small .loading-text-inside { font-size: 10px; }
+
 .loading-spinner-medium .loading-bar {
   width: 3px;
   height: 12px;
   transform: translate(-50%, -50%) rotate(calc(var(--angle) * var(--i))) translateY(-20px);
 }
 
+.loading-spinner-medium .loading-text-inside { font-size: 12px; }
+
 .loading-spinner-large .loading-bar {
   width: 5px;
   height: 20px;
   transform: translate(-50%, -50%) rotate(calc(var(--angle) * var(--i))) translateY(-35px);
 }
+
+.loading-spinner-large .loading-text-inside { font-size: 14px; }
 
 @keyframes glow-loading {
   0% {
