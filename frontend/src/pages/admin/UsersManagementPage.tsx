@@ -22,6 +22,12 @@ export default function UsersManagementPage({ usersPerPage: usersPerPageProp }: 
     setUsers(list);
   };
 
+  const formatLastLogin = (lastLogin?: string) => {
+    if (!lastLogin) return 'Never';
+    const date = new Date(lastLogin);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -159,6 +165,7 @@ export default function UsersManagementPage({ usersPerPage: usersPerPageProp }: 
               <th className="pr-2">Name</th>
               <th className="pr-2">Email</th>
               <th className="pr-2">Role</th>
+              <th className="pr-2">Last Login</th>
               <th className="w-40"></th>
             </tr>
           </thead>
@@ -181,6 +188,7 @@ export default function UsersManagementPage({ usersPerPage: usersPerPageProp }: 
                     </select>
                   ) : (u.role)}
                 </td>
+                <td className="pr-2 text-xs text-slate-600">{formatLastLogin(u.last_login_at)}</td>
                 <td className="py-2">
                   {editing === u.id ? (
                     <div className="flex gap-2">

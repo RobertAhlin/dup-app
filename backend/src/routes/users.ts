@@ -9,7 +9,7 @@ const router = Router();
 router.get('/', verifyToken, ensureAdmin, async (_req: AuthenticatedRequest, res: Response) => {
   try {
     const result = await pool.query(
-      `SELECT users.id, users.email, users.name, roles.name AS role, users.created_at
+      `SELECT users.id, users.email, users.name, roles.name AS role, users.created_at, users.last_login_at
        FROM users JOIN roles ON users.role_id = roles.id
        ORDER BY users.created_at DESC`
     );
@@ -44,7 +44,7 @@ router.post('/', verifyToken, ensureAdmin, async (req: AuthenticatedRequest, res
     const insert = await pool.query(
       `INSERT INTO users (email, password_hash, name, role_id)
        VALUES ($1, $2, $3, $4)
-       RETURNING id, email, name, role_id, created_at`,
+       RETURNING id, email, name, role_id, created_at, last_login_at`,
       [email, hash, name || null, roleRes.rows[0].id]
     );
     res.status(201).json({ user: insert.rows[0] });
@@ -84,7 +84,7 @@ router.put('/:id', verifyToken, ensureAdmin, async (req: AuthenticatedRequest, r
     if (roleId !== undefined) { fields.push(`role_id = $${idx++}`); values.push(roleId); }
     if (passwordHash !== undefined) { fields.push(`password_hash = $${idx++}`); values.push(passwordHash); }
     values.push(id); // where id
-    const sql = `UPDATE users SET ${fields.join(', ')} WHERE id = $${idx} RETURNING id, email, name, role_id, created_at`;
+    const sql = `UPDATE users SET ${fields.join(', ')} WHERE id = $${idx} RETURNING id, email, name, role_id, created_at, last_login_at`;
     const updated = await pool.query(sql, values);
     if (!updated.rows.length) {
       res.status(404).json({ error: 'User not found' });

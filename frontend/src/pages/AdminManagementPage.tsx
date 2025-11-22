@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoadingSpinner from '../components/LoadingSpinner';
+import FloatingSelect from '../components/FloatingSelect';
 import axios from '../api/axios';
 import type { User } from '../types/user';
 import MainCard from '../components/MainCard';
@@ -38,7 +39,7 @@ export default function AdminDashboard() {
     checkAuth();
   }, [navigate]);
 
-  if (loading) return <LoadingSpinner size="medium" />;
+  if (loading) return <LoadingSpinner size="large" />;
   if (!me) return null;
 
   return (
@@ -57,21 +58,22 @@ export default function AdminDashboard() {
             Admin • {tab === 'users' ? 'Users' : tab === 'courses' ? 'Courses' : 'Enrollments'}
           </h2>
           {tab === 'users' && (
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-600">Show:</label>
-              <select 
-                className="border rounded-lg px-3 py-1 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/40"
-                value={usersPerPageHeader}
+            <div className="w-20">
+              <FloatingSelect
+                id="users-per-page"
+                label="Show"
+                value={String(usersPerPageHeader)}
                 onChange={(e) => {
                   const value = parseInt(e.target.value);
                   setUsersPerPageHeader(value);
                 }}
-              >
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-                <option value={100}>100</option>
-                <option value={-1}>All</option>
-              </select>
+                options={[
+                  { value: '10', label: '10' },
+                  { value: '25', label: '25' },
+                  { value: '100', label: '100' },
+                  { value: '-1', label: 'All' },
+                ]}
+              />
             </div>
           )}
         </div>

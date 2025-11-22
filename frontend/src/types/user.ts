@@ -4,4 +4,5 @@ export interface User {
   email: string;
   role: string; // e.g., 'admin', 'user'
   created_at?: string;
+  last_login_at?: string;
 }
