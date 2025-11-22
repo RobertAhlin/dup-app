@@ -8,4 +8,8 @@
   .spinner-blue {
     background-color: #5dc1d0;
   }
+  /* Prevent accidental horizontal scroll caused by outlines or absolute elements */
+  html, body, #root {
+    overflow-x: hidden;
+  }
 }
