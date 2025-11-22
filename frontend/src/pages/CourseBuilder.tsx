@@ -10,8 +10,8 @@ import type { Course } from '../types/course'
 import { useAlert } from '../contexts/useAlert'
 import ProgressBar from '../components/ProgressBar'
 import LoadingSpinner from '../components/LoadingSpinner'
-import QuizBuilder from '../components/quiz/QuizBuilder'
-import { getQuizzes, deleteQuiz } from '../api/quizzes'
+import QuizManagementModal from '../components/quiz/QuizManagementModal'
+import { getQuizzes } from '../api/quizzes'
 import type { Quiz } from '../types/quiz'
 
 type GraphResponse = {
@@ -54,7 +54,6 @@ export default function CourseBuilderPage() {
   const [showQuizModal, setShowQuizModal] = useState(false)
   const [quizzes, setQuizzes] = useState<Quiz[]>([])
   const [selectedQuizId, setSelectedQuizId] = useState<number | undefined>(undefined)
-  const [loadingQuizzes, setLoadingQuizzes] = useState(false)
   const { showAlert } = useAlert()
 
   const isTeacher = useMemo(() => {
@@ -316,7 +315,6 @@ export default function CourseBuilderPage() {
   const [managePressed, setManagePressed] = useState(false)
 
   const loadQuizzes = useCallback(async () => {
-    setLoadingQuizzes(true)
     try {
       const data = await getQuizzes({ courseId })
       setQuizzes(data)
@@ -324,7 +322,7 @@ export default function CourseBuilderPage() {
       console.error('Failed to load quizzes', err)
       setQuizzes([])
     } finally {
-      setLoadingQuizzes(false)
+      // no-op
     }
   }, [courseId])
 
@@ -395,8 +393,6 @@ export default function CourseBuilderPage() {
             <>
               <button
                 onClick={() => {
-                  setQuizzes([]) // Reset first
-                  loadQuizzes()
                   setSelectedQuizId(undefined)
                   setShowQuizModal(true)
                 }}
@@ -497,93 +493,25 @@ export default function CourseBuilderPage() {
           </div>
         )}
 
-        {/* Quiz Management Modal */}
-        {showQuizModal && (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-            <div className="bg-dup-light-green rounded-lg shadow-xl w-full max-w-4xl h-[90vh] flex flex-col">
-              <div className="flex items-center justify-between p-4 border-b">
-                <h2 className="text-xl font-bold">Quiz Management</h2>
-                <button
-                  onClick={() => setShowQuizModal(false)}
-                  className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
-                >
-                  ×
-                </button>
-              </div>
-              <div className="flex-1 overflow-hidden">
-                {selectedQuizId === undefined ? (
-                  <div className="p-4 space-y-4 h-full overflow-y-auto">
-                    <div className="flex justify-between items-center">
-                      <h3 className="font-semibold">Course Quizzes</h3>
-                      <button
-                        onClick={() => setSelectedQuizId(0)}
-                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700"
-                      >
-                        Create New Quiz
-                      </button>
-                    </div>
-                    <div className="space-y-1">
-                      {loadingQuizzes ? (
-                        <p className="text-gray-500 text-sm">Loading quizzes...</p>
-                      ) : !quizzes || quizzes.length === 0 ? (
-                        <p className="text-gray-500 text-sm bg-white">No quizzes yet. Create one to get started.</p>
-                      ) : (
-                        quizzes.map(quiz => (
-                          <div
-                            key={quiz.id}
-                            className="border rounded px-2 py-1 bg-white flex justify-between items-center hover:bg-gray-50 cursor-pointer"
-                            onClick={() => setSelectedQuizId(quiz.id)}
-                          >
-                            <div>
-                              <h4 className="font-medium">{quiz.title}</h4>
-                              {quiz.description && (
-                                <p className="text-sm text-gray-600">{quiz.description}</p>
-                              )}
-                              <p className="text-xs text-gray-500 mt-1">
-                                {quiz.questions_per_attempt} questions per attempt
-                                {quiz.hub_id ? ' • Attached to hub' : ' • Not attached'}
-                              </p>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <QuizBuilder
-                    key={selectedQuizId}
-                    courseId={courseId}
-                    quizId={selectedQuizId === 0 ? undefined : selectedQuizId}
-                    availableQuizzes={quizzes.map(q => ({ id: q.id, title: q.title }))}
-                    hubs={graph?.hubs.map(h => ({ id: h.id, title: h.title, quiz_id: h.quiz_id })) || []}
-                    onSelectQuiz={(quizId) => setSelectedQuizId(quizId)}
-                    onDeleteQuiz={async (quizId) => {
-                      try {
-                        await deleteQuiz(quizId)
-                        await loadQuizzes()
-                        setSelectedQuizId(undefined)
-                      } catch (err) {
-                        console.error('Failed to delete quiz', err)
-                        alert('Failed to delete quiz')
-                      }
-                    }}
-                    onClose={() => setSelectedQuizId(undefined)}
-                    onSave={async (newQuizId) => {
-                      await loadQuizzes()
-                      // Reload graph to get updated hub quiz_id values
-                      const graphRes = await axios.get(`/api/courses/${courseId}/graph`)
-                      setGraph(graphRes.data.graph)
-                      // Keep the quiz open for adding questions
-                      if (newQuizId) {
-                        setSelectedQuizId(newQuizId)
-                      }
-                    }}
-                  />
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+        <QuizManagementModal
+          open={showQuizModal}
+          onClose={() => setShowQuizModal(false)}
+          courseId={courseId}
+          selectedQuizId={selectedQuizId}
+          onSelectQuiz={(id) => setSelectedQuizId(id)}
+          onSave={async (newQuizId) => {
+            await loadQuizzes()
+            // Reload graph to get updated hub quiz_id values
+            const graphRes = await axios.get(`/api/courses/${courseId}/graph`)
+            setGraph(graphRes.data.graph)
+            // Keep the quiz open for adding questions
+            if (newQuizId) {
+              setSelectedQuizId(newQuizId)
+            }
+          }}
+          hubs={graph?.hubs?.map(h => ({ id: h.id, title: h.title, quiz_id: h.quiz_id ?? undefined })) || []}
+          onQuizzesChanged={setQuizzes}
+        />
       </div>
     )
   }
