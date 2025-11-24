@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "../api/axios";
 import { useNavigate } from "react-router-dom";
 import MainCard from "../components/MainCard";
-import UserProgressCircle from "../components/UserProgressCircle";
+import UserProfileCircle from "../components/UserProfileCircle";
 import AdminDashboard from "../components/dashboard/AdminDashboard";
 import TeacherDashboard from "../components/dashboard/TeacherDashboard";
 import StudentDashboard from "../components/dashboard/StudentDashboard";
@@ -84,9 +84,9 @@ const Dashboard = () => {
     return <LoadingSpinner size="medium" />;
   }
 
-  // Calculate average percentage for student
+  // Calculate average percentage for all roles
   let avgPercent = 0;
-  if (user.role === 'student' && courses.length > 0) {
+  if (courses.length > 0) {
     avgPercent = Math.round(
       courses.reduce((sum, c) => sum + (c.progress?.percentage ?? 0), 0) / courses.length
     );
@@ -97,7 +97,7 @@ const Dashboard = () => {
       name={user.name ?? ''}
       email={user.email}
       role={user.role}
-      headerElement={user.role === 'student' ? <UserProgressCircle percentage={avgPercent} size={100} /> : undefined}
+      headerElement={<UserProfileCircle percentage={avgPercent} size={100} role={user.role} />}
     >
       {user.role === 'admin' ? (
         <AdminDashboard />

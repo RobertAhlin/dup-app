@@ -4,6 +4,7 @@ import axios from '../api/axios'
 import GraphCanvas from '../components/graph/GraphCanvas'
 import type { HubData, TaskData, HubEdgeData } from '../components/graph/GraphCanvas'
 import MainCard from '../components/MainCard'
+import UserProfileCircle from '../components/UserProfileCircle'
 import { useAuth } from '../hooks/useAuth'
 import { getCourse } from '../api/courses'
 import type { Course } from '../types/course'
@@ -38,6 +39,22 @@ type AxiosLikeError = {
   }
 }
 
+// Add CourseProgress type for local use
+type CourseProgress = {
+  id: number;
+  title: string;
+  icon?: string;
+  progress: {
+    totalTasks: number;
+    totalHubs: number;
+    completedTasks: number;
+    completedHubs: number;
+    totalItems: number;
+    completedItems: number;
+    percentage: number;
+  };
+};
+
 export default function CourseBuilderPage() {
   const { courseId: courseIdParam } = useParams<{ courseId: string }>()
   const navigate = useNavigate()
@@ -56,6 +73,8 @@ export default function CourseBuilderPage() {
   const [quizzes, setQuizzes] = useState<Quiz[]>([])
   const [selectedQuizId, setSelectedQuizId] = useState<number | undefined>(undefined)
   const { showAlert } = useAlert()
+  // Fix: Declare courses and setCourses at the top
+  const [courses, setCourses] = useState<CourseProgress[]>([]);
 
   const isTeacher = useMemo(() => {
     const role = (user?.role ?? '').toLowerCase()
@@ -100,8 +119,9 @@ export default function CourseBuilderPage() {
         summary: ProgressSummary
       }>(`/api/courses/${courseId}/progress`),
       getCourse(courseId),
+      axios.get<{ courses: CourseProgress[] }>(`/api/courses/dashboard/progress`),
     ])
-      .then(([graphRes, progressRes, courseData]) => {
+      .then(([graphRes, progressRes, courseData, coursesRes]) => {
         if (isCancelled) return
         setGraph(graphRes.data.graph)
         const taskIds = progressRes.data.taskProgress.filter(p => p.status === 'completed').map(p => p.task_id)
@@ -110,6 +130,7 @@ export default function CourseBuilderPage() {
         setHubDoneIds(hubIds)
         setProgressSummary(progressRes.data.summary)
         setCourse(courseData)
+        setCourses(coursesRes.data.courses)
       })
       .catch((err: unknown) => {
         if (isCancelled) return
@@ -602,12 +623,21 @@ export default function CourseBuilderPage() {
     )
   }
 
+  // Calculate average percentage for student (same as dashboard)
+  let avgPercent = 0;
+  if (courses.length > 0) {
+    avgPercent = Math.round(
+      courses.reduce((sum, c) => sum + (c.progress?.percentage ?? 0), 0) / courses.length
+    );
+  }
+
   return (
     <MainCard
       name={user?.name ?? ''}
       email={user?.email ?? ''}
       role={user?.role ?? ''}
       chip={!authLoading && user && !isAdmin ? { label: 'Dashboard', to: '/dashboard' } : undefined}
+      headerElement={<UserProfileCircle percentage={avgPercent} size={100} role={user?.role} />}
     >
       {renderContent()}
     </MainCard>

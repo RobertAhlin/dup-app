@@ -1,21 +1,27 @@
 import { UserIcon } from '@heroicons/react/24/solid';
 
-interface UserProgressCircleProps {
+interface UserProfileCircleProps {
   percentage: number;
   size?: number;
+  role?: string;
 }
 
-const UserProgressCircle: React.FC<UserProgressCircleProps> = ({ percentage, size = 100 }) => {
+const UserProfileCircle: React.FC<UserProfileCircleProps> = ({ percentage, size = 100, role = 'student' }) => {
   const barCount = 36;
   const radius = size / 2 - 8;
   const angle = 360 / barCount;
   const progressBars = Math.round((Math.max(0, Math.min(percentage, 100)) / 100) * barCount);
+  
+  // Determine colors based on role
+  const isTeacherOrAdmin = role?.toLowerCase() === 'teacher' || role?.toLowerCase() === 'admin';
+  const completedColor = isTeacherOrAdmin ? '#2563eb' : '#22c55e'; // blue for teachers/admins, green for students
+  const incompleteColor = isTeacherOrAdmin ? '#2563eb' : '#bf3030'; // same blue for teachers/admins, red for students
 
   return (
     <div style={{ position: 'relative', width: size, height: size }}>
       <svg width={size} height={size} style={{ position: 'absolute', top: 0, left: 0 }}>
         {Array.from({ length: barCount }).map((_, i) => {
-          const isGreen = i < progressBars;
+          const isComplete = i < progressBars;
           return (
             <rect
               key={i}
@@ -24,7 +30,7 @@ const UserProgressCircle: React.FC<UserProgressCircleProps> = ({ percentage, siz
               width={4}
               height={size * 0.18}
               rx={2}
-              fill={isGreen ? '#22c55e' : '#bf3030'}
+              fill={isComplete ? completedColor : incompleteColor}
               transform={`rotate(${angle * i} ${size / 2} ${size / 2})`}
             />
           );
@@ -51,4 +57,4 @@ const UserProgressCircle: React.FC<UserProgressCircleProps> = ({ percentage, siz
   );
 };
 
-export default UserProgressCircle;
+export default UserProfileCircle;

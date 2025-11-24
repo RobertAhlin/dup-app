@@ -5,6 +5,7 @@ import FloatingSelect from '../components/FloatingSelect';
 import axios from '../api/axios';
 import type { User } from '../types/user';
 import MainCard from '../components/MainCard';
+import UserProfileCircle from '../components/UserProfileCircle';
 import AdminSidebar from '../components/AdminSidebar';
 import UsersManagementPage from './admin/UsersManagementPage';
 import EnrollmentsMembersPage from './admin/EnrollmentsMembersPage';
@@ -42,6 +43,9 @@ export default function AdminDashboard() {
   if (loading) return <LoadingSpinner size="large" />;
   if (!me) return null;
 
+  // For now, just show a static blue progress circle for admin (can be replaced with real stats)
+  const avgPercent = 100; // Or fetch/compute real admin stats if available
+
   return (
     <MainCard
       name={me.name ?? ''}
@@ -51,6 +55,7 @@ export default function AdminDashboard() {
       chip={{ label: 'Dashboard', to: '/dashboard' }}
       hideSidebar={false}
       sidebar={<AdminSidebar active={tab} onChange={setTab} />}
+      headerElement={<UserProfileCircle percentage={avgPercent} size={100} role={me.role} />}
     >
       <div className="p-4 md:p-6 overflow-hidden w-full max-w-full mx-auto">
         <div className="flex items-center justify-between mb-4">

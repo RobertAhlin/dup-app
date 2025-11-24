@@ -79,8 +79,8 @@ export default function MainCard({ name, role, children, title, chip, hideSideba
   }, [showAlert]);
   return (
   <div className="bg-white rounded-2xl shadow-2xl w-[calc(100vw-1.5rem)] min-h-[calc(100vh-1.5rem)] font-sans p-3 m-3">
-  <div className="bg-linear-to-br from-[#01105a] to-[#313135] mb-3 md:p-8 p-3 text-white rounded-xl">
-        <div className="flex flex-col gap-5">
+  <div className="bg-linear-to-br from-[#01105a] to-[#313135] mb-3 px-5 text-white rounded-xl">
+        <div className="flex flex-col gap-2">
             <MainCardHeader
               name={name}
               role={role}
