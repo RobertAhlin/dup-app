@@ -314,7 +314,6 @@ export default function CourseBuilderPage() {
 
   const canEdit = isTeacher && mode === 'edit'
   const [managePressed, setManagePressed] = useState(false)
-  const [lockPressed, setLockPressed] = useState(false)
   const [isTogglingLock, setIsTogglingLock] = useState(false)
 
   const loadQuizzes = useCallback(async () => {
@@ -410,7 +409,7 @@ export default function CourseBuilderPage() {
           {isTeacher && (
             <>
               <div className="ml-auto" aria-label="Lock course" role="group">
-                <span className="pl-14 text-xs font-semibold uppercase">Course</span>
+                <span className="pl-13 text-xs font-semibold uppercase">Course</span>
                 <div
                   className="relative flex items-center w-30 h-7 rounded-full border border-slate-300 bg-linear-to-br from-slate-200 via-slate-100 to-white shadow-inner p-0.5"
                   style={{ minWidth: '148px' }}
@@ -441,14 +440,12 @@ export default function CourseBuilderPage() {
                     type="button"
                     onClick={handleToggleLock}
                     disabled={isTogglingLock}
-                    onMouseDown={() => setLockPressed(true)}
-                    onMouseUp={() => setLockPressed(false)}
-                    onMouseLeave={() => setLockPressed(false)}
-                    className={`flex-1 px-2 text-xs font-semibold uppercase tracking-wide rounded-full transition-all duration-400 ${
-                      course?.is_locked
-                        ? 'text-slate-900'
-                        : 'text-slate-500 hover:text-slate-700'
-                    } ${isTogglingLock ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    // ...removed lockPressed handlers
+                                className={`flex-1 px-2 text-xs font-semibold uppercase tracking-wide rounded-full transition-all duration-400 ${
+                                  course?.is_locked
+                                    ? 'text-slate-900'
+                                    : 'text-slate-500 hover:text-blue-500 cursor-pointer'
+                                } ${isTogglingLock ? 'opacity-50 cursor-not-allowed' : ''}`}
                     style={{
                       color: course?.is_locked ? '#b91c1c' : undefined,
                       transition: 'color 0.4s',
@@ -462,20 +459,18 @@ export default function CourseBuilderPage() {
                     type="button"
                     onClick={handleToggleLock}
                     disabled={isTogglingLock}
-                    onMouseDown={() => setLockPressed(true)}
-                    onMouseUp={() => setLockPressed(false)}
-                    onMouseLeave={() => setLockPressed(false)}
-                    className={`flex-1 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide rounded-full transition-all duration-400 ${
-                      !course?.is_locked
-                        ? 'text-slate-900'
-                        : 'text-slate-500 hover:text-slate-700'
-                    } ${isTogglingLock ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    // ...removed lockPressed handlers
+                                className={`flex-1 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide rounded-full transition-all duration-400 ${
+                                  !course?.is_locked
+                                    ? 'text-slate-900'
+                                    : 'text-slate-500 hover:text-blue-500 cursor-pointer'
+                                } ${isTogglingLock ? 'opacity-50 cursor-not-allowed' : ''}`}
                     style={{
                       color: !course?.is_locked ? '#65a30d' : undefined,
                       transition: 'color 0.4s',
                       zIndex: 2,
                       fontWeight: 600,
-                      marginLeft: !course?.is_locked ? '1px' : undefined,
+                      
                     }}
                   >
                     Unlocked
@@ -490,7 +485,7 @@ export default function CourseBuilderPage() {
                 onMouseDown={() => setManagePressed(true)}
                 onMouseUp={() => setManagePressed(false)}
                 onMouseLeave={() => setManagePressed(false)}
-                className={`ml-auto px-4 py-3.5 text-xs border-3 border-gray-300 font-semibold uppercase tracking-wide rounded-full transition-all ${managePressed ? 'bg-gray-200' : 'bg-white hover:bg-gray-100'} text-slate-900`}
+                className={`ml-auto px-4 py-3.5 text-xs border-3 border-gray-300 font-semibold uppercase tracking-wide rounded-full transition-all ${managePressed ? 'bg-gray-200 cursor-pointer' : 'bg-white hover:bg-gray-100 cursor-pointer'} text-slate-900`}
                   style={managePressed ? { boxShadow: 'inset 3px 3px 0 rgba(0,0,0,0.1), inset 1px 1px 0 rgba(0,0,0,0.2)' } : undefined}
               >
                 Manage Quizzes
@@ -502,7 +497,7 @@ export default function CourseBuilderPage() {
                   onClick={() => setMode('student')}
                   className={`flex-1 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide rounded-full transition-all ${mode === 'student'
                     ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
+                    : 'text-slate-500 hover:text-slate-700 cursor-pointer'
                   }`}
                 >
                   Student view
@@ -512,7 +507,7 @@ export default function CourseBuilderPage() {
                   onClick={() => setMode('edit')}
                   className={`flex-1 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide rounded-full transition-all ${mode === 'edit'
                     ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
+                    : 'text-slate-500 hover:text-slate-700 cursor-pointer'
                   }`}
                 >
                   Edit mode

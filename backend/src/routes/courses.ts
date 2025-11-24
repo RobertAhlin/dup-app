@@ -16,10 +16,10 @@ router.post('/', verifyToken, ensureAdmin, async (req: AuthenticatedRequest, res
   try {
     const created_by = req.user?.id ?? null;
     const result = await pool.query(
-      `INSERT INTO course (title, description, created_by, icon)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id, title, description, created_by, icon, created_at`,
-      [title, description ?? null, created_by, icon ?? null]
+      `INSERT INTO course (title, description, created_by, icon, is_locked)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, title, description, created_by, icon, created_at, is_locked`,
+      [title, description ?? null, created_by, icon ?? null, true]
     );
     const inserted = result.rows[0];
     // fetch creator name
