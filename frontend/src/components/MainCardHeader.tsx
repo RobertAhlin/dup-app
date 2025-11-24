@@ -20,7 +20,7 @@ export default function MainCardHeader({ name, role, title, chip, headerElement 
       <h1 className="inline text-2xl font-bold text-white leading-tight">
         {headingPrefix} {name}
       </h1>
-      <div className="ms-auto flex items-center gap-2">
+      <div className="ms-auto flex items-center">
         {chip ? (
           <button
             type="button"

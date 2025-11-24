@@ -5,40 +5,31 @@ interface UserProgressCircleProps {
   size?: number;
 }
 
-export default function UserProgressCircle({ percentage, size = 80 }: UserProgressCircleProps) {
-  const strokeWidth = 10;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const progress = Math.max(0, Math.min(percentage, 100));
-  const greenLength = (progress / 100) * circumference;
-  const redLength = circumference - greenLength;
+const UserProgressCircle: React.FC<UserProgressCircleProps> = ({ percentage, size = 100 }) => {
+  const barCount = 36;
+  const radius = size / 2 - 8;
+  const angle = 360 / barCount;
+  const progressBars = Math.round((Math.max(0, Math.min(percentage, 100)) / 100) * barCount);
 
   return (
     <div style={{ position: 'relative', width: size, height: size }}>
-      <svg width={size} height={size}>
-        {/* Red background */}
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="#ef4444"
-          strokeWidth={strokeWidth}
-        />
-        {/* Green progress */}
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="#22c55e"
-          strokeWidth={strokeWidth}
-          strokeDasharray={`${greenLength} ${redLength}`}
-          strokeDashoffset={0}
-          strokeLinecap="round"
-        />
+      <svg width={size} height={size} style={{ position: 'absolute', top: 0, left: 0 }}>
+        {Array.from({ length: barCount }).map((_, i) => {
+          const isGreen = i < progressBars;
+          return (
+            <rect
+              key={i}
+              x={size / 2 - 2}
+              y={size / 2 - radius}
+              width={4}
+              height={size * 0.18}
+              rx={2}
+              fill={isGreen ? '#22c55e' : '#bf3030'}
+              transform={`rotate(${angle * i} ${size / 2} ${size / 2})`}
+            />
+          );
+        })}
       </svg>
-      {/* User icon in center */}
       <div
         style={{
           position: 'absolute',
@@ -52,12 +43,12 @@ export default function UserProgressCircle({ percentage, size = 80 }: UserProgre
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
         }}
       >
         <UserIcon style={{ width: '60%', height: '60%', color: '#64748b' }} />
       </div>
-      {/* Percentage text below removed as requested */}
     </div>
   );
-}
+};
+
+export default UserProgressCircle;
