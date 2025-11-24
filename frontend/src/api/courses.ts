@@ -24,3 +24,8 @@ export async function updateCourse(id: number, input: UpdateCourseInput): Promis
 export async function deleteCourse(id: number): Promise<void> {
   await axios.delete(`/api/courses/${id}`);
 }
+
+export async function toggleCourseLock(id: number): Promise<{ is_locked: boolean }> {
+  const res = await axios.patch<{ course: { id: number; is_locked: boolean } }>(`/api/courses/${id}/lock`);
+  return { is_locked: res.data.course.is_locked };
+}

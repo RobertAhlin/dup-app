@@ -6,6 +6,7 @@ export interface Course {
   creator_name?: string | null;
   icon?: string | null;
   created_at?: string;
+  is_locked?: boolean;
 }
 
 export interface CreateCourseInput {

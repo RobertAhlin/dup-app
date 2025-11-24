@@ -13,6 +13,7 @@ import LoadingSpinner from '../components/LoadingSpinner'
 import QuizManagementModal from '../components/quiz/QuizManagementModal'
 import { getQuizzes } from '../api/quizzes'
 import type { Quiz } from '../types/quiz'
+import { toggleCourseLock } from '../api/courses'
 
 type GraphResponse = {
   hubs: HubData[]
@@ -313,6 +314,8 @@ export default function CourseBuilderPage() {
 
   const canEdit = isTeacher && mode === 'edit'
   const [managePressed, setManagePressed] = useState(false)
+  const [lockPressed, setLockPressed] = useState(false)
+  const [isTogglingLock, setIsTogglingLock] = useState(false)
 
   const loadQuizzes = useCallback(async () => {
     try {
@@ -369,6 +372,21 @@ export default function CourseBuilderPage() {
     }
   }, [showAlert])
 
+  const handleToggleLock = useCallback(async () => {
+    if (!course || isTogglingLock) return
+    setIsTogglingLock(true)
+    try {
+      const result = await toggleCourseLock(courseId)
+      setCourse(current => current ? { ...current, is_locked: result.is_locked } : current)
+      showAlert('success', result.is_locked ? 'Course locked for students' : 'Course unlocked for students')
+    } catch (err) {
+      console.error('Failed to toggle course lock', err)
+      showAlert('error', 'Failed to toggle course lock')
+    } finally {
+      setIsTogglingLock(false)
+    }
+  }, [course, courseId, isTogglingLock, showAlert])
+
   const renderContent = () => {
     if (loading || authLoading) {
       return <div className="p-6"><LoadingSpinner size="medium" text="Loading course..." /></div>
@@ -391,6 +409,43 @@ export default function CourseBuilderPage() {
           </div>
           {isTeacher && (
             <>
+              <div className="ml-auto" aria-label="Lock course" role="group">
+                <span className="pl-12 text-xs font-semibold uppercase">Course</span>
+                <div className="flex rounded-full border border-slate-300 bg-linear-to-br from-slate-200 via-slate-100 to-white shadow-inner p-0.5">
+                  <button
+                    type="button"
+                    onClick={handleToggleLock}
+                    disabled={isTogglingLock}
+                    onMouseDown={() => setLockPressed(true)}
+                    onMouseUp={() => setLockPressed(false)}
+                    onMouseLeave={() => setLockPressed(false)}
+                    className={`flex-1 px-3 py-0.5 text-xs font-semibold uppercase tracking-wide rounded-full transition-all ${
+                      course?.is_locked
+                        ? 'bg-red-400 text-slate-900 shadow-sm'
+                        : 'text-slate-500 hover:text-slate-700'
+                    } ${isTogglingLock ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    style={lockPressed && course?.is_locked ? { boxShadow: 'inset 2px 2px 0 rgba(0,0,0,0.1)' } : undefined}
+                  >
+                    Locked
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleToggleLock}
+                    disabled={isTogglingLock}
+                    onMouseDown={() => setLockPressed(true)}
+                    onMouseUp={() => setLockPressed(false)}
+                    onMouseLeave={() => setLockPressed(false)}
+                    className={`flex-1 px-3 py-0.5 text-xs font-semibold uppercase tracking-wide rounded-full transition-all ${
+                      !course?.is_locked
+                        ? 'bg-dup-light-green text-slate-900 shadow-sm'
+                        : 'text-slate-500 hover:text-slate-700'
+                    } ${isTogglingLock ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    style={lockPressed && !course?.is_locked ? { boxShadow: 'inset 2px 2px 0 rgba(0,0,0,0.1)' } : undefined}
+                  >
+                    Unlocked
+                  </button>
+                </div>
+              </div>
               <button
                 onClick={() => {
                   setSelectedQuizId(undefined)

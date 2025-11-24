@@ -62,6 +62,19 @@ async function initDb() {
         created_at  TIMESTAMP DEFAULT NOW()
       );
     `);
+    
+    // Add is_locked column if it doesn't exist
+    await client.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+          WHERE table_name = 'course' AND column_name = 'is_locked'
+        ) THEN
+          ALTER TABLE course ADD COLUMN is_locked BOOLEAN DEFAULT FALSE;
+        END IF;
+      END$$;
+    `);
 
     // 4️⃣ M2M: Enrollments (students ↔ courses)
     await client.query(`

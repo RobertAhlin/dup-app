@@ -29,7 +29,10 @@ export async function canViewCourse(user: AuthUser, courseId: number): Promise<b
 
   if (roleName === 'student') {
     const result = await pool.query(
-      `SELECT 1 FROM course_enrollments WHERE course_id = $1 AND user_id = $2 LIMIT 1`,
+      `SELECT 1 FROM course_enrollments ce
+       JOIN course c ON c.id = ce.course_id
+       WHERE ce.course_id = $1 AND ce.user_id = $2 AND c.is_locked = FALSE
+       LIMIT 1`,
       [courseId, user.id]
     );
     return result.rows.length > 0;

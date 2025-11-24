@@ -2,7 +2,7 @@ import { Router } from 'express';
 import pool from '../db';
 import { verifyToken, AuthenticatedRequest } from '../middleware/verifyToken';
 import { ensureAdmin } from '../middleware/roles';
-import { getRoleName, canViewCourse, AuthUser } from './helpers/courseAccess';
+import { getRoleName, canViewCourse, canEditCourse, AuthUser } from './helpers/courseAccess';
 
 const router = Router();
 
@@ -34,7 +34,7 @@ router.post('/', verifyToken, ensureAdmin, async (req: AuthenticatedRequest, res
 // Read all with RBAC filtering
 // admin: all courses
 // teacher: courses they own (created_by = user.id OR course_teachers.is_owner)
-// student: courses they are enrolled in (course_enrollments)
+// student: courses they are enrolled in (course_enrollments) - excluding locked courses
 router.get('/', verifyToken, async (req: AuthenticatedRequest, res) => {
   try {
     const user = req.user as AuthUser | undefined;
@@ -52,7 +52,7 @@ router.get('/', verifyToken, async (req: AuthenticatedRequest, res) => {
     let rows: any[] = [];
     if (roleName === 'admin') {
       const result = await pool.query(
-        `SELECT c.id, c.title, c.description, c.created_at, c.created_by, c.icon,
+        `SELECT c.id, c.title, c.description, c.created_at, c.created_by, c.icon, c.is_locked,
                 u.name AS creator_name
          FROM course c
          LEFT JOIN users u ON u.id = c.created_by
@@ -61,7 +61,7 @@ router.get('/', verifyToken, async (req: AuthenticatedRequest, res) => {
       rows = result.rows;
     } else if (roleName === 'teacher') {
       const result = await pool.query(
-        `SELECT DISTINCT c.id, c.title, c.description, c.created_at, c.created_by, c.icon,
+        `SELECT DISTINCT c.id, c.title, c.description, c.created_at, c.created_by, c.icon, c.is_locked,
                 u.name AS creator_name
          FROM course c
          LEFT JOIN users u ON u.id = c.created_by
@@ -73,11 +73,12 @@ router.get('/', verifyToken, async (req: AuthenticatedRequest, res) => {
       rows = result.rows;
     } else if (roleName === 'student') {
       const result = await pool.query(
-        `SELECT c.id, c.title, c.description, c.created_at, c.created_by, c.icon,
+        `SELECT c.id, c.title, c.description, c.created_at, c.created_by, c.icon, c.is_locked,
                 u.name AS creator_name
          FROM course c
          JOIN course_enrollments ce ON ce.course_id = c.id AND ce.user_id = $1
          LEFT JOIN users u ON u.id = c.created_by
+         WHERE c.is_locked = FALSE
          ORDER BY c.created_at DESC`,
         [user.id]
       );
@@ -124,6 +125,7 @@ router.get('/dashboard/progress', verifyToken, async (req: AuthenticatedRequest,
           WHERE hus.user_id = $1 AND h.course_id = c.id AND hus.state = 'completed') AS completed_hubs
        FROM course c
        JOIN course_enrollments ce ON ce.course_id = c.id AND ce.user_id = $1
+       WHERE c.is_locked = FALSE
        ORDER BY c.created_at DESC`,
       [user.id]
     );
@@ -546,7 +548,7 @@ router.get('/:id', verifyToken, async (req: AuthenticatedRequest, res) => {
 
     // Always fetch course basic data
     const courseRes = await pool.query(
-      `SELECT c.id, c.title, c.description, c.created_at, c.created_by, c.icon,
+      `SELECT c.id, c.title, c.description, c.created_at, c.created_by, c.icon, c.is_locked,
               u.name AS creator_name
        FROM course c
        LEFT JOIN users u ON u.id = c.created_by
@@ -577,7 +579,7 @@ router.put('/:id', verifyToken, ensureAdmin, async (req, res) => {
            description = $2,
            icon = COALESCE($3, icon)
        WHERE id = $4
-       RETURNING id, title, description, created_at, created_by, icon`,
+       RETURNING id, title, description, created_at, created_by, icon, is_locked`,
       [title ?? null, description ?? null, icon ?? null, id]
     );
     if (!result.rows.length) {
@@ -588,6 +590,56 @@ router.put('/:id', verifyToken, ensureAdmin, async (req, res) => {
   } catch (err) {
     console.error('Update course error:', err);
     res.status(500).json({ error: 'Failed to update course' });
+  }
+});
+
+// Toggle course lock (admin/teacher only)
+router.patch('/:id/lock', verifyToken, async (req: AuthenticatedRequest, res) => {
+  const courseId = Number(req.params.id);
+  if (!Number.isInteger(courseId)) {
+    res.status(400).json({ error: 'Invalid course id' });
+    return;
+  }
+  try {
+    const user = req.user as AuthUser | undefined;
+    if (!user) {
+      res.status(401).json({ error: 'Not authenticated' });
+      return;
+    }
+
+    const roleName = await getRoleName(user.role_id);
+    if (roleName !== 'admin' && roleName !== 'teacher') {
+      res.status(403).json({ error: 'Only teachers and admins can lock courses' });
+      return;
+    }
+
+    // For teachers, verify they can edit this course
+    if (roleName === 'teacher') {
+      const allowed = await canEditCourse(user, courseId);
+      if (!allowed) {
+        res.status(403).json({ error: 'You do not have permission to lock this course' });
+        return;
+      }
+    }
+
+    // Toggle is_locked
+    const result = await pool.query(
+      `UPDATE course
+       SET is_locked = NOT is_locked
+       WHERE id = $1
+       RETURNING id, is_locked`,
+      [courseId]
+    );
+
+    if (!result.rows.length) {
+      res.status(404).json({ error: 'Course not found' });
+      return;
+    }
+
+    res.json({ course: result.rows[0] });
+  } catch (err) {
+    console.error('Toggle course lock error:', err);
+    res.status(500).json({ error: 'Failed to toggle course lock' });
   }
 });
 
