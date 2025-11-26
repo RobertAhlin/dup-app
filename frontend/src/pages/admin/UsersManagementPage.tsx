@@ -1,7 +1,8 @@
 import { useEffect, useState, Fragment } from 'react';
-import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import { ArrowDownTrayIcon, AcademicCapIcon } from '@heroicons/react/24/outline';
 import FloatingInput from '../../components/FloatingInput';
 import FloatingSelect from '../../components/FloatingSelect';
+import StudentCertificatesModal from '../../components/StudentCertificatesModal';
 import { listUsers, createUser, updateUser, deleteUser } from '../../api/users';
 import { listRoles } from '../../api/roles';
 import type { Role } from '../../types/role';
@@ -18,6 +19,7 @@ export default function UsersManagementPage({ usersPerPage: usersPerPageProp }: 
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedRoles, setSelectedRoles] = useState<string[]>(['admin', 'teacher', 'student']);
+  const [viewingCertificatesUserId, setViewingCertificatesUserId] = useState<number | null>(null);
 
   const refresh = async () => {
     const list = await listUsers();
@@ -271,6 +273,13 @@ export default function UsersManagementPage({ usersPerPage: usersPerPageProp }: 
                   ) : (
                     <div className="flex gap-2">
                       <button className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-3 py-1" onClick={() => { setEditing(u.id); setForm({ email: u.email, name: u.name || '', password: '', role: u.role }); }}>Edit</button>
+                      <button 
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg px-3 py-1 flex items-center gap-1" 
+                        onClick={() => setViewingCertificatesUserId(u.id)}
+                        title="View certificates"
+                      >
+                        <AcademicCapIcon className="h-4 w-4" />
+                      </button>
                       <button className="bg-red-600 hover:bg-red-700 text-white rounded-lg px-3 py-1" onClick={() => onDelete(u.id)}>Delete</button>
                     </div>
                   )}
@@ -330,6 +339,14 @@ export default function UsersManagementPage({ usersPerPage: usersPerPageProp }: 
             </button>
           </div>
         </div>
+      )}
+
+      {/* Certificate Modal */}
+      {viewingCertificatesUserId && (
+        <StudentCertificatesModal
+          userId={viewingCertificatesUserId}
+          onClose={() => setViewingCertificatesUserId(null)}
+        />
       )}
     </>
   );

@@ -354,6 +354,22 @@ async function initDb() {
       END$$;
     `);
 
+    // ─────────────────────────────────────────────────────────────
+    // 🎓 Certificate System Schema
+    // ─────────────────────────────────────────────────────────────
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS certificate (
+        id         SERIAL PRIMARY KEY,
+        user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        course_id  INTEGER NOT NULL REFERENCES course(id) ON DELETE CASCADE,
+        issued_at  TIMESTAMP DEFAULT NOW(),
+        UNIQUE (user_id, course_id)
+      );
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_certificate_user ON certificate(user_id);`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_certificate_course ON certificate(course_id);`);
+
     // Helpers
     const userExists = async (id: number) => {
       const { rows } = await client.query<{ c: number }>(

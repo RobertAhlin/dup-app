@@ -3,6 +3,7 @@ import pool from '../db';
 import { verifyToken, AuthenticatedRequest } from '../middleware/verifyToken';
 import { canEditCourse, canViewCourse, AuthUser } from './helpers/courseAccess';
 import { emitActivityUpdate } from '../socket';
+import { checkAndIssueCertificate } from '../services/certificateService';
 
 const router = Router();
 
@@ -274,7 +275,31 @@ router.put('/:id/progress', verifyToken, async (req: AuthenticatedRequest, res) 
       }
     }
 
-    res.json({ success: true })
+    // Check if course is now complete and issue certificate if needed
+    let newCertificate = null;
+    if (done) {
+      try {
+        const cert = await checkAndIssueCertificate(user.id, courseId);
+        if (cert) {
+          // Get course title for response
+          const courseRes = await pool.query<{ title: string }>(
+            'SELECT title FROM course WHERE id = $1',
+            [courseId]
+          );
+          newCertificate = {
+            id: cert.id,
+            courseId: cert.course_id,
+            courseTitle: courseRes.rows[0]?.title ?? '',
+            issuedAt: cert.issued_at.toISOString(),
+          };
+        }
+      } catch (certErr) {
+        console.error('Certificate check error:', certErr);
+        // Don't fail the request if certificate check fails
+      }
+    }
+
+    res.json({ success: true, newCertificate })
   } catch (err) {
     console.error('Update task progress error:', err)
     res.status(500).json({ error: 'Failed to update task progress' })

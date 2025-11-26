@@ -7,9 +7,11 @@ import MainCard from '../components/MainCard'
 import UserProfileCircle from '../components/UserProfileCircle'
 import CourseHeader from '../components/CourseHeader'
 import CourseProgressBar from '../components/CourseProgressBar'
+import CertificateModal from '../components/CertificateModal'
 import { useAuth } from '../hooks/useAuth'
 import { getCourse } from '../api/courses'
 import type { Course } from '../types/course'
+import type { CertificateDto } from '../types/certificate'
 import { useAlert } from '../contexts/useAlert'
 import LoadingSpinner from '../components/LoadingSpinner'
 import QuizManagementModal from '../components/quiz/QuizManagementModal'
@@ -75,7 +77,8 @@ export default function CourseBuilderPage() {
   const [selectedQuizId, setSelectedQuizId] = useState<number | undefined>(undefined)
   const { showAlert } = useAlert()
   // Fix: Declare courses and setCourses at the top
-  const [courses, setCourses] = useState<CourseProgress[]>([]);
+  const [courses, setCourses] = useState<CourseProgress[]>([])
+  const [newCertificate, setNewCertificate] = useState<CertificateDto | null>(null)
 
   const isTeacher = useMemo(() => {
     const role = (user?.role ?? '').toLowerCase()
@@ -447,7 +450,10 @@ export default function CourseBuilderPage() {
             initialHubDoneIds={hubDoneIds ?? undefined}
             onSetTaskDone={async (taskId, done) => {
               try {
-                await axios.put(`/api/tasks/${taskId}/progress`, { done })
+                const response = await axios.put<{ success: boolean; newCertificate?: CertificateDto }>(`/api/tasks/${taskId}/progress`, { done })
+                if (response.data.newCertificate) {
+                  setNewCertificate(response.data.newCertificate)
+                }
                 await refetchProgress()
               } catch (err) {
                 const axiosErr = err as AxiosLikeError
@@ -458,7 +464,10 @@ export default function CourseBuilderPage() {
             }}
             onSetHubDone={async (hubId, done) => {
               try {
-                await axios.put(`/api/hubs/${hubId}/progress`, { done })
+                const response = await axios.put<{ success: boolean; newCertificate?: CertificateDto }>(`/api/hubs/${hubId}/progress`, { done })
+                if (response.data.newCertificate) {
+                  setNewCertificate(response.data.newCertificate)
+                }
                 await refetchProgress()
               } catch (err) {
                 const axiosErr = err as AxiosLikeError
@@ -534,6 +543,11 @@ export default function CourseBuilderPage() {
       headerElement={<UserProfileCircle percentage={avgPercent} size={100} role={user?.role} />}
     >
       {renderContent()}
+      <CertificateModal
+        certificate={newCertificate}
+        userName={user?.name ?? ''}
+        onClose={() => setNewCertificate(null)}
+      />
     </MainCard>
   )
 }

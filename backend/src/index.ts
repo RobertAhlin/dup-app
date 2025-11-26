@@ -15,6 +15,7 @@ import edgesRoutes from "./routes/edges";
 import quizzesRoutes from "./routes/quizzes";
 import questionsRoutes from "./routes/questions";
 import studentQuizRoutes from "./routes/studentQuiz";
+import certificatesRoutes from "./routes/certificates";
 import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
@@ -86,6 +87,7 @@ app.use("/api/edges", edgesRoutes);
 app.use("/api/quizzes", quizzesRoutes);
 app.use("/api/questions", questionsRoutes);
 app.use("/api/student-quiz", studentQuizRoutes);
+app.use("/api/certificates", certificatesRoutes);
 
 // Statuskontroll
 app.get("/", async (_req, res) => {
