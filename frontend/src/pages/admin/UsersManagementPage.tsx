@@ -236,7 +236,7 @@ export default function UsersManagementPage({ usersPerPage: usersPerPageProp }: 
         <table className="w-full text-sm">
           <thead className="sticky top-0 bg-white">
             <tr className="text-left border-b border-black/10 text-gray-600">
-              <th className="py-2 pr-2">ID</th>
+              <th className="py-1 pr-2">ID</th>
               <th className="pr-2">Name</th>
               <th className="pr-2">Email</th>
               <th className="pr-2">Role</th>
@@ -247,11 +247,22 @@ export default function UsersManagementPage({ usersPerPage: usersPerPageProp }: 
           <tbody>
             {currentUsers.map(u => (
               <tr key={u.id} className="border-b border-black/5 hover:bg-black/5">
-                <td className="py-2 pr-2">{u.id}</td>
+                <td className="py-1 pr-2">{u.id}</td>
                 <td className="pr-2">
-                  {editing === u.id ? (
-                    <input className="w-full border rounded-lg px-2 py-1" value={form.name} onChange={e => setForm(f => ({...f, name: e.target.value}))} />
-                  ) : (u.name)}
+                  <div className="flex items-center gap-2">
+                    <button 
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg px-3 py-1 flex items-center gap-1" 
+                      onClick={() => setViewingCertificatesUserId(u.id)}
+                      title="View certificates"
+                    >
+                      <AcademicCapIcon className="h-4 w-4" />
+                    </button>
+                    {editing === u.id ? (
+                      <input className="w-full border rounded-lg px-2 py-1" value={form.name} onChange={e => setForm(f => ({...f, name: e.target.value}))} />
+                    ) : (
+                      <span>{u.name}</span>
+                    )}
+                  </div>
                 </td>
                 <td className="pr-2">{u.email}</td>
                 <td className="pr-2">
@@ -264,7 +275,7 @@ export default function UsersManagementPage({ usersPerPage: usersPerPageProp }: 
                   ) : (u.role)}
                 </td>
                 <td className="pr-2 text-xs text-slate-600">{formatLastLogin(u.last_login_at)}</td>
-                <td className="py-2">
+                <td className="py-1">
                   {editing === u.id ? (
                     <div className="flex gap-2">
                       <button className="bg-green-600 hover:bg-green-700 text-white rounded-lg px-3 py-1" onClick={() => onUpdate(u.id)}>Save</button>
@@ -272,15 +283,11 @@ export default function UsersManagementPage({ usersPerPage: usersPerPageProp }: 
                     </div>
                   ) : (
                     <div className="flex gap-2">
+                      
                       <button className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-3 py-1" onClick={() => { setEditing(u.id); setForm({ email: u.email, name: u.name || '', password: '', role: u.role }); }}>Edit</button>
-                      <button 
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg px-3 py-1 flex items-center gap-1" 
-                        onClick={() => setViewingCertificatesUserId(u.id)}
-                        title="View certificates"
-                      >
-                        <AcademicCapIcon className="h-4 w-4" />
-                      </button>
+                      
                       <button className="bg-red-600 hover:bg-red-700 text-white rounded-lg px-3 py-1" onClick={() => onDelete(u.id)}>Delete</button>
+                      
                     </div>
                   )}
                 </td>

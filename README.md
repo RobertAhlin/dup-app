@@ -1,115 +1,194 @@
 # 🚀 DUP – Digital Upskill Platform
+_A full‑stack MVP for structured, visual and self‑paced learning_
 
 <p align="center">
-    <img src="frontend/src/assets/hero-image.png" alt="DUP hero" width="50%">
+  <img src="frontend/src/assets/hero-image.png" alt="DUP hero" width="55%">
 </p>
 
-**DUP** is a modern, guided self-paced learning platform designed to help educators and learners build skills through structured learning journeys, with visual progression and milestone-based unlocking. Built for flexibility, DUP supports any subject, any structure, and adapts for both internal company use and future SaaS delivery.
+**DUP** (Digital Upskill Platform) is a modern digital learning platform developed as a full‑stack examination project. The system combines **visual course progression**, **automatic unlock rules**, **self‑grading quizzes**, **role‑based dashboards**, and a **graph‑based course builder**, built entirely from scratch using React, Express, and PostgreSQL.
 
-> 🚧 This project is under active development. Features and structure may evolve.
+The platform is delivered as a **Minimum Viable Product (MVP)** with focus on scalable architecture, user‑centered design, and clean technical structure.
+
+> 🛠️ **Status:** Active development – more features planned.
 
 ---
 
 ## 🌟 Vision
 
-> “DUP helps educators and learners follow structured skill-building journeys with visual progress tracking and milestone-based development — so that every step in the learning process feels meaningful, clear, and empowering.”
-
-Our goal is to create a platform that supports upskilling through clarity, modularity, and smart progression design. Inspired by tools like [Loops Education](https://loopseducation.com), DUP is being built to combine engagement, structure, and accessibility.
+> “To provide educators and learners with a clear, visual and engaging learning journey that makes every step meaningful, understandable, and structured — without adding administrative complexity.”
 
 ---
 
-## 🚀 Features (Planned & In Progress)
+## ✨ MVP Features
 
-### 🧑‍🏫 User Roles
-- Admin – manage users, organizations, and global settings
-- Teacher – build and manage courses
-- Student – participate in learning journeys
+### 👥 Roles & Access Control
+- **Admin** – manage users, roles, courses
+- **Teacher** – build courses, monitor learners
+- **Student** – follow structured learning paths
 
-### 📚 Course & Content Structure
-- Create courses → modules → lessons → steps
-- Visual learning path builder
-- Unlock-based progression (cannot skip ahead)
-- Reusable templates for lessons
+### 📚 Course Design & Content
+- Graph‑based **Course Builder** using React Flow
+- Hubs (modules) and Tasks (steps)
+- Drag‑and‑drop layout with saved coordinates
+- JSONB‑based content storage (flexible + versioning)
+- SimpleEditor & QuizEditor
 
-### 📝 Learning & Evaluation
-- Self-check quizzes
-- Teacher-reviewed assignments
-- XP points, progress meters, and gamified unlocks
-- Optional certifications upon completion
+### 🧠 Learning & Progression
+- Self‑grading quizzes (3 or 5 randomized questions)
+- Automatic unlocking of next hubs
+- Task, hub and course progression tracking
+- Automatic course certificates (MVP)
 
-### 🧠 Platform Features
-- Role-based authentication & onboarding
-- Invite-based account creation
-- Two-factor authentication (first login)
-- File uploads: PDF, video, audio
-- Comments and feedback fields
-- Student dashboard with clear visual progress
+### 🔔 Real‑Time Features
+- Built with Socket.IO
+  - live activity log
+  - student notifications
+  - instant updates when editing course nodes
 
-### 📊 Future Enhancements
-- Admin-level analytics (per organization)
-- Timed challenges and gamified mini-quests
-- Multi-organization support (DUPaaS)
-- Advanced certificate generator
-- Mobile-friendly version
+### 📊 Dashboards
+**Student:** progress bars (linear + circular), notifications
+
+**Teacher:** course completion overview, student activity
+
+**Admin:** CRUD for users and courses
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Layer       | Tech              |
-|-------------|-------------------|
-| Frontend    | React + Vite      |
-| Styling     | Tailwind CSS      |
-| Backend     | Node.js + Express |
-| Database    | PostgreSQL        |
-| Hosting     | Neon (free-tier for MVP) |
-| Auth        | JWT + Email-based login |
-| Versioning  | GitHub (public repo)      |
+| Layer | Technologies |
+|-------|--------------|
+| Frontend | React (Vite + TypeScript), Tailwind CSS, React Flow |
+| Backend | Node.js, Express, Socket.IO |
+| Database | PostgreSQL (Neon) |
+| Auth | JWT in HttpOnly cookies |
+| Hosting (dev) | Local + Neon |
+| Tools | GitHub, Postman, Figma |
 
 ---
 
-## 📦 Project Structure
+## 🧩 Architecture Overview
+
+The project is structured as a full‑stack monorepo:
+
 ```
 /dup-app
-├── /frontend → React/Vite frontend
-├── /backend → Express + PostgreSQL API
+├── /frontend   # React + Vite + Tailwind
+├── /backend    # Express API + Socket.IO + PostgreSQL
 └── README.md
 ```
 
+Backend follows a layered RESTful structure using controllers, middleware and database services.  
+The database uses:
+
+- **ENUM types** for data integrity
+- **JSONB** for flexible content and drafts
+- **Triggers** for automatic `updated_at`
+- **Graph-based design** using hubs, tasks and edges
+
 ---
 
-## 📝 Project Commands
-- run `npm install` to install dependencies  
-- run `npm run dev` to start in /backend  
-- run `npm run dev` to start in /frontend  
-- run `npm run build` to build the project for production  
-- run `npm run initdb` to initialize the database  
+## 🔌 API – Summary
 
-## UI examples
-### Login page
+### Auth
+```
+POST /api/auth/login
+POST /api/auth/logout
+```
+
+### Users
+```
+GET    /api/users
+POST   /api/users
+PUT    /api/users/:id
+DELETE /api/users/:id
+```
+
+### Courses
+```
+GET    /api/courses
+POST   /api/courses
+PUT    /api/courses/:id
+PATCH  /api/courses/:id/lock
+DELETE /api/courses/:id
+```
+
+### Progress
+```
+PUT /api/tasks/:taskId/progress
+PUT /api/hubs/:hubId/progress
+```
+
+### Certificates
+```
+GET /api/certificates/my
+```
+
+### Quizzes
+```
+GET    /api/quizzes
+POST   /api/quizzes
+PUT    /api/quizzes/:id
+DELETE /api/quizzes/:id
+```
+
+---
+
+## 🧪 Development Commands
+
+### Frontend
+```
+cd frontend
+npm install
+npm run dev
+npm run build
+```
+
+### Backend
+```
+cd backend
+npm install
+npm run dev
+npm run initdb
+```
+
+---
+
+## 🖼️ UI Preview
+
+### Login
 ![Login page](readmefiles/login-page_01.png)
-### Student dashboard
-![Studen dashboard](readmefiles/student-dashboard_01.png)
-### Course selection sidebar
-![Course selection sidebar](readmefiles/course-selection-sidebar_01.png)
-![Course selection sidebar minimized](readmefiles/course-selection-sidebar-minimized_01.png)
-### Course view
+
+### Student Dashboard
+![Student dashboard](readmefiles/student-dashboard_01.png)
+
+### Course Builder – Hubs & Tasks
 ![Course view](readmefiles/course-view_02.png)
 
-## 💡 Why public?
+---
 
-This repo is public to showcase the development journey of a real-world, fullstack platform.  
-Feel free to follow along, contribute ideas, or fork it for your own educational use.
+## 📦 Deployment
+
+The project is designed for deployment on:
+
+- **TBA** (frontend)
+- **TBA** (backend)
+- **Neon** as production PostgreSQL
+
+The MVP is tested locally and with Neon.
 
 ---
 
-## 👋 Author
+## 👤 Author
 
-Created by **Robert Ahlin** at [i4 Solutions AB](https://i4solutions.se)  
-Contact: [robert.ahlin@i4solutions.se]
+**Robert Ahlin**  
+Full‑Stack Developer & Digital Solutions  
+GitHub: https://github.com/RobertAhlin
 
 ---
 
 ## 📄 License
 
-This project is open for inspiration and educational use during development. Commercial reuse not permitted without permission.
+Open for learning, inspiration and non‑commercial use.  
+Contact for commercial usage permissions.
+
