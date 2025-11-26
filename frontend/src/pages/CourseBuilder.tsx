@@ -5,11 +5,12 @@ import GraphCanvas from '../components/graph/GraphCanvas'
 import type { HubData, TaskData, HubEdgeData } from '../components/graph/GraphCanvas'
 import MainCard from '../components/MainCard'
 import UserProfileCircle from '../components/UserProfileCircle'
+import CourseHeader from '../components/CourseHeader'
+import CourseProgressBar from '../components/CourseProgressBar'
 import { useAuth } from '../hooks/useAuth'
 import { getCourse } from '../api/courses'
 import type { Course } from '../types/course'
 import { useAlert } from '../contexts/useAlert'
-import ProgressBar from '../components/ProgressBar'
 import LoadingSpinner from '../components/LoadingSpinner'
 import QuizManagementModal from '../components/quiz/QuizManagementModal'
 import { getQuizzes } from '../api/quizzes'
@@ -334,7 +335,6 @@ export default function CourseBuilderPage() {
   }, [])
 
   const canEdit = isTeacher && mode === 'edit'
-  const [managePressed, setManagePressed] = useState(false)
   const [isTogglingLock, setIsTogglingLock] = useState(false)
 
   const loadQuizzes = useCallback(async () => {
@@ -420,124 +420,20 @@ export default function CourseBuilderPage() {
 
     return (
       <div className="p-2 flex flex-col h-full">
-        <div className="flex items-center gap-3 mb-4">
-          <div>
-            <h2 className="text-xl font-semibold">{course.title}</h2>
-            {course.description && (
-              <p className="text-sm text-slate-500 max-w-xl">{course.description}</p>
-            )}
-          </div>
-          {isTeacher && (
-            <>
-              <div className="ml-auto" aria-label="Lock course" role="group">
-                <span className="pl-13 text-xs font-semibold uppercase">Course</span>
-                <div
-                  className="relative flex items-center w-30 h-7 rounded-full border border-slate-300 bg-linear-to-br from-slate-200 via-slate-100 to-white shadow-inner p-0.5"
-                  style={{ minWidth: '148px' }}
-                >
-                  {/* Animated slider background */}
-                  <div
-                    className="absolute top-0 left-0 h-full w-full rounded-full pointer-events-none"
-                    style={{
-                      transition: 'background 0.4s',
-                      background: course?.is_locked
-                        ? 'linear-gradient(90deg, #f87171 60%, #f87171 100%)'
-                        : 'linear-gradient(90deg, #a3e635 60%, #a3e635 100%)',
-                      opacity: 0.25,
-                    }}
-                  />
-                  {/* Slider knob */}
-                  <div
-                    className="absolute top-0.8 left-1 h-6 rounded-full bg-white shadow transition-all duration-400"
-                    style={{
-                      width: course?.is_locked ? '64px' : '80px', // Match 'Locked'/'Unlocked' label width
-                      transform: course?.is_locked ? 'translateX(-2px)' : 'translateX(60px)',
-                      transition: 'transform 0.4s cubic-bezier(.4,0,.2,1), width 0.4s cubic-bezier(.4,0,.2,1)',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                    }}
-                  />
-                  {/* Buttons (labels) */}
-                  <button
-                    type="button"
-                    onClick={handleToggleLock}
-                    disabled={isTogglingLock}
-                    // ...removed lockPressed handlers
-                                className={`flex-1 px-2 text-xs font-semibold uppercase tracking-wide rounded-full transition-all duration-400 ${
-                                  course?.is_locked
-                                    ? 'text-slate-900'
-                                    : 'text-slate-500 hover:text-blue-500 cursor-pointer'
-                                } ${isTogglingLock ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    style={{
-                      color: course?.is_locked ? '#b91c1c' : undefined,
-                      transition: 'color 0.4s',
-                      zIndex: 2,
-                      fontWeight: 600,
-                    }}
-                  >
-                    Locked
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleToggleLock}
-                    disabled={isTogglingLock}
-                    // ...removed lockPressed handlers
-                                className={`flex-1 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide rounded-full transition-all duration-400 ${
-                                  !course?.is_locked
-                                    ? 'text-slate-900'
-                                    : 'text-slate-500 hover:text-blue-500 cursor-pointer'
-                                } ${isTogglingLock ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    style={{
-                      color: !course?.is_locked ? '#65a30d' : undefined,
-                      transition: 'color 0.4s',
-                      zIndex: 2,
-                      fontWeight: 600,
-                      
-                    }}
-                  >
-                    Unlocked
-                  </button>
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  setSelectedQuizId(undefined)
-                  setShowQuizModal(true)
-                }}
-                onMouseDown={() => setManagePressed(true)}
-                onMouseUp={() => setManagePressed(false)}
-                onMouseLeave={() => setManagePressed(false)}
-                className={`ml-auto px-4 py-3.5 text-xs border-3 border-gray-300 font-semibold uppercase tracking-wide rounded-full transition-all ${managePressed ? 'bg-gray-200 cursor-pointer' : 'bg-white hover:bg-gray-100 cursor-pointer'} text-slate-900`}
-                  style={managePressed ? { boxShadow: 'inset 3px 3px 0 rgba(0,0,0,0.1), inset 1px 1px 0 rgba(0,0,0,0.2)' } : undefined}
-              >
-                Manage Quizzes
-              </button>
-              <div className="ml-2" aria-label="Switch view mode" role="group">
-                <div className="flex rounded-full border border-slate-300 bg-linear-to-br from-slate-200 via-slate-100 to-white shadow-inner p-0.5">
-                <button
-                  type="button"
-                  onClick={() => setMode('student')}
-                  className={`flex-1 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide rounded-full transition-all ${mode === 'student'
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700 cursor-pointer'
-                  }`}
-                >
-                  Student view
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMode('edit')}
-                  className={`flex-1 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide rounded-full transition-all ${mode === 'edit'
-                    ? 'bg-white text-slate-900 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700 cursor-pointer'
-                  }`}
-                >
-                  Edit mode
-                </button>
-              </div>
-            </div>
-            </>
-          )}
-        </div>
+        <CourseHeader
+          courseTitle={course.title}
+          courseDescription={course.description ?? undefined}
+          isTeacher={isTeacher}
+          isLocked={course.is_locked ?? false}
+          onToggleLock={handleToggleLock}
+          isTogglingLock={isTogglingLock}
+          onManageQuizzes={() => {
+            setSelectedQuizId(undefined)
+            setShowQuizModal(true)
+          }}
+          mode={mode}
+          onModeChange={setMode}
+        />
 
         <div className="flex-1 min-h-[500px]">
           <GraphCanvas
@@ -591,13 +487,11 @@ export default function CourseBuilderPage() {
         </div>
 
         {!canEdit && progressSummary && (
-          <div className="mt-4">
-            <ProgressBar
-              percentage={progressSummary.percentage}
-              completedItems={progressSummary.completedItems}
-              totalItems={progressSummary.totalItems}
-            />
-          </div>
+          <CourseProgressBar
+            percentage={progressSummary.percentage}
+            completedItems={progressSummary.completedItems}
+            totalItems={progressSummary.totalItems}
+          />
         )}
 
         <QuizManagementModal
