@@ -16,10 +16,11 @@ interface MainCardProps {
   hideSidebar?: boolean; // When true, hide the CourseSidebar and use single-column layout
   sidebar?: ReactNode; // Optional custom sidebar content to render instead of CourseSidebar
   onSelectCourse?: (id: number) => void;
-    headerElement?: ReactNode;
+  headerElement?: ReactNode;
+  hasCertificates?: boolean;
 }
 
-export default function MainCard({ name, role, children, title, chip, hideSidebar = false, sidebar, onSelectCourse, headerElement }: MainCardProps) {
+export default function MainCard({ name, role, children, title, chip, hideSidebar = false, sidebar, onSelectCourse, headerElement, hasCertificates }: MainCardProps) {
   const navigate = useNavigate();
   // Props are destructured above; remove unused variables
   const handleSelectCourse = useCallback((id: number) => {
@@ -87,6 +88,7 @@ export default function MainCard({ name, role, children, title, chip, hideSideba
               title={title}
               chip={chip}
               headerElement={headerElement}
+              hasCertificates={hasCertificates}
             />
         </div>
       </div>

@@ -7,6 +7,7 @@ import { getMyCertificates } from '../api/certificates';
 import type { CertificateDto } from '../types/certificate';
 import MainCard from '../components/MainCard';
 import LoadingSpinner from '../components/LoadingSpinner';
+import UserProfileCircle from '../components/UserProfileCircle';
 import { AcademicCapIcon, CalendarIcon } from '@heroicons/react/24/outline';
 import * as HeroIcons from '@heroicons/react/24/outline';
 
@@ -83,6 +84,8 @@ export default function MyCertificatesPage() {
       email={user?.email ?? ''}
       role={user?.role ?? ''}
       chip={{ label: 'Dashboard', to: '/dashboard' }}
+      headerElement={<UserProfileCircle percentage={100} size={100} role={user?.role} />}
+      hasCertificates={certificates.length > 0}
     >
       <div className="p-6">
         <div className="flex items-center gap-3 mb-6">

@@ -8,6 +8,7 @@ import TeacherDashboard from "../components/dashboard/TeacherDashboard";
 import StudentDashboard from "../components/dashboard/StudentDashboard";
 import LoadingSpinner from "../components/LoadingSpinner";
 import type { User } from "../types/user";
+import { getMyCertificates } from "../api/certificates";
 
 type CourseProgress = {
   id: number
@@ -44,6 +45,7 @@ const Dashboard = () => {
   const [teacherCourses, setTeacherCourses] = useState<TeacherCourseStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [hasCertificates, setHasCertificates] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -65,6 +67,15 @@ const Dashboard = () => {
             { withCredentials: true }
           );
           setCourses(coursesRes.data.courses);
+          
+          // Check if student has certificates
+          try {
+            const certs = await getMyCertificates();
+            setHasCertificates(certs.length > 0);
+          } catch {
+            // If fetch fails, assume no certificates
+            setHasCertificates(false);
+          }
         }
         // Admin doesn't need to fetch course data since AdminDashboard handles its own data
       } catch (err: unknown) {
@@ -98,6 +109,7 @@ const Dashboard = () => {
       email={user.email}
       role={user.role}
       headerElement={<UserProfileCircle percentage={avgPercent} size={100} role={user.role} />}
+      hasCertificates={user.role === 'student' && hasCertificates}
     >
       {user.role === 'admin' ? (
         <AdminDashboard />
