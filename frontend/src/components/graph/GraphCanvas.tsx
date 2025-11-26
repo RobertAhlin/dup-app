@@ -37,8 +37,6 @@ type Props = {
   onDeleteTask: (taskId: number) => Promise<void> | void
   onMoveHub: (hubId: number, coords: { x: number; y: number }) => void
   onMoveTask: (taskId: number, coords: { x: number; y: number }) => void
-  onDeleteEdge: (edgeId: number) => Promise<void> | void
-  onUpdateEdgeColor: (edgeId: number, color: string) => Promise<void> | void
   onHubUpdate?: () => Promise<void> | void
 }
 
@@ -62,8 +60,6 @@ export default function GraphCanvas(props: Props) {
     onDeleteTask,
     onMoveHub,
     onMoveTask,
-    onDeleteEdge,
-    onUpdateEdgeColor,
     onHubUpdate,
   } = props
   const [connectMode, setConnectMode] = useState(false)
