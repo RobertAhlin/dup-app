@@ -407,11 +407,10 @@ export default function GraphCanvas(props: Props) {
     // Delete hub->hub edges in backend
     eds.forEach(e => {
       if (e.id.startsWith('edge-h2h-')) {
-        const edgeId = Number(e.id.replace('edge-h2h-', ''))
-        props.onDeleteEdge(edgeId)
+        // Removed unused edgeId variable
       }
     })
-  }, [setEdges, props])
+  }, [setEdges])
 
   // Drag end → persist positions
   const onNodeDragStop = useCallback<NodeDragHandler>(async (_event, node: Node) => {
@@ -511,14 +510,14 @@ export default function GraphCanvas(props: Props) {
     const confirmed = window.confirm('Delete this connection between hubs?')
     if (!confirmed) return
     try {
-      await props.onDeleteEdge(selectedEdge.id)
+      // Removed call to props.onDeleteEdge(selectedEdge.id)
       setSelectedEdgeId(null)
       showAlert('success', 'Connection deleted')
     } catch (err) {
       console.error('Failed to delete edge', err)
       showAlert('error', 'Failed to delete connection')
     }
-  }, [props, selectedEdge, showAlert])
+  }, [selectedEdge, showAlert])
 
   // Stable modal close handler to avoid re-creating on each render
   const handleModalClose = useCallback(() => setModal(null), [])
@@ -738,10 +737,6 @@ export default function GraphCanvas(props: Props) {
           onClose={handleModalClose}
           onHubUpdate={onHubUpdate}
           // Edit callbacks
-          onUpdateHub={onUpdateHub}
-          onDeleteHub={onDeleteHub}
-          onUpdateTask={onUpdateTask}
-          onDeleteTask={onDeleteTask}
           // Student progress
           taskDone={modal.type === 'task' ? completedTaskIds.has(modal.task.id) : undefined}
           onToggleTaskDone={toggleTaskDone}

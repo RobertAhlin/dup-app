@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import axios from "../../api/axios";
-import { io, Socket } from "socket.io-client";
+import { io } from "socket.io-client";
 import { CheckIcon, PlusCircleIcon } from "@heroicons/react/24/solid";
 
 type Activity = {
@@ -18,9 +18,6 @@ type Props = {
 export default function ActivityLog({ limit = 20 }: Props) {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
-  // Socket stored in state to maintain WebSocket connection lifecycle
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
   const fetchActivities = useCallback(async () => {
@@ -82,8 +79,6 @@ export default function ActivityLog({ limit = 20 }: Props) {
     newSocket.on('activity:new', (newActivity: Activity) => {
       setActivities(prev => [newActivity, ...prev].slice(0, limit));
     });
-
-    setSocket(newSocket);
 
     // Cleanup
     return () => {

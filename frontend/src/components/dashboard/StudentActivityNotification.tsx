@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import axios from "../../api/axios";
-import { io, Socket } from "socket.io-client";
+import { io } from "socket.io-client";
 import AlertBanner from "../AlertBanner";
 
 type Activity = {
@@ -16,9 +16,6 @@ export default function StudentActivityNotification() {
   const [showModal, setShowModal] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(false);
-  // Socket stored in state to maintain WebSocket connection lifecycle
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [socket, setSocket] = useState<Socket | null>(null);
 
   const fetchActivities = useCallback(async () => {
     try {
@@ -68,8 +65,6 @@ export default function StudentActivityNotification() {
         setLatestActivity(null);
       }, 10000);
     });
-
-    setSocket(newSocket);
 
     // Cleanup
     return () => {
