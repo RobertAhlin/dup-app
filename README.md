@@ -2,7 +2,7 @@
 _A full‑stack MVP for structured, visual and self‑paced learning_
 
 <p align="center">
-  <img src="frontend/src/assets/hero-image.png" alt="DUP hero" width="55%">
+  <img src="frontend/src/assets/dup-logo-colors-web_01.png" alt="DUP hero" width="55%">
 </p>
 
 **DUP** (Digital Upskill Platform) is a modern digital learning platform developed as a full‑stack examination project. The system combines **visual course progression**, **automatic unlock rules**, **self‑grading quizzes**, **role‑based dashboards**, and a **graph‑based course builder**, built entirely from scratch using React, Express, and PostgreSQL.
@@ -157,7 +157,7 @@ npm run initdb
 ## 🖼️ UI Preview
 
 ### Login
-![Login page](readmefiles/login-page_01.png)
+<img src="readmefiles/login_01.jpg" alt="Login page" width="60%" />
 
 ### Student Dashboard
 ![Student dashboard](readmefiles/student-dashboard_01.png)
@@ -171,8 +171,8 @@ npm run initdb
 
 The project is designed for deployment on:
 
-- **TBA** (frontend)
-- **TBA** (backend)
+- **https://dup.ahlin.org** (frontend)
+- **Render** (backend)
 - **Neon** as production PostgreSQL
 
 The MVP is tested locally and with Neon.
