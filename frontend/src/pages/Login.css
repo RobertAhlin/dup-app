@@ -14,7 +14,7 @@ body::before {
   content: "";
   position: fixed;
   inset: 0; /* cover viewport but we'll place image via background-position */
-  background-image: url('../assets/hero-image.png');
+  background-image: url('');
   background-repeat: no-repeat;
   background-position: center center; /* centered placement */
   background-size:  auto; /* adjust as desired */
