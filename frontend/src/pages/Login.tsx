@@ -25,7 +25,9 @@ export default function Login() {
         password,
       });
 
-      console.log("✅ Login successful:", response.data);
+      if (import.meta.env.DEV) {
+        console.log("✅ Login successful:", response.data);
+      }
 
       // Förväntar oss att backend skickar med { message: '...', socketToken: '...' }
       const { socketToken } = response.data as { socketToken?: string };
