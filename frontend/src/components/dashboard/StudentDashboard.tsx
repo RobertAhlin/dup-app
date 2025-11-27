@@ -1,3 +1,5 @@
+//src/components/dashboard/StudentDashboard.tsx
+
 import CircularProgressBar from "../CircularProgressBar";
 import StudentActivityNotification from "./StudentActivityNotification";
 

@@ -1,15 +1,17 @@
+// src/components/dashboard/StudentActivityNotification.tsx
+
 import { useEffect, useState, useCallback } from "react";
 import axios from "../../api/axios";
 import { io } from "socket.io-client";
 import AlertBanner from "../AlertBanner";
 
 type Activity = {
-  type: 'task' | 'hub' | 'task_created' | 'hub_created'
-  userName: string
-  itemTitle: string
-  courseTitle: string
-  timestamp: string
-}
+  type: "task" | "hub" | "task_created" | "hub_created";
+  userName: string;
+  itemTitle: string;
+  courseTitle: string;
+  timestamp: string;
+};
 
 export default function StudentActivityNotification() {
   const [latestActivity, setLatestActivity] = useState<Activity | null>(null);
@@ -26,39 +28,33 @@ export default function StudentActivityNotification() {
       );
       setActivities(response.data.activities);
     } catch (err) {
-      console.error('Failed to fetch activity log:', err);
+      console.error("Failed to fetch activity log:", err);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    // Get token from cookie (socketToken is non-httpOnly for Socket.IO)
-    const getCookie = (name: string) => {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop()?.split(';').shift();
-      return null;
-    };
+    // Hämta token från sessionStorage (satt i Login.tsx)
+    const token = sessionStorage.getItem("socketToken");
 
-    const token = getCookie('socketToken');
-    
     if (!token) {
-      console.error('No socketToken found in cookies. Please log in again.');
+      console.warn(
+        "⚠️ No socketToken found in sessionStorage – StudentActivityNotification live updates disabled."
+      );
       return;
     }
-    
-    // Connect to backend server for Socket.IO
-    const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-    // Initialize Socket.IO connection
+    const backendUrl =
+      import.meta.env.VITE_API_URL || "http://localhost:5000";
+
     const newSocket = io(backendUrl, {
       auth: { token },
-      withCredentials: true
+      withCredentials: true,
+      transports: ["websocket"],
     });
 
-    // Listen for new activity updates
-    newSocket.on('activity:new', (newActivity: Activity) => {
+    newSocket.on("activity:new", (newActivity: Activity) => {
       setLatestActivity(newActivity);
       // Auto-hide after 10 seconds
       setTimeout(() => {
@@ -66,7 +62,10 @@ export default function StudentActivityNotification() {
       }, 10000);
     });
 
-    // Cleanup
+    newSocket.on("connect_error", (err) => {
+      console.error("StudentActivityNotification socket error:", err.message);
+    });
+
     return () => {
       newSocket.close();
     };
@@ -81,54 +80,57 @@ export default function StudentActivityNotification() {
   const getRelativeTime = (timestamp: string) => {
     const now = new Date();
     const then = new Date(timestamp);
-    
+
     const diffMs = now.getTime() - then.getTime();
     const diffSecs = Math.floor(diffMs / 1000);
     const diffMins = Math.floor(diffSecs / 60);
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
 
-    if (diffMs < 0) return 'just now';
-    if (diffSecs < 10) return 'just now';
+    if (diffMs < 0) return "just now";
+    if (diffSecs < 10) return "just now";
     if (diffSecs < 60) return `${diffSecs} seconds ago`;
-    if (diffMins === 1) return '1 minute ago';
+    if (diffMins === 1) return "1 minute ago";
     if (diffMins < 60) return `${diffMins} minutes ago`;
-    if (diffHours === 1) return '1 hour ago';
+    if (diffHours === 1) return "1 hour ago";
     if (diffHours < 24) return `${diffHours} hours ago`;
-    if (diffDays === 1) return '1 day ago';
+    if (diffDays === 1) return "1 day ago";
     return `${diffDays} days ago`;
   };
 
   const getActivityMessage = (activity: Activity) => {
-    let actionText = '';
-    let itemType = '';
-    
+    let actionText = "";
+    let itemType = "";
+
     switch (activity.type) {
-      case 'task':
-        actionText = 'completed';
-        itemType = 'task';
+      case "task":
+        actionText = "completed";
+        itemType = "task";
         break;
-      case 'hub':
-        actionText = 'completed';
-        itemType = 'hub';
+      case "hub":
+        actionText = "completed";
+        itemType = "hub";
         break;
-      case 'task_created':
-        actionText = 'added a new';
-        itemType = 'task';
+      case "task_created":
+        actionText = "added a new";
+        itemType = "task";
         break;
-      case 'hub_created':
-        actionText = 'added a new';
-        itemType = 'hub';
+      case "hub_created":
+        actionText = "added a new";
+        itemType = "hub";
         break;
     }
 
     return (
       <div className="flex flex-col gap-1">
         <p className="text-sm font-medium">
-          <span className="font-semibold text-xs">{activity.userName}</span> {actionText}{' '}
-          <span className="font-medium">{itemType}</span> in{' '}
-          <span className="font-medium">{activity.courseTitle}</span>{' - '}
-          <span className="text-xs opacity-75">{getRelativeTime(activity.timestamp)}</span>
+          <span className="font-semibold text-xs">{activity.userName}</span>{" "}
+          {actionText} <span className="font-medium">{itemType}</span> in{" "}
+          <span className="font-medium">{activity.courseTitle}</span>
+          {" - "}
+          <span className="text-xs opacity-75">
+            {getRelativeTime(activity.timestamp)}
+          </span>
         </p>
       </div>
     );
@@ -147,7 +149,7 @@ export default function StudentActivityNotification() {
           width="40%"
           actionButton={{
             label: "View activities",
-            onClick: handleViewActivities
+            onClick: handleViewActivities,
           }}
         />
       )}
@@ -158,7 +160,9 @@ export default function StudentActivityNotification() {
           <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
             {/* Modal Header */}
             <div className="flex items-center justify-between p-2 border-b border-slate-200">
-              <h3 className="text-lg font-semibold text-slate-800">Recent Activity</h3>
+              <h3 className="text-lg font-semibold text-slate-800">
+                Recent Activity
+              </h3>
               <button
                 onClick={() => setShowModal(false)}
                 className="text-slate-400 hover:text-slate-600 text-2xl leading-none"
@@ -170,9 +174,13 @@ export default function StudentActivityNotification() {
             {/* Modal Body */}
             <div className="flex-1 overflow-y-auto p-2">
               {loading ? (
-                <p className="text-sm text-slate-500 text-center py-8">Loading activities...</p>
+                <p className="text-sm text-slate-500 text-center py-8">
+                  Loading activities...
+                </p>
               ) : activities.length === 0 ? (
-                <p className="text-sm text-slate-500 text-center py-8">No recent activity</p>
+                <p className="text-sm text-slate-500 text-center py-8">
+                  No recent activity
+                </p>
               ) : (
                 <div className="flex flex-col gap-2">
                   {activities.map((activity, index) => (
@@ -182,13 +190,27 @@ export default function StudentActivityNotification() {
                     >
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-slate-700 leading-snug">
-                          <span className="font-semibold">{activity.userName}</span>{' '}
-                          {activity.type === 'task' || activity.type === 'hub' ? 'completed' : 'added a new'}{' '}
+                          <span className="font-semibold">
+                            {activity.userName}
+                          </span>{" "}
+                          {activity.type === "task" ||
+                          activity.type === "hub"
+                            ? "completed"
+                            : "added a new"}{" "}
                           <span className="font-medium">
-                            {activity.type === 'task_created' ? 'task' : activity.type === 'hub_created' ? 'hub' : activity.type}
-                          </span>{' '}
-                          in <span className="font-medium">{activity.courseTitle}</span>{' '}
-                          <span className="text-xs text-slate-500 mt-1">{getRelativeTime(activity.timestamp)}</span>
+                            {activity.type === "task_created"
+                              ? "task"
+                              : activity.type === "hub_created"
+                              ? "hub"
+                              : activity.type}
+                          </span>{" "}
+                          in{" "}
+                          <span className="font-medium">
+                            {activity.courseTitle}
+                          </span>{" "}
+                          <span className="text-xs text-slate-500 mt-1">
+                            {getRelativeTime(activity.timestamp)}
+                          </span>
                         </p>
                       </div>
                     </div>
