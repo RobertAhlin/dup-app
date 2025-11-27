@@ -19,7 +19,6 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Don't reset states immediately to avoid showing default color
     try {
       const response = await axiosInstance.post("/api/auth/login", {
         email,
@@ -27,33 +26,37 @@ export default function Login() {
       });
 
       console.log("✅ Login successful:", response.data);
-      // Clear error state and set success state
+
+      // Förväntar oss att backend skickar med { message: '...', socketToken: '...' }
+      const { socketToken } = response.data as { socketToken?: string };
+
+      if (socketToken) {
+        sessionStorage.setItem("socketToken", socketToken);
+      } else {
+        console.warn("⚠️ No socketToken in login response – Socket.IO auth will be disabled.");
+      }
+
       setError("");
       setSuccess(true);
-
-      // Show success alert
       showAlert("success", "Login successful!");
 
-      // Wait 1 second before navigating to dashboard
       setTimeout(() => {
         navigate("/dashboard");
       }, 1000);
     } catch (err: unknown) {
-      // Clear success state and set error state
       setSuccess(false);
       let message = "Login failed";
+
       if (isAxiosError(err)) {
         const resp = err.response;
-        if (resp && resp.data && typeof resp.data === 'object' && 'error' in resp.data) {
+        if (resp && resp.data && typeof resp.data === "object" && "error" in resp.data) {
           const e = (resp.data as { error?: string }).error;
           if (e) message = e;
         }
       }
+
       setError(message);
-
-      // Show error alert using the global alert system
       showAlert("error", message);
-
       console.error("❌ Login error:", err);
     }
   };
@@ -68,7 +71,7 @@ export default function Login() {
         {Array.from({ length: 36 }, (_, i) => (
           <div
             className="bar"
-            style={{ ['--i']: i } as React.CSSProperties & Record<'--i', number>}
+            style={{ ["--i"]: i } as React.CSSProperties & Record<"--i", number>}
             key={i}
           ></div>
         ))}
@@ -89,7 +92,12 @@ export default function Login() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        <button className="bg-gray-200! px-1! py-0.5! border! border-gray-600! rounded! cursor-pointer" type="submit">Log In</button>
+        <button
+          className="bg-gray-200! px-1! py-0.5! border! border-gray-600! rounded! cursor-pointer"
+          type="submit"
+        >
+          Log In
+        </button>
       </form>
     </div>
   );

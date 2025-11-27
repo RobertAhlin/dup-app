@@ -1,10 +1,10 @@
 // backend/src/routes/auth.ts
 
-import { Router, Request, Response } from 'express';
-import pool from '../db';
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import { verifyToken, AuthenticatedRequest } from '../middleware/verifyToken';
+import { Router, Request, Response } from "express";
+import pool from "../db";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import { verifyToken, AuthenticatedRequest } from "../middleware/verifyToken";
 
 const router = Router();
 
@@ -12,29 +12,30 @@ const registerHandler = async (req: Request, res: Response) => {
   const { email, password, name, role } = req.body;
 
   if (!email || !password || !role) {
-    return res.status(400).json({ error: 'Email, password, and role are required.' });
+    return res
+      .status(400)
+      .json({ error: "Email, password, and role are required." });
   }
 
   try {
-    // 1. Check if user already exists
-    const userExists = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+    const userExists = await pool.query(
+      "SELECT id FROM users WHERE email = $1",
+      [email]
+    );
     if (userExists.rows.length > 0) {
-      return res.status(409).json({ error: 'Email already in use.' });
+      return res.status(409).json({ error: "Email already in use." });
     }
 
-    // 2. Look up role_id from roles table
     const roleResult = await pool.query(
-      'SELECT id FROM roles WHERE name = $1',
+      "SELECT id FROM roles WHERE name = $1",
       [role]
     );
 
     if (roleResult.rows.length === 0) {
-      return res.status(400).json({ error: 'Invalid role name.' });
+      return res.status(400).json({ error: "Invalid role name." });
     }
 
     const role_id = roleResult.rows[0].id;
-
-    // 3. Hash password and insert user
     const password_hash = await bcrypt.hash(password, 10);
 
     const result = await pool.query(
@@ -45,25 +46,26 @@ const registerHandler = async (req: Request, res: Response) => {
     );
 
     res.status(201).json({ user: result.rows[0] });
-
   } catch (err) {
-    console.error('❌ Registration error:', err);
-    res.status(500).json({ error: 'Server error during registration.' });
+    console.error("❌ Registration error:", err);
+    res.status(500).json({ error: "Server error during registration." });
   }
 };
 
-router.post('/register', (req: Request, res: Response) => {
+router.post("/register", (req: Request, res: Response) => {
   registerHandler(req, res);
 });
 
-const secret = process.env.JWT_SECRET || 'supersecret';
-const isProduction = process.env.NODE_ENV === 'production';
+const secret = process.env.JWT_SECRET || "supersecret";
+const isProduction = process.env.NODE_ENV === "production";
 
 const loginHandler = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required.' });
+    return res
+      .status(400)
+      .json({ error: "Email and password are required." });
   }
 
   try {
@@ -75,56 +77,49 @@ const loginHandler = async (req: Request, res: Response) => {
     const user = result.rows[0];
 
     if (!user) {
-      return res.status(401).json({ error: 'Invalid email or password.' });
+      return res.status(401).json({ error: "Invalid email or password." });
     }
 
     const isMatch = await bcrypt.compare(password, user.password_hash);
 
     if (!isMatch) {
-      return res.status(401).json({ error: 'Invalid email or password.' });
+      return res.status(401).json({ error: "Invalid email or password." });
     }
 
-    // Update last login timestamp
-    await pool.query(
-      'UPDATE users SET last_login_at = NOW() WHERE id = $1',
-      [user.id]
-    );
+    await pool.query("UPDATE users SET last_login_at = NOW() WHERE id = $1", [
+      user.id,
+    ]);
 
     const tokenPayload = {
       id: user.id,
       email: user.email,
       name: user.name,
-      role_id: user.role_id
+      role_id: user.role_id,
     };
 
-    const token = jwt.sign(tokenPayload, secret, { expiresIn: '12h' });
+    const token = jwt.sign(tokenPayload, secret, { expiresIn: "12h" });
 
-  res
-    .cookie('token', token, {
-      httpOnly: true,
-      secure: isProduction,                    // måste vara true med SameSite 'none'
-      sameSite: isProduction ? 'none' : 'lax', // 'none' när frontend & backend är olika domäner
-      maxAge: 12 * 60 * 60 * 1000
-    })
-    .cookie('socketToken', token, {
-      httpOnly: false,                         // används av Socket.IO
-      secure: isProduction,
-      sameSite: isProduction ? 'none' : 'lax',
-      maxAge: 12 * 60 * 60 * 1000
-    })
-    .json({ message: 'Login successful' });
+    res
+      .cookie("token", token, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
+        maxAge: 12 * 60 * 60 * 1000,
+      })
+      .json({
+        message: "Login successful",
+        socketToken: token, // frontend plockar upp denna och sparar i sessionStorage
+      });
   } catch (err) {
-    console.error('❌ Login error:', err);
-    res.status(500).json({ error: 'Server error during login.' });
+    console.error("❌ Login error:", err);
+    res.status(500).json({ error: "Server error during login." });
   }
 };
 
-// Register the route using a wrapper
-router.post('/login', (req: Request, res: Response) => {
+router.post("/login", (req: Request, res: Response) => {
   loginHandler(req, res);
 });
 
-// Get user profile handler to profile route
 const getProfileHandler = async (
   req: AuthenticatedRequest,
   res: Response
@@ -148,37 +143,41 @@ const getProfileHandler = async (
     const user = result.rows[0];
 
     if (!user) {
-      res.status(404).json({ error: 'User not found.' });
+      res.status(404).json({ error: "User not found." });
       return;
     }
 
     res.json({
-      message: '👤 Profile retrieved',
+      message: "👤 Profile retrieved",
       user,
     });
   } catch (err) {
-    console.error('❌ Error fetching profile:', err);
-    res.status(500).json({ error: 'Failed to fetch user profile.' });
+    console.error("❌ Error fetching profile:", err);
+    res.status(500).json({ error: "Failed to fetch user profile." });
   }
 };
 
+router.get("/me", verifyToken, getProfileHandler);
 
-router.get('/me', verifyToken, getProfileHandler);
+router.post("/logout", (_req, res) => {
+  const baseOptions = {
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+  } as const;
 
-router.post('/logout', (_req, res) => {
-  res.clearCookie('token', {
+  res.clearCookie("token", {
+    ...baseOptions,
     httpOnly: true,
-    secure: true,
-    sameSite: 'strict',
   });
-  res.clearCookie('socketToken', {
+
+  // socketToken-cookien använder vi inte längre egentligen,
+  // men om den fortfarande finns från äldre versioner kan vi rensa den också:
+  res.clearCookie("socketToken", {
+    ...baseOptions,
     httpOnly: false,
-    secure: true,
-    sameSite: 'strict',
   });
-  res.json({ message: 'Logged out' });
+
+  res.json({ message: "Logged out" });
 });
 
 export default router;
-
-
