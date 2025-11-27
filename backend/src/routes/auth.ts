@@ -57,6 +57,7 @@ router.post('/register', (req: Request, res: Response) => {
 });
 
 const secret = process.env.JWT_SECRET || 'supersecret';
+const isProduction = process.env.NODE_ENV === 'production';
 
 const loginHandler = async (req: Request, res: Response) => {
   const { email, password } = req.body;
@@ -98,21 +99,20 @@ const loginHandler = async (req: Request, res: Response) => {
 
     const token = jwt.sign(tokenPayload, secret, { expiresIn: '12h' });
 
-    // Set cookies with 12 hours expiry
-    res
-      .cookie('token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production' ? true : false,
-        sameSite: 'lax',
-        maxAge: 12 * 60 * 60 * 1000 // 12 hours
-      })
-      .cookie('socketToken', token, {
-        httpOnly: false, // Accessible to JavaScript for Socket.IO
-        secure: process.env.NODE_ENV === 'production' ? true : false,
-        sameSite: 'lax',
-        maxAge: 12 * 60 * 60 * 1000 // 12 hours
-      })
-      .json({ message: 'Login successful' });
+  res
+    .cookie('token', token, {
+      httpOnly: true,
+      secure: isProduction,                    // måste vara true med SameSite 'none'
+      sameSite: isProduction ? 'none' : 'lax', // 'none' när frontend & backend är olika domäner
+      maxAge: 12 * 60 * 60 * 1000
+    })
+    .cookie('socketToken', token, {
+      httpOnly: false,                         // används av Socket.IO
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
+      maxAge: 12 * 60 * 60 * 1000
+    })
+    .json({ message: 'Login successful' });
   } catch (err) {
     console.error('❌ Login error:', err);
     res.status(500).json({ error: 'Server error during login.' });
