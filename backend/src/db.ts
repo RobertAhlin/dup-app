@@ -9,7 +9,6 @@ const types = pg.types;
 // Override the default timestamp parser (type ID 1114 is TIMESTAMP)
 types.setTypeParser(1114, (str) => new Date(str + 'Z'));
 
-//console.log('DATABASE_URL:', process.env.DATABASE_URL);
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL as string,
 
